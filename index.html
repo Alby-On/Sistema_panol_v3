@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Materiales - Inicio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.29.0/dist/supabase.min.js"></script>
+
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f5f5f5; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            max-width: 450px;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.15);
+        }
+        h2, h3 { text-align: center; margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 15px;
+            border-radius: 7px;
+            border: 1px solid #aaa;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 7px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { opacity: 0.9; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .hidden { display: none; }
+        a { color: #007bff; cursor: pointer; text-decoration: underline; }
+        .error { color: red; font-size: 14px; margin-bottom: 10px; }
+        ul { padding-left: 18px; margin-top: -5px; }
+    </style>
+</head>
+<body>
+
+<!-- BIENVENIDA -->
+<div class="box" id="welcomeBox">
+    <h2>Bienvenido(a)</h2>
+    <p>
+        Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por 
+        <b>pañol del área de Electricidad, Automatización y Robótica</b>.
+    </p>
+    <h3>Consideraciones:</h3>
+    <ul>
+        <li>Todo material facilitado debe regresar en las mismas condiciones.</li>
+        <li>Los estudiantes deben entregar su <b>TNE</b> o <b>Cédula de Identidad</b>.</li>
+        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
+    </ul>
+    <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+    <button class="btn-success" onclick="showRegister()">Registrarse</button>
+</div>
+
+<!-- LOGIN -->
+<div class="box hidden" id="loginBox">
+    <h2>Iniciar Sesión</h2>
+    <input type="email" placeholder="Correo" id="loginEmail">
+    <input type="password" placeholder="Contraseña" id="loginPass">
+    <button class="btn-primary" onclick="login()">Ingresar</button>
+    <p><a onclick="showRegister()">Registrarme</a></p>
+    <p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<!-- REGISTRO -->
+<div class="box hidden" id="registerBox">
+    <h2>Registro</h2>
+    <input type="text" id="regNombre" placeholder="Nombre Completo">
+    <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+    <p id="rutError" class="error"></p>
+
+    <select id="regCarrera">
+        <option value="">Seleccione una carrera</option>
+        <option>Ingeniería Eléctrica</option>
+        <option>Técnico de nivel superior en Electricidad Industrial</option>
+        <option>Ingeniería en Automatización y Robótica</option>
+        <option>Técnico de nivel superior en Automatización y Robótica</option>
+        <option>Ingeniería en Mecatrónica</option>
+        <option>Técnico de nivel superior en Mecatrónica</option>
+        <option>Área Mecánica</option>
+        <option>Otras Áreas</option>
+    </select>
+
+    <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
+    <input type="email" id="regEmail" placeholder="Correo">
+    <input type="password" id="regPass" placeholder="Contraseña">
+
+    <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+    <p><a onclick="showLogin()">Ya tengo cuenta</a></p>
+    <p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<script>
+/* ------------------ SUPABASE ------------------ */
+const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; // reemplaza con tu URL
+const SUPABASE_KEY = "TU_API_KEY"; // reemplaza con tu anon key
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ------------------ CAMBIO DE PANTALLAS ------------------ */
+function hideAll() {
+    welcomeBox.classList.add("hidden");
+    loginBox.classList.add("hidden");
+    registerBox.classList.add("hidden");
+}
+function showWelcome() { hideAll(); welcomeBox.classList.remove("hidden"); }
+function showLogin() { hideAll(); loginBox.classList.remove("hidden"); }
+function showRegister() { hideAll(); registerBox.classList.remove("hidden"); }
+
+/* ------------------ VALIDACIÓN DE RUT ------------------ */
+function limpiarRut(rut) { return rut.replace(/\./g, '').replace(/\s/g, '').toUpperCase(); }
+function dvT(rut) { let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+function validarRutCompleto(rutCompleto) {
+    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+    const r = limpiarRut(rutCompleto);
+    if(!r.includes("-")) return {ok:false,msg:"El RUT debe contener guion."};
+    const [num,dv] = r.split("-");
+    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
+    return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
+}
+function clearRutError() { rutError.textContent = ""; }
+
+/* ------------------ VERIFICAR DUPLICADOS ------------------ */
+async function usuarioExiste(rut, email) {
+    const { data, error } = await supabase
+        .from('Usuarios')
+        .select('rut, email')
+        .or(`rut.eq.${rut},email.eq.${email}`);
+
+    if (error || !data) return {existeRut:false, existeEmail:false};
+
+    return {
+        existeRut: data.some(u => u.rut.toUpperCase() === rut.toUpperCase()),
+        existeEmail: data.some(u => u.email.toLowerCase() === email.toLowerCase())
+    };
+}
+
+/* ------------------ REGISTRO ------------------ */
+async function registrar() {
+    clearRutError();
+
+    const data = {
+        nombre: regNombre.value.trim(),
+        rut: regRut.value.trim(),
+        carrera: regCarrera.value,
+        telefono: regTelefono.value.trim(),
+        email: regEmail.value.trim(),
+        pass: regPass.value.trim()
+    };
+
+    if(!data.nombre||!data.rut||!data.carrera||!data.telefono||!data.email||!data.pass){
+        alert("Complete todos los campos."); 
+        return;
+    }
+
+    const rutVal = validarRutCompleto(data.rut);
+    if(!rutVal.ok){ rutError.textContent = rutVal.msg; return; }
+
+    if(!/^\+569\d{8}$/.test(data.telefono)){
+        alert("Teléfono inválido. Formato correcto: +569xxxxxxxx"); 
+        return;
+    }
+
+    const check = await usuarioExiste(data.rut, data.email);
+    if (check.existeRut) { alert("❌ Este RUT ya está registrado."); return; }
+    if (check.existeEmail) { alert("❌ Este correo ya está registrado."); return; }
+
+    const { error } = await supabase.from('Usuarios').insert([data]);
+    if (error) { alert("Error: " + error.message); return; }
+
+    alert("✅ Registro exitoso. Ahora puede iniciar sesión.");
+    showLogin();
+}
+
+/* ------------------ LOGIN ------------------ */
+async function login() {
+    const email = loginEmail.value.trim();
+    const pass = loginPass.value.trim();
+
+    if(!email || !pass){ alert("Complete todos los campos."); return; }
+
+    const { data, error } = await supabase
+        .from('Usuarios')
+        .select('*')
+        .eq('email', email)
+        .eq('pass', pass)
+        .single();
+
+    if (error || !data) {
+        alert("❌ Email o contraseña incorrectos");
+        return;
+    }
+
+    localStorage.setItem("currentUser", JSON.stringify(data));
+    window.location.href="menu.html";
+}
+
+showWelcome();
+</script>
+
+</body>
+</html>

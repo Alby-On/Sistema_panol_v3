@@ -3,72 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro de Usuario - Pañol</title>
+  <title>Registro de Usuario - Pañol Electricidad</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 40px; }
+    .box { max-width: 450px; margin: auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    input, select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #aaa; box-sizing: border-box; }
+    button { background: #007bff; color: white; cursor: pointer; font-size: 16px; }
+    button:hover { opacity: 0.9; }
+    #mensaje { margin-top: 10px; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <h2>Registro de Usuario</h2>
+  <div class="box">
+    <h2>Registro de Usuario</h2>
 
-  <label>Nombre completo:</label><br>
-  <input type="text" id="nombre_completo" placeholder="Ej: Juan Pérez"><br><br>
+    <input type="text" id="regNombre" placeholder="Nombre completo">
+    <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+    <select id="regCarrera">
+      <option value="">Seleccione carrera</option>
+      <option>Ingeniería Eléctrica</option>
+      <option>Técnico en Electricidad Industrial</option>
+      <option>Ingeniería en Automatización y Robótica</option>
+      <option>Técnico en Automatización y Robótica</option>
+      <option>Ingeniería en Mecatrónica</option>
+      <option>Técnico en Mecatrónica</option>
+      <option>Área Mecánica</option>
+      <option>Otras Áreas</option>
+    </select>
+    <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
+    <input type="email" id="regEmail" placeholder="Correo electrónico">
+    <input type="password" id="regPass" placeholder="Contraseña">
 
-  <label>Correo:</label><br>
-  <input type="email" id="correo" placeholder="Ej: juan@correo.com"><br><br>
-
-  <label>Contraseña:</label><br>
-  <input type="password" id="contraseña" placeholder="Mínimo 6 caracteres"><br><br>
-
-  <label>Tipo de usuario:</label><br>
-  <select id="tipo_usuario">
-    <option value="Alumno">Alumno</option>
-    <option value="Docente">Docente</option>
-  </select><br><br>
-
-  <button onclick="registrar()">Crear cuenta</button>
-
-  <p id="mensaje"></p>
+    <button onclick="registrar()">Registrar</button>
+    <p id="mensaje"></p>
+  </div>
 
   <script>
-    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; // tu URL
+    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function registrar() {
-      const nombre_completo = document.getElementById("nombre_completo").value;
-      const correo = document.getElementById("correo").value;
-      const contraseña = document.getElementById("contraseña").value;
-      const tipo_usuario = document.getElementById("tipo_usuario").value;
+      const nombre = regNombre.value.trim();
+      const rut = regRut.value.trim();
+      const carrera = regCarrera.value;
+      const telefono = regTelefono.value.trim();
+      const email = regEmail.value.trim();
+      const pass = regPass.value.trim();
       const mensaje = document.getElementById("mensaje");
 
-      if (!nombre_completo || !correo || !contraseña) {
-        mensaje.textContent = "⚠️ Por favor, completa todos los campos.";
+      if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
+        mensaje.textContent = "⚠️ Complete todos los campos.";
+        mensaje.style.color = "red";
         return;
       }
 
       try {
-        // Inserta en la tabla usuarios
-        const { data, error } = await supabase
+        // Verificar si ya existe el usuario (por rut o correo)
+        const { data: existente, error: errCheck } = await supabaseClient
           .from("usuarios")
-          .insert([
-            { nombre_completo, correo, contraseña, tipo_usuario }
-          ]);
+          .select("*")
+          .or(`rut.eq.${rut},email.eq.${email}`);
 
-        if (error) {
-          console.error(error);
-          mensaje.textContent = "❌ Error al registrar: " + error.message;
-        } else {
-          console.log("✅ Usuario registrado:", data);
-          mensaje.textContent = "✅ Usuario registrado correctamente.";
+        if (errCheck) throw errCheck;
+
+        if (existente.length > 0) {
+          mensaje.textContent = "⚠️ El RUT o correo ya están registrados.";
+          mensaje.style.color = "red";
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        mensaje.textContent = "❌ Error inesperado: " + err.message;
+
+        // Insertar nuevo usuario
+        const { data, error } = await supabaseClient
+          .from("usuarios")
+          .insert([{ nombre, rut, carrera, telefono, email, pass }]);
+
+        if (error) throw error;
+
+        mensaje.textContent = "✅ Registro exitoso. Ahora puede iniciar sesión.";
+        mensaje.style.color = "green";
+
+        // Limpiar formulario
+        regNombre.value = "";
+        regRut.value = "";
+        regCarrera.value = "";
+        regTelefono.value = "";
+        regEmail.value = "";
+        regPass.value = "";
+
+      } catch (error) {
+        console.error("❌ Error en registro:", error);
+        mensaje.textContent = "❌ Error al registrar: " + error.message;
+        mensaje.style.color = "red";
       }
     }
   </script>
 </body>
 </html>
-
 
 

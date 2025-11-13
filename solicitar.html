@@ -1,175 +1,174 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Solicitud de Materiales</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 20px;
-    }
-    .box {
-      background: white;
-      padding: 20px;
-      max-width: 750px;
-      margin: 20px auto;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.15);
-    }
-    h2, h3 { text-align: center; margin-bottom: 15px; }
-    label { font-weight: bold; display: block; margin-top: 10px; }
-    input, select {
-      width: 100%; padding: 10px; font-size: 15px; margin-top: 5px; margin-bottom: 15px;
-      border-radius: 6px; border: 1px solid #aaa; box-sizing: border-box;
-    }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 10px; }
-    th {
-      background: #007bff; color: white; text-align: center;
-    }
-    td input {
-      width: 100%; padding: 7px; font-size: 14px; box-sizing: border-box;
-    }
-    .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-      width: 100%; padding: 12px; border: none; border-radius: 6px;
-      font-size: 16px; cursor: pointer; margin-top: 10px;
-    }
-    .btnAdd { background: #17a2b8; color: white; }
-    .btnRemove { background: #dc3545; color: white; }
-    .btnEnviar { background: #28a745; color: white; }
-    .btnVolver { background: #6c757d; color: white; }
-    .btnAdd:hover { background: #138496; }
-    .btnRemove:hover { background: #c82333; }
-    .btnEnviar:hover { background: #218838; }
-    .btnVolver:hover { background: #565e64; }
-  </style>
+<meta charset="UTF-8">
+<title>Solicitud de Materiales</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: Arial; background: #f0f2f5; margin:0; padding:20px; }
+.box { background:white; padding:20px; max-width:750px; margin:20px auto; border-radius:12px; box-shadow:0 0 15px rgba(0,0,0,0.15); }
+h2,h3 { text-align:center; margin-bottom:15px; }
+label { font-weight:bold; display:block; margin-top:10px; }
+input, select { width:100%; padding:10px; font-size:15px; margin-top:5px; margin-bottom:15px; border-radius:6px; border:1px solid #aaa; box-sizing:border-box; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th, td { border:1px solid #ccc; padding:10px; }
+th { background:#007bff; color:white; text-align:center; }
+td input { width:100%; padding:7px; font-size:14px; box-sizing:border-box; }
+.btnAdd, .btnRemove, .btnEnviar, .btnVolver { width:100%; padding:12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; margin-top:10px; }
+.btnAdd { background:#17a2b8; color:white; }
+.btnRemove { background:#dc3545; color:white; }
+.btnEnviar { background:#28a745; color:white; }
+.btnVolver { background:#6c757d; color:white; }
+.btnAdd:hover { background:#138496; }
+.btnRemove:hover { background:#c82333; }
+.btnEnviar:hover { background:#218838; }
+.btnVolver:hover { background:#565e64; }
+</style>
 </head>
 <body>
 
 <div class="box">
-  <h2>Solicitud de Materiales</h2>
+    <h2>Solicitud de Materiales</h2>
 
-  <label>Docente a cargo:</label>
-  <select id="docente">
-    <option value="">Seleccione un docente</option>
-    <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
-    <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
-    <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
-    <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
-    <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
-    <option>ELÍAS ANDRÉS POBLETE AVILA</option>
-    <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
-    <option>GIOVANNI ANDRÉS JARA TORRES</option>
-    <option>JORGE ANDRÉS PÉREZ MILLAR</option>
-    <option>JOSEFA CATALINA LISBOA RIVERA</option>
-    <option>JULIO CESAR ALARCON MONTEROS</option>
-    <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
-    <option>MARCO ANTONIO ARRIAGADA CASAS</option>
-    <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
-    <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
-    <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
-    <option>ROBERTO SEBASTIAN CID LIZAMA</option>
-    <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
-    <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
-    <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
-    <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
-    <option>OTROS DOCENTES</option>
-  </select>
+    <label>Docente a cargo:</label>
+    <select id="docente">
+        <option value="">Seleccione un docente</option>
+        <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
+        <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
+        <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
+        <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
+        <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
+        <option>ELÍAS ANDRÉS POBLETE AVILA</option>
+        <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
+        <option>GIOVANNI ANDRÉS JARA TORRES</option>
+        <option>JORGE ANDRÉS PÉREZ MILLAR</option>
+        <option>JOSEFA CATALINA LISBOA RIVERA</option>
+        <option>JULIO CESAR ALARCON MONTEROS</option>
+        <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
+        <option>MARCO ANTONIO ARRIAGADA CASAS</option>
+        <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
+        <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
+        <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
+        <option>ROBERTO SEBASTIAN CID LIZAMA</option>
+        <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
+        <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
+        <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
+        <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
+        <option>OTROS DOCENTES</option>
+    </select>
 
-  <label>Asignatura:</label>
-  <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
+    <label>Asignatura:</label>
+    <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
 
-  <h3>Materiales Solicitados</h3>
+    <h3>Materiales Solicitados</h3>
 
-  <table id="tabla">
-    <thead>
-      <tr>
-        <th>Material / Equipo</th>
-        <th>Cantidad</th>
-      </tr>
-    </thead>
-    <tbody id="tbody">
-      <tr>
-        <td><input type="text" placeholder="Ej: Multímetro UT33C"></td>
-        <td><input type="number" min="1" value="1"></td>
-      </tr>
-    </tbody>
-  </table>
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Material / Equipo</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr>
+                <td><input type="text" placeholder="Ej: Multímetro UT33C"></td>
+                <td><input type="number" min="1" value="1"></td>
+            </tr>
+        </tbody>
+    </table>
 
-  <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
-  <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
-  <button class="btnEnviar" onclick="enviar()">Enviar Solicitud</button>
-  <button class="btnVolver" onclick="location.href='menu.html'">Volver</button>
+    <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
+    <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
+    <button class="btnEnviar" onclick="enviar()">Enviar Solicitud</button>
+    <button class="btnVolver" onclick="location.href='menu.html'">Volver</button>
 </div>
 
-<!-- Librería y conexión a Supabase -->
+<!-- Supabase JS y tu configuración -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+<script src="supabase.js"></script> <!-- tu archivo en GitHub -->
 
 <script>
-/* ----------- VALIDAR SESIÓN ----------- */
+/* ----------- VERIFICAR USUARIO LOGEADO ----------- */
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user) window.location.href = "index.html";
 
-/* ----------- AGREGAR FILA ----------- */
+/* ----------- AGREGAR/ELIMINAR FILAS ----------- */
 function addRow() {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td><input type="text" placeholder="Ej: Cables de prueba"></td>
-    <td><input type="number" min="1" value="1"></td>
-  `;
-  document.getElementById("tbody").appendChild(tr);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td><input type="text" placeholder="Ej: Cables de prueba"></td>
+        <td><input type="number" min="1" value="1"></td>
+    `;
+    document.getElementById("tbody").appendChild(tr);
 }
 
-/* ----------- ELIMINAR ÚLTIMA FILA ----------- */
 function removeRow() {
-  const tbody = document.getElementById("tbody");
-  if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
-  else alert("Debe haber al menos un material.");
+    const tbody = document.getElementById("tbody");
+    if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    else alert("Debe haber al menos un material.");
 }
 
-/* ----------- ENVIAR SOLICITUD ----------- */
+/* ----------- ENVIAR SOLICITUD A SUPABASE ----------- */
+let enviando = false;
+
 async function enviar() {
-  const docente = document.getElementById("docente").value;
-  const asignatura = document.getElementById("asignatura").value.trim();
-  const fecha = new Date().toISOString().split("T")[0];
-  const estado = "Pendiente";
+    if (enviando) return;
+    enviando = true;
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
 
-  if (!docente || !asignatura) return alert("Complete los campos requeridos.");
+    const docente = document.getElementById("docente").value;
+    const asignatura = document.getElementById("asignatura").value.trim();
 
-  const filas = document.querySelectorAll("#tbody tr");
-  const materiales = [];
-  filas.forEach(f => {
-    const nombre = f.children[0].querySelector("input").value.trim();
-    const cantidad = f.children[1].querySelector("input").value.trim();
-    if (nombre && cantidad) materiales.push({ nombre, cantidad });
-  });
+    if (!docente) { alert("Seleccione un docente."); resetBtn(); return; }
+    if (!asignatura) { alert("Ingrese la asignatura."); resetBtn(); return; }
 
-  if (materiales.length === 0) return alert("Debe ingresar al menos un material.");
+    const filas = document.querySelectorAll("#tbody tr");
+    const materiales = [];
+    filas.forEach(f => {
+        const nombre = f.children[0].querySelector("input").value.trim();
+        const cantidad = f.children[1].querySelector("input").value.trim();
+        if (nombre && cantidad) materiales.push({ material: nombre, cantidad: parseInt(cantidad) });
+    });
 
-  // Crear la solicitud
-  const { data: solicitud, error: errSolicitud } = await supabaseClient
-    .from("solicitudes")
-    .insert([{ email: user.email, docente, asignatura, fecha, estado }])
-    .select();
+    if (materiales.length === 0) { alert("Debe ingresar al menos un material."); resetBtn(); return; }
 
-  if (errSolicitud) return alert("Error al guardar solicitud: " + errSolicitud.message);
+    try {
+        // Insertar solicitud
+        const { data: solicitud, error: errSol } = await supabaseClient
+            .from('solicitudes')
+            .insert([{ email: user.email, docente, asignatura, fecha: new Date().toISOString(), estado: 'Pendiente' }])
+            .select()
+            .single();
+        if (errSol) throw errSol;
 
-  const solicitudId = solicitud[0].id;
+        const id_solicitud = solicitud.id;
 
-  // Insertar materiales relacionados
-  for (const m of materiales) {
-    const { error: errMat } = await supabaseClient
-      .from("materiales_solicitados")
-      .insert([{ id_solicitud: solicitudId, material: m.nombre, cantidad: m.cantidad }]);
-    if (errMat) console.error("Error insertando material:", errMat.message);
-  }
+        // Insertar materiales asociados
+        for (let m of materiales) {
+            const { error: errMat } = await supabaseClient
+                .from('materiales_solicitados')
+                .insert([{ id_solicitud, material: m.material, cantidad: m.cantidad }]);
+            if (errMat) throw errMat;
+        }
 
-  alert("✅ Solicitud enviada con éxito.");
-  location.href = "menu.html";
+        alert("✅ Solicitud enviada con éxito.");
+        location.href = "menu.html";
+
+    } catch (err) {
+        console.error(err);
+        alert("❌ Error al enviar la solicitud: " + err.message);
+    }
+
+    resetBtn();
+}
+
+function resetBtn() {
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = false;
+    btn.innerText = "Enviar Solicitud";
+    enviando = false;
 }
 </script>
 </body>

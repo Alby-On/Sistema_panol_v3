@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Menú Principal - Sistema de Pañol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+      margin: 40px auto;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .perfil {
+      background: #e9ecef;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: left;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      background: #28a745;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      margin-top: 12px;
+      font-size: 17px;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #1e7e34;
+    }
+    .logout {
+      background: #dc3545 !important;
+    }
+    .logout:hover {
+      background: #b02a37 !important;
+    }
+    .welcome {
+      font-size: 17px;
+      font-weight: bold;
+      color: #007bff;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Menú Principal</h2>
+
+  <div id="welcomeMsg" class="welcome"></div>
+
+  <div class="perfil">
+    <p><b>Nombre:</b> <span id="pNombre"></span></p>
+    <p><b>RUT:</b> <span id="pRut"></span></p>
+    <p><b>Carrera:</b> <span id="pCarrera"></span></p>
+    <p><b>Teléfono:</b> <span id="pTelefono"></span></p>
+    <p><b>Correo:</b> <span id="pCorreo"></span></p>
+  </div>
+
+  <button onclick="location.href='solicitar.html'">Solicitar Materiales</button>
+  <button onclick="location.href='pendientes.html'">Entregas Pendientes</button>
+  <button onclick="location.href='entregadas.html'">Historial de Entregas</button>
+
+  <button class="logout" onclick="logout()">Cerrar Sesión</button>
+</div>
+
+<script type="module">
+/* ---------------------- SESIÓN ACTIVA ---------------------- */
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+if (!user) {
+  window.location.href = "index.html";
+}
+
+/* ---------------------- DATOS EN PANTALLA ---------------------- */
+document.getElementById("welcomeMsg").textContent = `👋 Bienvenido(a), ${user.nombre}`;
+document.getElementById("pNombre").textContent   = user.nombre;
+document.getElementById("pRut").textContent      = user.rut;
+document.getElementById("pCarrera").textContent  = user.carrera;
+document.getElementById("pTelefono").textContent = user.telefono;
+document.getElementById("pCorreo").textContent   = user.email;
+
+/* ---------------------- CERRAR SESIÓN ---------------------- */
+function logout() {
+  localStorage.removeItem("currentUser");
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>

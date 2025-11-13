@@ -14,7 +14,6 @@ button:hover { opacity:0.9; }
 .btn-primary { background: #007bff; color:white; }
 .btn-success { background:#28a745; color:white; }
 .hidden { display:none; }
-a { color:#007bff; cursor:pointer; text-decoration:underline; }
 .error { color:red; font-size:14px; margin-bottom:10px; }
 </style>
 </head>
@@ -22,13 +21,7 @@ a { color:#007bff; cursor:pointer; text-decoration:underline; }
 
 <div class="box" id="welcomeBox">
     <h2>Bienvenido(a)</h2>
-    <p>Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
-    <h3>Consideraciones:</h3>
-    <ul>
-        <li>Todo material facilitado debe regresar en las mismas condiciones.</li>
-        <li>Los estudiantes deben entregar su <b>TNE</b> o <b>Cédula de Identidad</b>.</li>
-        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
-    </ul>
+    <p>Plataforma de <b>solicitud de materiales</b>.</p>
     <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
     <button class="btn-success" onclick="showRegister()">Registrarse</button>
 </div>
@@ -50,13 +43,7 @@ a { color:#007bff; cursor:pointer; text-decoration:underline; }
     <select id="regCarrera">
         <option value="">Seleccione una carrera</option>
         <option>Ingeniería Eléctrica</option>
-        <option>Técnico de nivel superior en Electricidad Industrial</option>
-        <option>Ingeniería en Automatización y Robótica</option>
-        <option>Técnico de nivel superior en Automatización y Robótica</option>
-        <option>Ingeniería en Mecatrónica</option>
-        <option>Técnico de nivel superior en Mecatrónica</option>
-        <option>Área Mecánica</option>
-        <option>Otras Áreas</option>
+        <option>Ingeniería en Automatización</option>
     </select>
     <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
     <input type="email" id="regEmail" placeholder="Correo">
@@ -69,91 +56,47 @@ a { color:#007bff; cursor:pointer; text-decoration:underline; }
 <!-- ✅ SDK UMD -->
 https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.0/dist/umd/supabase.min.js
 
+<!-- ✅ Tu código después del SDK -->
 <script>
-// ✅ Inicialización después de cargar el SDK
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; 
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ------------------ CAMBIO DE PANTALLAS ------------------ */
-function hideAll() {
-    welcomeBox.classList.add("hidden");
-    loginBox.classList.add("hidden");
-    registerBox.classList.add("hidden");
-}
-function showWelcome() { hideAll(); welcomeBox.classList.remove("hidden"); }
-function showLogin() { hideAll(); loginBox.classList.remove("hidden"); }
-function showRegister() { hideAll(); registerBox.classList.remove("hidden"); }
+/* Pantallas */
+function hideAll(){ welcomeBox.classList.add("hidden"); loginBox.classList.add("hidden"); registerBox.classList.add("hidden"); }
+function showWelcome(){ hideAll(); welcomeBox.classList.remove("hidden"); }
+function showLogin(){ hideAll(); loginBox.classList.remove("hidden"); }
+function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
 
-/* ------------------ VALIDACIÓN DE RUT ------------------ */
-function limpiarRut(rut) { return rut.replace(/\./g, '').replace(/\s/g, '').toUpperCase(); }
-function dvT(rut) { let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
-function validarRutCompleto(rutCompleto) {
-    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
-    const r = limpiarRut(rutCompleto);
-    if(!r.includes("-")) return {ok:false,msg:"El RUT debe contener guion."};
-    const [num,dv] = r.split("-");
-    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
-    return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
-}
-function clearRutError() { rutError.textContent = ""; }
+/* Validación RUT */
+function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
+function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+function validarRutCompleto(rutCompleto){ if(!rutCompleto)return{ok:false,msg:"Debe ingresar un RUT."}; const r=limpiarRut(rutCompleto); if(!r.includes("-"))return{ok:false,msg:"El RUT debe contener guion."}; const[num,dv]=r.split("-"); if(!/^\d+$/.test(num))return{ok:false,msg:"La parte numérica debe ser solo números."}; return{ok:dvT(parseInt(num,10)).toString()===dv.toUpperCase()}; }
+function clearRutError(){ rutError.textContent=""; }
 
-/* ------------------ REGISTRO ------------------ */
-async function registrar() {
+/* Registro */
+async function registrar(){
     clearRutError();
-    const nombre = regNombre.value.trim();
-    const rut = regRut.value.trim();
-    const carrera = regCarrera.value;
-    const telefono = regTelefono.value.trim();
-    const email = regEmail.value.trim();
-    const pass = regPass.value.trim();
-
-    if(!nombre || !rut || !carrera || !telefono || !email || !pass) {
-        alert("Complete todos los campos."); return;
-    }
-
-    const rutVal = validarRutCompleto(rut);
-    if(!rutVal.ok){ rutError.textContent = rutVal.msg; return; }
-
-    if(!/^\+569\d{8}$/.test(telefono)){
-        alert("Teléfono inválido. Formato correcto: +569xxxxxxxx"); return;
-    }
-
-    const { data: usuarios } = await supabaseClient
-        .from('usuarios')
-        .select('*')
-        .or(`rut.eq.${rut},email.eq.${email}`);
-
+    const nombre=regNombre.value.trim(),rut=regRut.value.trim(),carrera=regCarrera.value,telefono=regTelefono.value.trim(),email=regEmail.value.trim(),pass=regPass.value.trim();
+    if(!nombre||!rut||!carrera||!telefono||!email||!pass){ alert("Complete todos los campos."); return; }
+    const rutVal=validarRutCompleto(rut); if(!rutVal.ok){ rutError.textContent=rutVal.msg; return; }
+    if(!/^\+569\d{8}$/.test(telefono)){ alert("Teléfono inválido."); return; }
+    const {data:usuarios}=await supabaseClient.from('usuarios').select('*').or(`rut.eq.${rut},email.eq.${email}`);
     if(usuarios.length>0){ alert("El RUT o correo ya está registrado."); return; }
-
-    const { error } = await supabaseClient
-        .from('usuarios')
-        .insert([{ nombre, rut, carrera, telefono, email, pass }]);
-
+    const {error}=await supabaseClient.from('usuarios').insert([{nombre,rut,carrera,telefono,email,pass}]);
     if(error){ alert("Error al registrar: "+error.message); return; }
-
-    alert("✅ Registro exitoso. Ahora puede iniciar sesión.");
-    showLogin();
+    alert("✅ Registro exitoso."); showLogin();
 }
 
-/* ------------------ LOGIN ------------------ */
-async function login() {
-    const email = loginEmail.value.trim();
-    const pass = loginPass.value.trim();
+/* Login */
+async function login(){
+    const email=loginEmail.value.trim(),pass=loginPass.value.trim();
     if(!email||!pass){ alert("Complete todos los campos."); return; }
-
-    const { data: user, error } = await supabaseClient
-        .from('usuarios')
-        .select('*')
-        .eq('email', email)
-        .eq('pass', pass)
-        .single();
-
-    if(error || !user){ alert("Correo o contraseña incorrectos."); return; }
-
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    window.location.href = "menu.html";
+    const {data:user,error}=await supabaseClient.from('usuarios').select('*').eq('email',email).eq('pass',pass).single();
+    if(error||!user){ alert("Correo o contraseña incorrectos."); return; }
+    localStorage.setItem("currentUser",JSON.stringify(user));
+    window.location.href="menu.html";
 }
 
 showWelcome();

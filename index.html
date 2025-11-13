@@ -105,10 +105,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.0/dist/supabase.min.js"></script>
 <script>
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; // Reemplaza con tu URL
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; // Reemplaza con tu clave pública
-const { createClient } = window.supabase;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; // Tu URL
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; // Tu clave pública
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ------------------ CAMBIO DE PANTALLAS ------------------ */
 function hideAll() {
@@ -157,22 +156,22 @@ async function registrar() {
     }
 
     // Verificar duplicados en Supabase
-    const { data: usuarios } = await supabase
-        .from('Usuarios')
+    const { data: usuarios, error: selectError } = await supabase
+        .from('usuarios')
         .select('*')
         .or(`rut.eq.${rut},email.eq.${email}`);
 
-    if (usuarios.length > 0) {
+    if (usuarios && usuarios.length > 0) {
         alert("El RUT o correo ya está registrado.");
         return;
     }
 
     // Insertar usuario
-    const { error } = await supabase
-        .from('Usuarios')
+    const { error: insertError } = await supabase
+        .from('usuarios')
         .insert([{ nombre, rut, carrera, telefono, email, pass }]);
 
-    if (error) { alert("Error al registrar: " + error.message); return; }
+    if (insertError) { alert("Error al registrar: " + insertError.message); return; }
 
     alert("✅ Registro exitoso. Ahora puede iniciar sesión.");
     showLogin();
@@ -185,7 +184,7 @@ async function login() {
     if (!email || !pass) { alert("Complete todos los campos."); return; }
 
     const { data: user, error } = await supabase
-        .from('Usuarios')
+        .from('usuarios')
         .select('*')
         .eq('email', email)
         .eq('pass', pass)
@@ -201,4 +200,5 @@ showWelcome();
 </script>
 </body>
 </html>
+
 

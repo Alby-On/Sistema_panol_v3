@@ -69,30 +69,15 @@ ul { padding-left:18px; margin-top:-5px; }
     <p><a onclick="showWelcome()">Volver</a></p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.0/dist/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.33.0/dist/supabase.min.js" defer></script>
 
 <script>
-// Declaración de credenciales
+// Tus credenciales
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; 
 
-// Inicializa la variable con 'let' para asignarla dentro del listener
-let supabaseClient;
-
-// **CORRECCIÓN CLAVE:** Esperar a que el DOM esté completamente cargado.
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicialización segura del cliente de Supabase
-    try {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (error) {
-        console.error("Error al inicializar Supabase. El objeto 'supabase' no está definido:", error);
-        alert("Error de conexión con la base de datos.");
-    }
-    
-    // Iniciar la UI después de la inicialización
-    showWelcome();
-});
-
+// Inicialización del cliente (usa el objeto 'supabase' que ya debería estar definido)
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ------------------ CAMBIO DE PANTALLAS ------------------ */
 function hideAll() {
@@ -119,12 +104,6 @@ function clearRutError() { rutError.textContent = ""; }
 
 /* ------------------ REGISTRO ------------------ */
 async function registrar() {
-    // Verifica que el cliente esté inicializado antes de usarlo
-    if (!supabaseClient) {
-        alert("Error de conexión: El cliente de Supabase no está inicializado.");
-        return;
-    }
-    
     clearRutError();
     const nombre = regNombre.value.trim();
     const rut = regRut.value.trim();
@@ -165,12 +144,6 @@ async function registrar() {
 
 /* ------------------ LOGIN ------------------ */
 async function login() {
-    // Verifica que el cliente esté inicializado antes de usarlo
-    if (!supabaseClient) {
-        alert("Error de conexión: El cliente de Supabase no está inicializado.");
-        return;
-    }
-
     const email = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     if(!email||!pass){ alert("Complete todos los campos."); return; }
@@ -187,6 +160,8 @@ async function login() {
     localStorage.setItem("currentUser", JSON.stringify(user));
     window.location.href = "menu.html";
 }
+
+showWelcome();
 </script>
 </body>
 </html>

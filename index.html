@@ -55,6 +55,7 @@
   <h2>Registro</h2>
   <input type="text" id="regNombre" placeholder="Nombre Completo">
   <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+  <p id="rutError" class="error"></p>
   <select id="regCarrera">
     <option value="">Seleccione una carrera</option>
     <option>Ingeniería Eléctrica</option>
@@ -76,12 +77,10 @@
 </div>
 
 <script>
-  /* 🔗 Conexión Supabase */
   const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  /* 🌐 Navegación entre cajas */
   function hideAll() {
     welcomeBox.classList.add("hidden");
     loginBox.classList.add("hidden");
@@ -91,7 +90,18 @@
   function showLogin() { hideAll(); loginBox.classList.remove("hidden"); }
   function showRegister() { hideAll(); registerBox.classList.remove("hidden"); }
 
-  /* 🟢 Registro con Supabase Auth */
+  // Limpiar RUT
+  function limpiarRut(rut) { return rut.replace(/\./g, '').replace(/\s/g, '').toUpperCase(); }
+  function dvT(rut) { let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+  function validarRutCompleto(rutCompleto) {
+    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+    const r = limpiarRut(rutCompleto);
+    if(!r.includes("-")) return {ok:false,msg:"El RUT debe contener guion."};
+    const [num,dv] = r.split("-");
+    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
+    return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
+  }
+
   async function registrar() {
     const nombre = regNombre.value.trim();
     const rut = regRut.value.trim();
@@ -101,51 +111,69 @@
     const pass = regPass.value.trim();
     const mensaje = document.getElementById("mensaje");
 
+    // Validaciones
     if(!nombre || !rut || !carrera || !telefono || !email || !pass) {
-      mensaje.textContent = "⚠️ Complete todos los campos."; mensaje.style.color="red"; return;
+      mensaje.textContent = "⚠️ Complete todos los campos.";
+      mensaje.style.color = "red"; return;
     }
 
-    // Crear usuario en Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: pass
-    });
+    const rutVal = validarRutCompleto(rut);
+    if(!rutVal.ok){ rutError.textContent = rutVal.msg; return; }
+    if(!/^\+569\d{8}$/.test(telefono)){
+      mensaje.textContent = "⚠️ Teléfono inválido. Use formato +569XXXXXXXX";
+      mensaje.style.color = "red"; return;
+    }
 
-    if(error){ mensaje.textContent="❌ Error al registrar: "+error.message; mensaje.style.color="red"; return; }
+    // Verificar duplicados
+    const { data: existente, error: errCheck } = await supabaseClient
+      .from("usuarios")
+      .select("*")
+      .or(`rut.eq.${rut},email.eq.${email}`);
 
-    // Guardar info adicional en tabla "usuarios"
-    const { error: err2 } = await supabase.from("usuarios").insert([{
-      nombre, rut, carrera, telefono, email
-    }]);
+    if (errCheck) { mensaje.textContent = "❌ Error al verificar duplicados."; mensaje.style.color = "red"; return; }
+    if (existente.length > 0) { mensaje.textContent = "⚠️ El RUT o correo ya están registrados."; mensaje.style.color = "red"; return; }
 
-    if(err2){ mensaje.textContent="❌ Error al guardar info extra: "+err2.message; mensaje.style.color="red"; return; }
+    // Insertar usuario
+    const { data, error } = await supabaseClient
+      .from("usuarios")
+      .insert([{ nombre, rut, carrera, telefono, email, pass }]);
 
-    mensaje.textContent = "✅ Registro exitoso. Verifique su correo para activar cuenta."; mensaje.style.color="green";
-    regNombre.value=regRut.value=regCarrera.value=regTelefono.value=regEmail.value=regPass.value="";
+    if (error) {
+      mensaje.textContent = "❌ Error al registrar: " + error.message;
+      mensaje.style.color = "red";
+    } else {
+      mensaje.textContent = "✅ Registro exitoso. Ahora puede iniciar sesión.";
+      mensaje.style.color = "green";
+      regNombre.value = regRut.value = regCarrera.value = regTelefono.value = regEmail.value = regPass.value = "";
+    }
   }
 
-  /* 🔐 Login con Supabase Auth */
   async function login() {
     const email = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
+    if(!email || !pass){ msg.textContent = "⚠️ Complete todos los campos."; msg.style.color="red"; return; }
 
-    if(!email || !pass){ msg.textContent="⚠️ Complete todos los campos."; msg.style.color="red"; return; }
+    const { data: user, error } = await supabaseClient
+      .from("usuarios")
+      .select("*")
+      .eq("email", email)
+      .eq("pass", pass)
+      .single();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: pass
-    });
+    if(error || !user){
+      msg.textContent = "❌ Correo o contraseña incorrectos.";
+      msg.style.color = "red";
+      return;
+    }
 
-    if(error){ msg.textContent="❌ Correo o contraseña incorrectos."; msg.style.color="red"; return; }
-
-    // Guardar sesión en localStorage
-    localStorage.setItem("currentUser", JSON.stringify(data.user));
-
-    msg.textContent = "✅ Bienvenido, " + email; msg.style.color="green";
-    setTimeout(()=>{ window.location.href="menu.html"; }, 1500);
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    msg.textContent = "✅ Bienvenido, " + user.nombre;
+    msg.style.color = "green";
+    setTimeout(() => { window.location.href = "menu.html"; }, 1500);
   }
 
+  showWelcome();
 </script>
 </body>
 </html>

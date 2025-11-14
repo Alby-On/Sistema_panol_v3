@@ -41,7 +41,7 @@
 
 <script>
   const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+  const SUPABASE_ANON_KEY = "TU_ANON_KEY_CORRECTA_AQUÍ"; // Reemplaza con tu clave anónima
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
@@ -58,11 +58,12 @@
   }
 
   async function cargarSolicitudes() {
+    // Filtrar solicitudes pendientes usando fecha_entrega = null
     const { data: solicitudes, error } = await supabase
       .from("solicitudes")
       .select("*")
-      .eq("email", currentUser.email)
-      .is("fecha_entrega", null); // pendientes
+      .eq("email", currentUser.email) // lectura también puede usar email
+      .is("fecha_entrega", null);
 
     const tbody = document.getElementById("solicitudesBody");
     tbody.innerHTML = "";
@@ -78,6 +79,7 @@
     }
 
     for (const solicitud of solicitudes) {
+      // Obtener materiales asociados a la solicitud
       const { data: materiales, error: errorMat } = await supabase
         .from("materiales_solicitados")
         .select("*")
@@ -103,14 +105,14 @@
     boton.disabled = true;
     boton.textContent = "Guardando...";
 
+    // Actualizamos solo por ID; RLS validará que sea del usuario logeado
     const { data, error } = await supabase
       .from("solicitudes")
       .update({ 
         estado: "Entregada",
         fecha_entrega: new Date().toISOString()
       })
-      .eq("id", id)
-      .eq("email", currentUser.email);
+      .eq("id", id); // quitar filtro por email para no chocar con RLS
 
     if (error) {
       document.getElementById("mensaje").textContent = "❌ Error al registrar entrega: " + error.message;
@@ -118,7 +120,7 @@
       boton.textContent = "Entregado";
     } else {
       boton.textContent = "✅ Entregado";
-      cargarSolicitudes();
+      cargarSolicitudes(); // refresca tabla
     }
   }
 

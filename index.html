@@ -1,144 +1,233 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Login - Sistema Pañol</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <title>Solicitud de Materiales - Inicio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .box { background: white; padding: 20px; max-width: 450px; margin: 20px auto; border-radius: 12px; box-shadow: 0 0 12px rgba(0,0,0,0.15); }
+    h2,h3 { text-align:center; margin-bottom:15px; }
+    input, select { width:100%; padding:12px; margin:8px 0 15px; border-radius:7px; border:1px solid #aaa; font-size:16px; box-sizing:border-box; }
+    button { width:100%; padding:12px; border:none; border-radius:7px; font-size:16px; cursor:pointer; margin-top:10px; }
+    button:hover { opacity:0.9; }
+    .btn-primary { background: #007bff; color:white; }
+    .btn-success { background:#28a745; color:white; }
+    .hidden { display:none; }
+    a { color:#007bff; cursor:pointer; text-decoration:underline; }
+    .error { color:red; font-size:14px; margin-bottom:10px; }
+    ul { padding-left:18px; margin-top:-5px; }
+    #mensaje, #loginMsg { font-weight:bold; text-align:center; }
+  </style>
 </head>
+<body>
 
-<body class="bg-light">
+<!-- Pantalla de bienvenida -->
+<div class="box" id="welcomeBox">
+  <h2>Bienvenido(a)</h2>
+  <p>Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
+  <h3>Consideraciones:</h3>
+  <ul>
+    <li>Todo material facilitado debe regresar en las mismas condiciones.</li>
+    <li>Los estudiantes deben entregar su <b>TNE</b> o <b>Cédula de Identidad</b>.</li>
+    <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
+  </ul>
+  <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+  <button class="btn-success" onclick="showRegister()">Registrarse</button>
+</div>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
+<!-- Login -->
+<div class="box hidden" id="loginBox">
+  <h2>Iniciar Sesión</h2>
+  <input type="email" placeholder="Correo" id="loginEmail">
+  <input type="password" placeholder="Contraseña" id="loginPass">
+  <button class="btn-primary" onclick="login()">Ingresar</button>
+  <p id="loginMsg"></p>
+  <p><a onclick="showRegister()">Registrarme</a></p>
+  <p><a onclick="showWelcome()">Volver</a></p>
+</div>
 
-            <div class="card shadow p-4">
-                <h3 class="text-center">Iniciar Sesión</h3>
+<!-- Registro -->
+<div class="box hidden" id="registerBox">
+  <h2>Registro</h2>
+  <input type="text" id="regNombre" placeholder="Nombre Completo">
+  <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+  <p id="rutError" class="error"></p>
 
-                <div id="msgLogin" class="text-center mb-2"></div>
+  <select id="regCarrera">
+    <option value="">Seleccione una carrera</option>
+    <option>Ingeniería Eléctrica</option>
+    <option>Técnico de nivel superior en Electricidad Industrial</option>
+    <option>Ingeniería en Automatización y Robótica</option>
+    <option>Técnico de nivel superior en Automatización y Robótica</option>
+    <option>Ingeniería en Mecatrónica</option>
+    <option>Técnico de nivel superior en Mecatrónica</option>
+    <option>Área Mecánica</option>
+    <option>Otras Áreas</option>
+  </select>
 
-                <input id="loginEmail" class="form-control mt-2" type="email" placeholder="Correo">
-                <input id="loginPass" class="form-control mt-2" type="password" placeholder="Contraseña">
+  <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
+  <input type="email" id="regEmail" placeholder="Correo">
+  <input type="password" id="regPass" placeholder="Contraseña">
 
-                <button class="btn btn-primary w-100 mt-3" onclick="login()">Ingresar</button>
-
-                <hr>
-
-                <h4 class="text-center">Crear Cuenta</h4>
-                <div id="msgReg" class="text-center mb-2"></div>
-
-                <input id="regNombre" class="form-control mt-2" placeholder="Nombre completo">
-                <input id="regRut" class="form-control mt-2" placeholder="RUT (11.111.111-1)">
-                <input id="regCarrera" class="form-control mt-2" placeholder="Carrera">
-                <input id="regTelefono" class="form-control mt-2" placeholder="Teléfono +569...">
-                <input id="regEmail" class="form-control mt-2" type="email" placeholder="Correo">
-                <input id="regPass" class="form-control mt-2" type="password" placeholder="Contraseña">
-
-                <button class="btn btn-success w-100 mt-3" onclick="registrar()">Crear Cuenta</button>
-            </div>
-
-        </div>
-    </div>
+  <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+  <p id="mensaje"></p>
+  <p><a onclick="showLogin()">Ya tengo cuenta</a></p>
+  <p><a onclick="showWelcome()">Volver</a></p>
 </div>
 
 <script>
-// ------------------------------------
-// INICIALIZAR SUPABASE
-// ------------------------------------
-const supabase = supabase.createClient(
-    "TU_URL_SUPABASE",
-    "TU_PUBLIC_ANON_KEY"
+// ----------------------------------------
+// CONFIGURAR SUPABASE
+// ----------------------------------------
+const supabaseClient = supabase.createClient(
+  "TU_URL_SUPABASE",
+  "TU_ANON_KEY"
 );
 
-// ------------------------------------
-// LOGIN
-// ------------------------------------
-async function login() {
+// ----------------------------------------
+// REDIRECCIÓN DESPUÉS DE CONFIRMAR EMAIL
+// ----------------------------------------
+async function handleRedirect() {
+  const hash = window.location.hash;
+  if (hash.includes("access_token")) {
+    const params = new URLSearchParams(hash.slice(1));
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
 
-    document.getElementById("msgLogin").textContent = "Verificando...";
-    document.getElementById("msgLogin").style.color = "black";
+    await supabaseClient.auth.setSession({ access_token, refresh_token });
 
-    let email = loginEmail.value.trim();
-    let pass = loginPass.value.trim();
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass
-    });
-
-    if (error) {
-        document.getElementById("msgLogin").textContent = "❌ " + error.message;
-        document.getElementById("msgLogin").style.color = "red";
-        return;
-    }
-
-    // Obtener perfil desde tabla usuarios
-    const { data: perfil, error: e2 } = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("email", email)
-        .single();
-
-    if (e2) {
-        document.getElementById("msgLogin").textContent =
-            "❌ No se pudo obtener el perfil.";
-        document.getElementById("msgLogin").style.color = "red";
-        return;
-    }
-
-    // Guardar perfil en localStorage
-    localStorage.setItem("userData", JSON.stringify(perfil));
-
-    // Redirigir al menú
     window.location.href = "menu.html";
+  }
+}
+handleRedirect();
+
+// ----------------------------------------
+// NAVEGACIÓN
+// ----------------------------------------
+function hideAll() {
+  welcomeBox.classList.add("hidden");
+  loginBox.classList.add("hidden");
+  registerBox.classList.add("hidden");
+}
+function showWelcome(){ hideAll(); welcomeBox.classList.remove("hidden"); }
+function showLogin(){ hideAll(); loginBox.classList.remove("hidden"); }
+function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
+
+// ----------------------------------------
+// VALIDACIÓN RUT
+// ----------------------------------------
+function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
+function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:'K'; }
+function validarRutCompleto(rutCompleto){
+  if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+  const r = limpiarRut(rutCompleto);
+  if(!r.includes('-')) return {ok:false,msg:"El RUT debe contener guion."};
+  const [num,dv] = r.split('-');
+  if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
+  return {ok: dvT(parseInt(num,10)).toString() === dv.toUpperCase()};
 }
 
-// ------------------------------------
-// REGISTRO
-// ------------------------------------
+// ----------------------------------------
+// FUNCIÓN REGISTRAR
+// ----------------------------------------
 async function registrar() {
+  const nombre = regNombre.value.trim();
+  const rut = regRut.value.trim();
+  const carrera = regCarrera.value;
+  const telefono = regTelefono.value.trim();
+  const email = regEmail.value.trim();
+  const pass = regPass.value.trim();
 
-    let nombre = regNombre.value.trim();
-    let rut = regRut.value.trim();
-    let carrera = regCarrera.value.trim();
-    let telefono = regTelefono.value.trim();
-    let email = regEmail.value.trim();
-    let pass = regPass.value.trim();
+  const mensaje = document.getElementById("mensaje");
+  mensaje.style.color = "red";
 
-    document.getElementById("msgReg").textContent = "Procesando...";
-    document.getElementById("msgReg").style.color = "black";
+  if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
+    mensaje.textContent = "⚠️ Complete todos los campos.";
+    return;
+  }
 
-    // 1. Crear cuenta en Supabase Auth
-    const { data: signupData, error: e1 } = await supabase.auth.signUp({
-        email: email,
-        password: pass
-    });
+  const rutVal = validarRutCompleto(rut);
+  if (!rutVal.ok) {
+    rutError.textContent = rutVal.msg;
+    return;
+  }
 
-    if (e1) {
-        document.getElementById("msgReg").textContent = "❌ " + e1.message;
-        document.getElementById("msgReg").style.color = "red";
-        return;
-    }
+  if (!/^\+569\d{8}$/.test(telefono)) {
+    mensaje.textContent = "⚠️ Teléfono inválido. Use +569XXXXXXXX";
+    return;
+  }
 
-    // 2. Guardar perfil en tu tabla usuarios
-    const { data: perfil, error: e2 } = await supabase
-        .from("usuarios")
-        .insert([{ nombre, rut, carrera, telefono, email }]);
+  // 1. Crear usuario en AUTH
+  const { error: e1 } = await supabaseClient.auth.signUp({
+    email,
+    password: pass
+  });
 
-    if (e2) {
-        document.getElementById("msgReg").textContent =
-            "❌ Error al crear perfil: " + e2.message;
-        document.getElementById("msgReg").style.color = "red";
-        return;
-    }
+  if (e1) {
+    mensaje.textContent = "❌ " + e1.message;
+    return;
+  }
 
-    document.getElementById("msgReg").textContent =
-        "✅ Cuenta creada. Revise su correo y confirme el registro.";
-    document.getElementById("msgReg").style.color = "green";
+  // 2. Guardar datos en tabla usuarios
+  const { error: e2 } = await supabaseClient.from("usuarios").insert([
+    { nombre, rut, carrera, telefono, email }
+  ]);
+
+  if (e2) {
+    mensaje.textContent = "❌ Error al guardar perfil: " + e2.message;
+    return;
+  }
+
+  mensaje.style.color = "green";
+  mensaje.textContent = "✅ Registro exitoso. Revisa tu correo para confirmar.";
 }
 
+// ----------------------------------------
+// FUNCIÓN LOGIN
+// ----------------------------------------
+async function login() {
+  const email = loginEmail.value.trim();
+  const pass = loginPass.value.trim();
+  const msg = document.getElementById("loginMsg");
+
+  if (!email || !pass) {
+    msg.textContent = "⚠️ Complete todos los campos.";
+    msg.style.color = "red";
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password: pass
+  });
+
+  if (error) {
+    msg.textContent = "❌ Correo o contraseña incorrectos.";
+    msg.style.color = "red";
+    return;
+  }
+
+  // Obtener perfil desde la tabla usuarios
+  const { data: perfil } = await supabaseClient
+    .from("usuarios")
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  localStorage.setItem("currentUser", JSON.stringify(perfil));
+
+  msg.textContent = "✅ Bienvenido, " + perfil.nombre;
+  msg.style.color = "green";
+
+  setTimeout(() => {
+    window.location.href = "menu.html";
+  }, 1200);
+}
+
+showWelcome();
 </script>
 
 </body>

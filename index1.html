@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Solicitud de Materiales - Inicio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:20px; }
+.box { background: white; padding:20px; max-width:450px; margin:20px auto; border-radius:12px; box-shadow:0 0 12px rgba(0,0,0,0.15); }
+h2,h3 { text-align:center; margin-bottom:15px; }
+input, select { width:100%; padding:12px; margin:8px 0 15px; border-radius:7px; border:1px solid #aaa; font-size:16px; box-sizing:border-box; }
+button { width:100%; padding:12px; border:none; border-radius:7px; font-size:16px; cursor:pointer; margin-top:10px; }
+button:hover { opacity:0.9; }
+.btn-primary { background:#007bff; color:white; }
+.btn-success { background:#28a745; color:white; }
+.hidden { display:none; }
+.error { color:red; font-size:14px; margin-bottom:10px; }
+#mensaje, #loginMsg { font-weight:bold; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="box" id="welcomeBox">
+<h2>Bienvenido(a)</h2>
+<p>Plataforma de <b>solicitud de materiales e insumos</b> - Pañol Electricidad, Automatización y Robótica</p>
+<button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+<button class="btn-success" onclick="showRegister()">Registrarse</button>
+</div>
+
+<div class="box hidden" id="loginBox">
+<h2>Iniciar Sesión</h2>
+<input type="email" placeholder="Correo" id="loginEmail">
+<input type="password" placeholder="Contraseña" id="loginPass">
+<button class="btn-primary" onclick="login()">Ingresar</button>
+<p id="loginMsg"></p>
+<p><a onclick="showRegister()">Registrarme</a></p>
+<p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<div class="box hidden" id="registerBox">
+<h2>Registro</h2>
+<input type="text" id="regNombre" placeholder="Nombre Completo">
+<input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+<select id="regCarrera">
+  <option value="">Seleccione carrera</option>
+  <option>Ingeniería Eléctrica</option>
+  <option>Técnico Electricidad Industrial</option>
+  <option>Ingeniería Automatización y Robótica</option>
+</select>
+<input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
+<input type="email" id="regEmail" placeholder="Correo">
+<input type="password" id="regPass" placeholder="Contraseña">
+<button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+<p id="mensaje"></p>
+<p><a onclick="showLogin()">Ya tengo cuenta</a></p>
+<p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<script>
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function hideAll(){ welcomeBox.classList.add("hidden"); loginBox.classList.add("hidden"); registerBox.classList.add("hidden"); }
+function showWelcome(){ hideAll(); welcomeBox.classList.remove("hidden"); }
+function showLogin(){ hideAll(); loginBox.classList.remove("hidden"); }
+function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
+
+function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
+function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+function validarRutCompleto(rutCompleto){ 
+  if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+  const r = limpiarRut(rutCompleto);
+  if(!r.includes("-")) return {ok:false,msg:"RUT debe contener guion."};
+  const [num,dv]=r.split("-");
+  if(!/^\d+$/.test(num)) return {ok:false,msg:"Parte numérica debe ser solo números."};
+  return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
+}
+
+async function registrar(){
+  const boton = document.querySelector("#registerBox button.btn-success");
+  boton.disabled=true; boton.textContent="Registrando...";
+  const nombre=regNombre.value.trim(), rut=regRut.value.trim(), carrera=regCarrera.value,
+        telefono=regTelefono.value.trim(), email=regEmail.value.trim(), pass=regPass.value.trim();
+  const mensaje=document.getElementById("mensaje");
+
+  if(!nombre||!rut||!carrera||!telefono||!email||!pass){ mensaje.textContent="⚠️ Complete todos los campos."; mensaje.style.color="red"; boton.disabled=false; boton.textContent="Crear Cuenta"; return; }
+  const rutVal=validarRutCompleto(rut);
+  if(!rutVal.ok){ mensaje.textContent=rutVal.msg; mensaje.style.color="red"; boton.disabled=false; boton.textContent="Crear Cuenta"; return; }
+  if(!/^\+569\d{8}$/.test(telefono)){ mensaje.textContent="⚠️ Teléfono inválido"; mensaje.style.color="red"; boton.disabled=false; boton.textContent="Crear Cuenta"; return; }
+
+  // 1️⃣ Crear usuario en Auth
+  const { data: authData, error: authError } = await supabase.auth.signUp({ email, password: pass });
+  if(authError){ mensaje.textContent="❌ Error al registrar: "+authError.message; mensaje.style.color="red"; boton.disabled=false; boton.textContent="Crear Cuenta"; return; }
+
+  // 2️⃣ Guardar info extra en tabla 'usuarios'
+  const { error } = await supabase.from("usuarios").insert([{ id: authData.user.id, nombre, rut, carrera, telefono, email }]);
+  if(error){ mensaje.textContent="❌ Error al guardar datos: "+error.message; mensaje.style.color="red"; boton.disabled=false; boton.textContent="Crear Cuenta"; return; }
+
+  mensaje.textContent="✅ Registro exitoso. Revise su correo para verificar."; mensaje.style.color="green"; boton.disabled=false; boton.textContent="Crear Cuenta";
+  regNombre.value=regRut.value=regCarrera.value=regTelefono.value=regEmail.value=regPass.value="";
+}
+
+async function login(){
+  const email=loginEmail.value.trim(), pass=loginPass.value.trim(), msg=document.getElementById("loginMsg");
+  if(!email||!pass){ msg.textContent="⚠️ Complete todos los campos"; msg.style.color="red"; return; }
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  if(error){ msg.textContent="❌ Correo o contraseña incorrectos"; msg.style.color="red"; return; }
+  localStorage.setItem("currentUser", JSON.stringify(authData.user));
+  msg.textContent="✅ Bienvenido, "+authData.user.email; msg.style.color="green";
+  setTimeout(()=>{ window.location.href="menu.html"; },1500);
+}
+
+showWelcome();
+</script>
+</body>
+</html>

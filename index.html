@@ -15,11 +15,9 @@
     button:hover { opacity:0.9; }
     .btn-primary { background: #007bff; color:white; }
     .btn-success { background:#28a745; color:white; }
-    .btn-secondary { background:#6c757d; color:white; }
     .hidden { display:none; }
     a { color:#007bff; cursor:pointer; text-decoration:underline; }
     .error { color:red; font-size:14px; margin-bottom:10px; }
-    ul { padding-left:18px; margin-top:-5px; }
     #mensaje { font-weight:bold; text-align:center; }
   </style>
 </head>
@@ -74,12 +72,12 @@
 </div>
 
 <script>
-  // 🔗 Inicializar Supabase correctamente
+  // Inicializar Supabase Auth
   const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // 🔄 Navegación entre cajas
+  // Navegación
   function hideAll() {
     welcomeBox.classList.add("hidden");
     loginBox.classList.add("hidden");
@@ -89,22 +87,22 @@
   function showLogin() { hideAll(); loginBox.classList.remove("hidden"); }
   function showRegister() { hideAll(); registerBox.classList.remove("hidden"); }
 
-  // 🧾 Funciones de validación
-  function limpiarRut(rut) { return rut.replace(/\./g, '').replace(/\s/g, '').toUpperCase(); }
-  function dvT(rut) { let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
-  function validarRutCompleto(rutCompleto) {
+  // Validaciones de RUT
+  function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
+  function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+  function validarRutCompleto(rutCompleto){
     if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
     const r = limpiarRut(rutCompleto);
     if(!r.includes("-")) return {ok:false,msg:"El RUT debe contener guion."};
     const [num,dv] = r.split("-");
     if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
-    return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
+    return {ok: dvT(parseInt(num,10)).toString() === dv.toUpperCase()};
   }
 
-  // 🟢 Registro de usuario
-  let registrando = false; // previene múltiples envíos
+  // Registro usando Supabase Auth
+  let registrando = false;
   async function registrar() {
-    if (registrando) return;
+    if(registrando) return;
     registrando = true;
 
     const boton = document.querySelector("#registerBox button.btn-success");
@@ -122,59 +120,40 @@
     // Validaciones
     if(!nombre || !rut || !carrera || !telefono || !email || !pass){
       mensaje.textContent = "⚠️ Complete todos los campos.";
-      mensaje.style.color = "red"; 
-      boton.disabled = false; boton.textContent = "Crear Cuenta"; 
-      registrando = false;
-      return;
-    }
-
-    const rutVal = validarRutCompleto(rut);
-    if(!rutVal.ok){ 
-      rutError.textContent = rutVal.msg; 
+      mensaje.style.color = "red";
       boton.disabled = false; boton.textContent = "Crear Cuenta";
       registrando = false;
       return;
     }
-
+    const rutVal = validarRutCompleto(rut);
+    if(!rutVal.ok){
+      rutError.textContent = rutVal.msg;
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
+      registrando = false;
+      return;
+    }
     if(!/^\+569\d{8}$/.test(telefono)){
       mensaje.textContent = "⚠️ Teléfono inválido. Use formato +569XXXXXXXX";
-      mensaje.style.color = "red"; 
+      mensaje.style.color = "red";
       boton.disabled = false; boton.textContent = "Crear Cuenta";
       registrando = false;
       return;
     }
 
-    // Verificar duplicados
-    const { data: existente, error: errCheck } = await supabase
-      .from("usuarios")
-      .select("*")
-      .or(`rut.eq.${rut},email.eq.${email}`);
+    // Crear usuario en Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: { nombre, rut, carrera, telefono } // metadata
+      }
+    });
 
-    if (errCheck) { 
-      mensaje.textContent = "❌ Error al verificar duplicados."; 
-      mensaje.style.color = "red"; 
-      boton.disabled = false; boton.textContent = "Crear Cuenta"; 
-      registrando = false;
-      return;
-    }
-    if (existente.length > 0) { 
-      mensaje.textContent = "⚠️ El RUT o correo ya están registrados."; 
-      mensaje.style.color = "red"; 
-      boton.disabled = false; boton.textContent = "Crear Cuenta"; 
-      registrando = false;
-      return; 
-    }
-
-    // Insertar usuario
-    const { data, error } = await supabase
-      .from("usuarios")
-      .insert([{ nombre, rut, carrera, telefono, email, pass }]);
-
-    if (error) {
+    if(error){
       mensaje.textContent = "❌ Error al registrar: " + error.message;
       mensaje.style.color = "red";
     } else {
-      mensaje.textContent = "✅ Registro exitoso. Ahora puede iniciar sesión.";
+      mensaje.textContent = "✅ Registro exitoso. Confirme su correo antes de iniciar sesión.";
       mensaje.style.color = "green";
       regNombre.value = regRut.value = regCarrera.value = regTelefono.value = regEmail.value = regPass.value = "";
     }
@@ -184,8 +163,8 @@
     registrando = false;
   }
 
-  // 🔐 Login de usuario
-  async function login() {
+  // Login usando Supabase Auth
+  async function login(){
     const email = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
@@ -194,22 +173,19 @@
       msg.textContent = "⚠️ Complete todos los campos."; msg.style.color="red"; return;
     }
 
-    const { data: user, error } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("email", email)
-      .eq("pass", pass)
-      .single();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
 
-    if(error || !user){
+    if(error){
       msg.textContent = "❌ Correo o contraseña incorrectos.";
       msg.style.color = "red";
       return;
     }
 
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    msg.textContent = "✅ Bienvenido, " + user.nombre;
+    msg.textContent = "✅ Bienvenido, " + (data.user.user_metadata.nombre || "");
     msg.style.color = "green";
+
+    // Guardar sesión
+    localStorage.setItem("supabaseSession", JSON.stringify(data.session));
     setTimeout(() => { window.location.href = "menu.html"; }, 1500);
   }
 
@@ -217,4 +193,5 @@
 </script>
 </body>
 </html>
+
 

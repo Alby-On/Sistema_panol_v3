@@ -9,14 +9,22 @@
 
     <script>
         const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; 
+        const SUPABASE_KEY = "TU_API_KEY_AQUI";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", () => {
-            cargarSolicitudesPendientes();
+            const email = localStorage.getItem("email");
+
+            if (!email) {
+                alert("Debe iniciar sesión para continuar");
+                window.location.href = "login.html";
+                return;
+            }
+
+            cargarSolicitudesPendientes(email);
         });
 
-        async function cargarSolicitudesPendientes() {
+        async function cargarSolicitudesPendientes(emailUsuario) {
             const contenedor = document.getElementById("contenedor");
 
             contenedor.innerHTML = "<p>Cargando solicitudes...</p>";
@@ -24,7 +32,8 @@
             const { data: solicitudes, error } = await supabaseClient
                 .from("solicitudes")
                 .select("*")
-                .eq("estado", "Pendiente");
+                .eq("estado", "Pendiente")
+                .eq("email", emailUsuario);   // FILTRO POR USUARIO LOGEADO
 
             if (error) {
                 contenedor.innerHTML = `<p style="color:red">Error: ${error.message}</p>`;
@@ -46,7 +55,8 @@
                     <h3>Solicitud #${sol.id}</h3>
                     <p><strong>Docente:</strong> ${sol.docente}</p>
                     <p><strong>Asignatura:</strong> ${sol.asignatura}</p>
-                    <p><strong>Fecha:</strong> ${sol.fecha}</p>
+                    <p><strong>Fecha Solicitud:</strong> ${sol.fecha}</p>
+
                     <h4>Materiales solicitados:</h4>
                     <div id="materiales-${sol.id}">Cargando materiales...</div>
                     <hr>
@@ -72,7 +82,7 @@
             }
 
             if (!materiales || materiales.length === 0) {
-                divMat.innerHTML = "<p>No hay materiales en esta solicitud.</p>";
+                divMat.innerHTML = "<p>No hay materiales para esta solicitud.</p>";
                 return;
             }
 
@@ -81,14 +91,12 @@
             materiales.forEach(mat => {
                 html += `
                     <li>
-                        ${mat.material} — Cant: ${mat.cantidad}
-                        <br>
+                        ${mat.material} — Cant: ${mat.cantidad}<br>
                         ${mat.fecha_entrega ? 
                             `<span style="color:green">✔ Entregado el ${mat.fecha_entrega}</span>` :
                             `<button onclick="entregarMaterial(${mat.id}, ${idSolicitud})">Entregar</button>`
                         }
-                    </li>
-                    <br>
+                    </li><br>
                 `;
             });
 
@@ -110,10 +118,7 @@
                 return;
             }
 
-            // Recargar materiales
             cargarMateriales(idSolicitud);
-
-            // Revisar si ya están todos entregados
             revisarSolicitudCompletada(idSolicitud);
         }
 
@@ -133,7 +138,8 @@
                     .update({ estado: "Entregado" })
                     .eq("id", idSolicitud);
 
-                cargarSolicitudesPendientes();
+                const email = localStorage.getItem("email");
+                cargarSolicitudesPendientes(email);
             }
         }
 
@@ -166,4 +172,3 @@
 
 </body>
 </html>
-

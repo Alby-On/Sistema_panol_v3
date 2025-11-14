@@ -166,7 +166,7 @@ async function enviar() {
                 email: user.email,
                 docente,
                 asignatura,
-                fecha: new Date().toISOString(),
+                fecha_solicitud: new Date().toISOString(),
                 estado: "Pendiente"
             }])
             .select()

@@ -1,139 +1,168 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Entregar Materiales</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <title>Entregar Materiales</title>
 
-  <style>
-    body { font-family: Arial, sans-serif; background: #f2f2f2; padding: 20px; }
-    .box { background:white; padding:20px; border-radius:10px; max-width:600px; margin:auto;
-           box-shadow:0 0 10px rgba(0,0,0,0.15); }
-    h2 { text-align:center; }
-    .solicitud { padding:15px; margin-top:15px; border:1px solid #ccc; border-radius:10px; background:#fafafa; }
-    .material { padding:8px; border-bottom:1px solid #ddd; }
-    button { padding:10px; width:100%; border:none; border-radius:7px; background:#007bff; color:white; cursor:pointer; }
-    button:hover { opacity:0.9; }
-    .disabled { background:#999 !important; cursor:not-allowed; }
-  </style>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarSolicitudesPendientes();
+        });
+
+        async function cargarSolicitudesPendientes() {
+            const contenedor = document.getElementById("contenedor");
+
+            contenedor.innerHTML = "<p>Cargando solicitudes...</p>";
+
+            const { data: solicitudes, error } = await supabaseClient
+                .from("solicitudes")
+                .select("*")
+                .eq("estado", "Pendiente");
+
+            if (error) {
+                contenedor.innerHTML = `<p style="color:red">Error: ${error.message}</p>`;
+                return;
+            }
+
+            if (!solicitudes || solicitudes.length === 0) {
+                contenedor.innerHTML = "<p>No hay solicitudes pendientes.</p>";
+                return;
+            }
+
+            contenedor.innerHTML = "";
+
+            for (const sol of solicitudes) {
+                const div = document.createElement("div");
+                div.classList.add("solicitud");
+
+                div.innerHTML = `
+                    <h3>Solicitud #${sol.id}</h3>
+                    <p><strong>Docente:</strong> ${sol.docente}</p>
+                    <p><strong>Asignatura:</strong> ${sol.asignatura}</p>
+                    <p><strong>Fecha:</strong> ${sol.fecha}</p>
+                    <h4>Materiales solicitados:</h4>
+                    <div id="materiales-${sol.id}">Cargando materiales...</div>
+                    <hr>
+                `;
+
+                contenedor.appendChild(div);
+
+                cargarMateriales(sol.id);
+            }
+        }
+
+        async function cargarMateriales(idSolicitud) {
+            const divMat = document.getElementById(`materiales-${idSolicitud}`);
+
+            const { data: materiales, error } = await supabaseClient
+                .from("materiales_solicitados")
+                .select("*")
+                .eq("id_solicitud", idSolicitud);
+
+            if (error) {
+                divMat.innerHTML = `<p style="color:red">Error al cargar materiales</p>`;
+                return;
+            }
+
+            if (!materiales || materiales.length === 0) {
+                divMat.innerHTML = "<p>No hay materiales en esta solicitud.</p>";
+                return;
+            }
+
+            let html = "<ul>";
+
+            materiales.forEach(mat => {
+                html += `
+                    <li>
+                        ${mat.material} — Cant: ${mat.cantidad}
+                        <br>
+                        ${mat.fecha_entrega ? 
+                            `<span style="color:green">✔ Entregado el ${mat.fecha_entrega}</span>` :
+                            `<button onclick="entregarMaterial(${mat.id}, ${idSolicitud})">Entregar</button>`
+                        }
+                    </li>
+                    <br>
+                `;
+            });
+
+            html += "</ul>";
+
+            divMat.innerHTML = html;
+        }
+
+        async function entregarMaterial(idMaterial, idSolicitud) {
+            const fecha = new Date().toISOString();
+
+            const { error } = await supabaseClient
+                .from("materiales_solicitados")
+                .update({ fecha_entrega: fecha })
+                .eq("id", idMaterial);
+
+            if (error) {
+                alert("Error entregando material");
+                return;
+            }
+
+            // Recargar materiales
+            cargarMateriales(idSolicitud);
+
+            // Revisar si ya están todos entregados
+            revisarSolicitudCompletada(idSolicitud);
+        }
+
+        async function revisarSolicitudCompletada(idSolicitud) {
+            const { data: materiales, error } = await supabaseClient
+                .from("materiales_solicitados")
+                .select("fecha_entrega")
+                .eq("id_solicitud", idSolicitud);
+
+            if (error) return;
+
+            const pendientes = materiales.some(m => m.fecha_entrega === null);
+
+            if (!pendientes) {
+                await supabaseClient
+                    .from("solicitudes")
+                    .update({ estado: "Entregado" })
+                    .eq("id", idSolicitud);
+
+                cargarSolicitudesPendientes();
+            }
+        }
+
+    </script>
+
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .solicitud {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        button {
+            padding: 6px 10px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
 
-<div class="box">
-  <h2>Solicitudes Pendientes</h2>
-  <div id="contenedor"></div>
-</div>
+<h1>Entregar materiales</h1>
 
-<script>
-/* 🔗 Conexión Supabase */
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* 🔐 Verificar sesión */
-async function verificarSesion() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-        alert("Debe iniciar sesión.");
-        window.location.href = "index.html";
-        return;
-    }
-    return session.user;
-}
-
-/* 📦 Cargar solicitudes pendientes */
-async function cargarSolicitudes() {
-
-    const user = await verificarSesion();
-    if (!user) return;
-
-    const cont = document.getElementById("contenedor");
-    cont.innerHTML = "<p>Cargando...</p>";
-
-    const { data: solicitudes, error } = await supabaseClient
-        .from("solicitudes")
-        .select("id, docente, asignatura, fecha, estado")
-        .eq("estado", "Pendiente")
-        .eq("email", user.email);
-
-    if (error) {
-        cont.innerHTML = "<p>Error cargando solicitudes</p>";
-        console.error(error);
-        return;
-    }
-
-    if (solicitudes.length === 0) {
-        cont.innerHTML = "<p>No tienes solicitudes pendientes.</p>";
-        return;
-    }
-
-    cont.innerHTML = "";
-
-    for (const sol of solicitudes) {
-
-        // 🧾 Obtener materiales de cada solicitud
-        const { data: materiales } = await supabaseClient
-            .from("materiales_solicitados")
-            .select("id, material, cantidad")
-            .eq("id_solicitud", sol.id);
-
-        const div = document.createElement("div");
-        div.className = "solicitud";
-
-        div.innerHTML = `
-          <h3>Solicitud #${sol.id}</h3>
-          <p><b>Docente:</b> ${sol.docente}</p>
-          <p><b>Asignatura:</b> ${sol.asignatura}</p>
-          <p><b>Fecha:</b> ${sol.fecha}</p>
-          <h4>Materiales solicitados:</h4>
-        `;
-
-        const listaDiv = document.createElement("div");
-        listaDiv.id = "lista-" + sol.id;
-
-        materiales.forEach(mat => {
-            const row = document.createElement("div");
-            row.className = "material";
-            row.innerHTML = `
-                <input type="checkbox" class="chk" data-id="${sol.id}">
-                ${mat.material} — <b>${mat.cantidad}</b>
-            `;
-            listaDiv.appendChild(row);
-        });
-
-        div.appendChild(listaDiv);
-
-        const btn = document.createElement("button");
-        btn.textContent = "Confirmar Entrega";
-        btn.classList.add("disabled");
-        btn.disabled = true;
-
-        btn.onclick = () => {
-            alert("Entrega lista para confirmar (no implementado aún)");
-        };
-
-        // 🟡 Habilitar botón solo si todos los check están marcados
-        listaDiv.addEventListener("change", () => {
-            const checks = listaDiv.querySelectorAll(".chk");
-            const todosMarcados = [...checks].every(c => c.checked);
-
-            if (todosMarcados) {
-                btn.classList.remove("disabled");
-                btn.disabled = false;
-            } else {
-                btn.classList.add("disabled");
-                btn.disabled = true;
-            }
-        });
-
-        div.appendChild(btn);
-        cont.appendChild(div);
-    }
-}
-
-cargarSolicitudes();
-</script>
+<div id="contenedor"></div>
 
 </body>
 </html>

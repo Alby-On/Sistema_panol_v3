@@ -153,7 +153,7 @@ async function entregar(id_solicitud) {
             estado: "Entregado",
             fecha_entrega: new Date().toISOString()
         })
-        .eq("id", id_solicitud);
+        .eq("id", Number(id_solicitud));  // 🔥 Fix crítico
 
     if (error) {
         alert("❌ Error al registrar entrega");
@@ -163,6 +163,7 @@ async function entregar(id_solicitud) {
     alert("✅ Entrega registrada correctamente.");
     cargarSolicitudes();
     document.getElementById("detalles").innerHTML = "";
+
 }
 </script>
 

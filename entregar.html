@@ -1,143 +1,140 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Entregar Materiales</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-  .box { background: white; padding: 20px; max-width: 900px; margin: 20px auto; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.15); }
-  h2,h3 { text-align:center; margin-bottom:15px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { border: 1px solid #ccc; padding: 10px; text-align:center; }
-  th { background:#007bff; color:white; }
-  input[type="checkbox"] { transform: scale(1.3); }
-  button { width: 100%; padding: 12px; border:none; border-radius:6px; font-size:16px; cursor:pointer; margin-top:10px; }
-  .btn-success { background:#28a745; color:white; }
-  .btn-secondary { background:#6c757d; color:white; }
-  .btn-success:hover { background:#218838; }
-  .btn-secondary:hover { background:#565e64; }
-</style>
+  <meta charset="UTF-8">
+  <title>Entregar Materiales</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f2f2; padding: 20px; }
+    .box { background:white; padding:20px; border-radius:10px; max-width:600px; margin:auto;
+           box-shadow:0 0 10px rgba(0,0,0,0.15); }
+    h2 { text-align:center; }
+    .solicitud { padding:15px; margin-top:15px; border:1px solid #ccc; border-radius:10px; background:#fafafa; }
+    .material { padding:8px; border-bottom:1px solid #ddd; }
+    button { padding:10px; width:100%; border:none; border-radius:7px; background:#007bff; color:white; cursor:pointer; }
+    button:hover { opacity:0.9; }
+    .disabled { background:#999 !important; cursor:not-allowed; }
+  </style>
 </head>
 <body>
 
 <div class="box">
-  <h2>Solicitudes Pendientes de Entrega</h2>
-  <div id="solicitudesContainer">Cargando solicitudes...</div>
-  <button class="btn-secondary" onclick="location.href='menu.html'">Volver</button>
+  <h2>Solicitudes Pendientes</h2>
+  <div id="contenedor"></div>
 </div>
 
 <script>
+/* 🔗 Conexión Supabase */
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGpwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const user = JSON.parse(localStorage.getItem("currentUser"));
-if (!user) window.location.href = "index.html";
+/* 🔐 Verificar sesión */
+async function verificarSesion() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+        alert("Debe iniciar sesión.");
+        window.location.href = "index.html";
+        return;
+    }
+    return session.user;
+}
 
+/* 📦 Cargar solicitudes pendientes */
 async function cargarSolicitudes() {
-  const container = document.getElementById("solicitudesContainer");
-  try {
+
+    const user = await verificarSesion();
+    if (!user) return;
+
+    const cont = document.getElementById("contenedor");
+    cont.innerHTML = "<p>Cargando...</p>";
+
     const { data: solicitudes, error } = await supabaseClient
-      .from("solicitudes")
-      .select("*")
-      .eq("email", user.email)
-      .eq("estado", "Pendiente");
+        .from("solicitudes")
+        .select("id, docente, asignatura, fecha, estado")
+        .eq("estado", "Pendiente")
+        .eq("email", user.email);
 
-    if (error) throw error;
-
-    if (!solicitudes || solicitudes.length === 0) {
-      container.innerHTML = "<p>No hay solicitudes pendientes de entrega.</p>";
-      return;
+    if (error) {
+        cont.innerHTML = "<p>Error cargando solicitudes</p>";
+        console.error(error);
+        return;
     }
 
-    container.innerHTML = "";
+    if (solicitudes.length === 0) {
+        cont.innerHTML = "<p>No tienes solicitudes pendientes.</p>";
+        return;
+    }
+
+    cont.innerHTML = "";
 
     for (const sol of solicitudes) {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.borderRadius = "8px";
-      div.style.marginBottom = "15px";
-      div.style.padding = "10px";
 
-      const fecha = new Date(sol.fecha).toLocaleString();
-      div.innerHTML = `<h3>Solicitud #${sol.id} - ${sol.docente}</h3>
-                       <p><b>Asignatura:</b> ${sol.asignatura} | <b>Fecha:</b> ${fecha}</p>
-                       <table>
-                         <thead>
-                           <tr>
-                             <th>Seleccionar</th>
-                             <th>Material / Equipo</th>
-                             <th>Cantidad</th>
-                           </tr>
-                         </thead>
-                         <tbody id="materiales-${sol.id}">
-                           <tr><td colspan="3">Cargando materiales...</td></tr>
-                         </tbody>
-                       </table>
-                       <button class="btn-success" id="btn-entregar-${sol.id}" onclick="confirmarEntrega(${sol.id})" disabled>Confirmar Entrega</button>`;
+        // 🧾 Obtener materiales de cada solicitud
+        const { data: materiales } = await supabaseClient
+            .from("materiales_solicitados")
+            .select("id, material, cantidad")
+            .eq("id_solicitud", sol.id);
 
-      container.appendChild(div);
+        const div = document.createElement("div");
+        div.className = "solicitud";
 
-      // Cargar materiales
-      const { data: materiales, error: matError } = await supabaseClient
-        .from("materiales_solicitados")
-        .select("*")
-        .eq("id_solicitud", sol.id);
+        div.innerHTML = `
+          <h3>Solicitud #${sol.id}</h3>
+          <p><b>Docente:</b> ${sol.docente}</p>
+          <p><b>Asignatura:</b> ${sol.asignatura}</p>
+          <p><b>Fecha:</b> ${sol.fecha}</p>
+          <h4>Materiales solicitados:</h4>
+        `;
 
-      const tbody = document.getElementById(`materiales-${sol.id}`);
-      if (matError) {
-        tbody.innerHTML = `<tr><td colspan="3">Error cargando materiales</td></tr>`;
-      } else if (!materiales || materiales.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3">No hay materiales registrados</td></tr>`;
-      } else {
-        tbody.innerHTML = "";
+        const listaDiv = document.createElement("div");
+        listaDiv.id = "lista-" + sol.id;
+
         materiales.forEach(mat => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td><input type="checkbox" class="chk-${sol.id}"></td>
-                          <td>${mat.material}</td>
-                          <td>${mat.cantidad}</td>`;
-          tbody.appendChild(tr);
+            const row = document.createElement("div");
+            row.className = "material";
+            row.innerHTML = `
+                <input type="checkbox" class="chk" data-id="${sol.id}">
+                ${mat.material} — <b>${mat.cantidad}</b>
+            `;
+            listaDiv.appendChild(row);
         });
 
-        // Habilitar botón solo si se seleccionan todos los materiales
-        const checkboxes = document.querySelectorAll(`.chk-${sol.id}`);
-        checkboxes.forEach(chk => {
-          chk.addEventListener("change", () => {
-            const allChecked = Array.from(checkboxes).every(c => c.checked);
-            document.getElementById(`btn-entregar-${sol.id}`).disabled = !allChecked;
-          });
+        div.appendChild(listaDiv);
+
+        const btn = document.createElement("button");
+        btn.textContent = "Confirmar Entrega";
+        btn.classList.add("disabled");
+        btn.disabled = true;
+
+        btn.onclick = () => {
+            alert("Entrega lista para confirmar (no implementado aún)");
+        };
+
+        // 🟡 Habilitar botón solo si todos los check están marcados
+        listaDiv.addEventListener("change", () => {
+            const checks = listaDiv.querySelectorAll(".chk");
+            const todosMarcados = [...checks].every(c => c.checked);
+
+            if (todosMarcados) {
+                btn.classList.remove("disabled");
+                btn.disabled = false;
+            } else {
+                btn.classList.add("disabled");
+                btn.disabled = true;
+            }
         });
-      }
+
+        div.appendChild(btn);
+        cont.appendChild(div);
     }
-
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = "<p>Error cargando solicitudes.</p>";
-  }
 }
 
-// Función para confirmar entrega
-async function confirmarEntrega(idSolicitud) {
-  try {
-    const { error } = await supabaseClient
-      .from("solicitudes")
-      .update({ estado: "Entregado" })
-      .eq("id", idSolicitud);
-
-    if (error) throw error;
-
-    alert("✅ Solicitud marcada como entregada.");
-    cargarSolicitudes();
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error al actualizar solicitud: " + err.message);
-  }
-}
-
-// Cargar al inicio
 cargarSolicitudes();
 </script>
+
 </body>
 </html>
+

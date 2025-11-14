@@ -5,7 +5,6 @@
 <title>Entregar Materiales</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
     body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
     .box { background: white; padding: 20px; max-width: 900px; margin: auto; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.15); }
@@ -28,29 +27,20 @@
 </div>
 
 <script>
-/* 🔗 Conexión Supabase */
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* 🟦 Validar usuario */
-async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) window.location.href = "index.html";
-    return user;
-}
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if (!user) window.location.href = "index.html";
 
-window.onload = async () => {
-    const user = await checkUser();
-    cargarSolicitudes(user);
-};
+window.onload = cargarSolicitudes;
 
-/* 🟩 Cargar solicitudes del usuario autenticado */
-async function cargarSolicitudes(user) {
+async function cargarSolicitudes() {
     const cont = document.getElementById("listaSolicitudes");
     cont.innerHTML = "<p>Cargando solicitudes...</p>";
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("solicitudes")
         .select("*")
         .eq("email", user.email)
@@ -61,55 +51,50 @@ async function cargarSolicitudes(user) {
         return;
     }
 
-    if (!data || data.length === 0) {
+    if (!data.length) {
         cont.innerHTML = "<p>No hay solicitudes registradas.</p>";
         return;
     }
 
-    let html = `
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Docente</th>
-                    <th>Asignatura</th>
-                    <th>Fecha Solicitud</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    data.forEach(s => {
-        html += `
+    let html = `<table>
+        <thead>
             <tr>
-                <td>${s.id}</td>
-                <td>${s.docente}</td>
-                <td>${s.asignatura}</td>
-                <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-                <td>${s.estado}</td>
-                <td><button class="btnVer" onclick="verDetalles(${s.id})">Ver detalles</button></td>
+                <th>ID</th>
+                <th>Docente</th>
+                <th>Asignatura</th>
+                <th>Fecha Solicitud</th>
+                <th>Estado</th>
+                <th>Acción</th>
             </tr>
-        `;
+        </thead>
+        <tbody>`;
+    
+    data.forEach(s => {
+        html += `<tr>
+            <td>${s.id}</td>
+            <td>${s.docente}</td>
+            <td>${s.asignatura}</td>
+            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+            <td>${s.estado}</td>
+            <td><button class="btnVer" onclick="verDetalles(${s.id})">Ver detalles</button></td>
+        </tr>`;
     });
 
     html += "</tbody></table>";
     cont.innerHTML = html;
 }
 
-/* 🟧 Ver detalles de una solicitud */
 async function verDetalles(id_solicitud) {
     const det = document.getElementById("detalles");
     det.innerHTML = "<p>Cargando...</p>";
 
-    const { data: solicitud, error: err1 } = await supabase
+    const { data: solicitud, error: err1 } = await supabaseClient
         .from("solicitudes")
         .select("*")
         .eq("id", id_solicitud)
         .single();
 
-    const { data: materiales, error: err2 } = await supabase
+    const { data: materiales, error: err2 } = await supabaseClient
         .from("materiales_solicitados")
         .select("*")
         .eq("id_solicitud", id_solicitud);
@@ -119,8 +104,7 @@ async function verDetalles(id_solicitud) {
         return;
     }
 
-    let html = `
-        <p><strong>ID:</strong> ${solicitud.id}</p>
+    let html = `<p><strong>ID:</strong> ${solicitud.id}</p>
         <p><strong>Docente:</strong> ${solicitud.docente}</p>
         <p><strong>Asignatura:</strong> ${solicitud.asignatura}</p>
         <p><strong>Fecha Solicitud:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleString()}</p>
@@ -128,45 +112,48 @@ async function verDetalles(id_solicitud) {
 
         <h4>Materiales Solicitados</h4>
         <table>
-            <thead>
-                <tr><th>Material</th><th>Cantidad</th></tr>
-            </thead>
-            <tbody>
-    `;
-
+            <thead><tr><th>Material</th><th>Cantidad</th></tr></thead>
+            <tbody>`;
+    
     materiales.forEach(m => {
         html += `<tr><td>${m.material}</td><td>${m.cantidad}</td></tr>`;
     });
 
-    html += `
-            </tbody>
-        </table>
-        ${solicitud.estado !== 'Entregado' ? `<button class="btnEntregar" onclick="entregar(${solicitud.id})">Marcar como ENTREGADO</button>` : ''}
-    `;
+    html += `</tbody></table>`;
+
+    if (solicitud.estado !== "Entregado") {
+        html += `<button class="btnEntregar" id="btnEntregar" onclick="entregar(${solicitud.id})">Marcar como ENTREGADO</button>`;
+    }
 
     det.innerHTML = html;
 }
 
-/* 🟩 ENTREGAR solicitud */
 async function entregar(id_solicitud) {
+    const boton = document.getElementById("btnEntregar");
+    if (!boton) return;
     if (!confirm("¿Confirmar entrega de esta solicitud?")) return;
 
-    const { data, error } = await supabase
+    boton.disabled = true;
+    boton.textContent = "Entregando...";
+
+    const { error } = await supabaseClient
         .from("solicitudes")
         .update({
             estado: "Entregado",
             fecha_entrega: new Date().toISOString()
         })
-        .eq("id", id_solicitud);
+        .eq("id", id_solicitud)
+        .eq("email", user.email); // RLS: solo el usuario que creó la solicitud
 
     if (error) {
         alert("❌ Error al registrar entrega: " + error.message);
+        boton.disabled = false;
+        boton.textContent = "Marcar como ENTREGADO";
         return;
     }
 
     alert("✅ Entrega registrada correctamente.");
-    const user = await checkUser();
-    cargarSolicitudes(user);
+    cargarSolicitudes();
     document.getElementById("detalles").innerHTML = "";
 }
 </script>

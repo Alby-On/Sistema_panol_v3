@@ -1,8 +1,112 @@
-async function registrar() {
-    const boton = document.querySelector("#registerBox button.btn-success");
-    boton.disabled = true; // ❌ deshabilitar botón
-    boton.textContent = "Registrando..."; // feedback al usuario
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Solicitud de Materiales - Inicio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .box { background: white; padding: 20px; max-width: 450px; margin: 20px auto; border-radius: 12px; box-shadow: 0 0 12px rgba(0,0,0,0.15); }
+    h2,h3 { text-align:center; margin-bottom:15px; }
+    label { font-weight:bold; display:block; margin-top:10px; }
+    input, select { width:100%; padding:12px; margin:8px 0 15px; border-radius:7px; border:1px solid #aaa; font-size:16px; box-sizing:border-box; }
+    button { width:100%; padding:12px; border:none; border-radius:7px; font-size:16px; cursor:pointer; margin-top:10px; }
+    button:hover { opacity:0.9; }
+    .btn-primary { background: #007bff; color:white; }
+    .btn-success { background:#28a745; color:white; }
+    .btn-secondary { background:#6c757d; color:white; }
+    .hidden { display:none; }
+    a { color:#007bff; cursor:pointer; text-decoration:underline; }
+    .error { color:red; font-size:14px; margin-bottom:10px; }
+    ul { padding-left:18px; margin-top:-5px; }
+    #mensaje { font-weight:bold; text-align:center; }
+  </style>
+</head>
+<body>
 
+<!-- 🌟 Pantalla de bienvenida -->
+<div class="box" id="welcomeBox">
+  <h2>Bienvenido(a)</h2>
+  <p>Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
+  <h3>Consideraciones:</h3>
+  <ul>
+    <li>Todo material facilitado debe regresar en las mismas condiciones.</li>
+    <li>Los estudiantes deben entregar su <b>TNE</b> o <b>Cédula de Identidad</b>.</li>
+    <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
+  </ul>
+  <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+  <button class="btn-success" onclick="showRegister()">Registrarse</button>
+</div>
+
+<!-- 🔐 Caja de Login -->
+<div class="box hidden" id="loginBox">
+  <h2>Iniciar Sesión</h2>
+  <input type="email" placeholder="Correo" id="loginEmail">
+  <input type="password" placeholder="Contraseña" id="loginPass">
+  <button class="btn-primary" onclick="login()">Ingresar</button>
+  <p id="loginMsg"></p>
+  <p><a onclick="showRegister()">Registrarme</a></p>
+  <p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<!-- 📝 Caja de Registro -->
+<div class="box hidden" id="registerBox">
+  <h2>Registro</h2>
+  <input type="text" id="regNombre" placeholder="Nombre Completo">
+  <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
+  <p id="rutError" class="error"></p>
+  <select id="regCarrera">
+    <option value="">Seleccione una carrera</option>
+    <option>Ingeniería Eléctrica</option>
+    <option>Técnico de nivel superior en Electricidad Industrial</option>
+    <option>Ingeniería en Automatización y Robótica</option>
+    <option>Técnico de nivel superior en Automatización y Robótica</option>
+    <option>Ingeniería en Mecatrónica</option>
+    <option>Técnico de nivel superior en Mecatrónica</option>
+    <option>Área Mecánica</option>
+    <option>Otras Áreas</option>
+  </select>
+  <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
+  <input type="email" id="regEmail" placeholder="Correo">
+  <input type="password" id="regPass" placeholder="Contraseña">
+  <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+  <p id="mensaje"></p>
+  <p><a onclick="showLogin()">Ya tengo cuenta</a></p>
+  <p><a onclick="showWelcome()">Volver</a></p>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function hideAll() {
+    welcomeBox.classList.add("hidden");
+    loginBox.classList.add("hidden");
+    registerBox.classList.add("hidden");
+  }
+  function showWelcome() { hideAll(); welcomeBox.classList.remove("hidden"); }
+  function showLogin() { hideAll(); loginBox.classList.remove("hidden"); }
+  function showRegister() { hideAll(); registerBox.classList.remove("hidden"); }
+
+  // Limpiar RUT
+  function limpiarRut(rut) { return rut.replace(/\./g, '').replace(/\s/g, '').toUpperCase(); }
+  function dvT(rut) { let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:"K"; }
+  function validarRutCompleto(rutCompleto) {
+    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+    const r = limpiarRut(rutCompleto);
+    if(!r.includes("-")) return {ok:false,msg:"El RUT debe contener guion."};
+    const [num,dv] = r.split("-");
+    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
+    return {ok: dvT(parseInt(num,10)).toString()===dv.toUpperCase()};
+  }
+
+  async function registrar() {
+    const boton = document.querySelector("#registerBox button.btn-success");
+    boton.disabled = true;
+    boton.textContent = "Registrando...";
+    
     const nombre = regNombre.value.trim();
     const rut = regRut.value.trim();
     const carrera = regCarrera.value;
@@ -15,24 +119,21 @@ async function registrar() {
     if(!nombre || !rut || !carrera || !telefono || !email || !pass) {
       mensaje.textContent = "⚠️ Complete todos los campos.";
       mensaje.style.color = "red"; 
-      boton.disabled = false;
-      boton.textContent = "Crear Cuenta";
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
       return;
     }
 
     const rutVal = validarRutCompleto(rut);
     if(!rutVal.ok){ 
       rutError.textContent = rutVal.msg; 
-      boton.disabled = false;
-      boton.textContent = "Crear Cuenta";
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
       return; 
     }
 
     if(!/^\+569\d{8}$/.test(telefono)){
       mensaje.textContent = "⚠️ Teléfono inválido. Use formato +569XXXXXXXX";
       mensaje.style.color = "red"; 
-      boton.disabled = false;
-      boton.textContent = "Crear Cuenta";
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
       return;
     }
 
@@ -45,16 +146,13 @@ async function registrar() {
     if (errCheck) { 
       mensaje.textContent = "❌ Error al verificar duplicados."; 
       mensaje.style.color = "red"; 
-      boton.disabled = false;
-      boton.textContent = "Crear Cuenta";
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
       return; 
     }
-
     if (existente.length > 0) { 
       mensaje.textContent = "⚠️ El RUT o correo ya están registrados."; 
       mensaje.style.color = "red"; 
-      boton.disabled = false;
-      boton.textContent = "Crear Cuenta";
+      boton.disabled = false; boton.textContent = "Crear Cuenta";
       return; 
     }
 
@@ -75,6 +173,35 @@ async function registrar() {
       boton.disabled = false;
       boton.textContent = "Crear Cuenta";
     }
-}
+  }
 
+  async function login() {
+    const email = loginEmail.value.trim();
+    const pass = loginPass.value.trim();
+    const msg = document.getElementById("loginMsg");
+    if(!email || !pass){ msg.textContent = "⚠️ Complete todos los campos."; msg.style.color="red"; return; }
+
+    const { data: user, error } = await supabaseClient
+      .from("usuarios")
+      .select("*")
+      .eq("email", email)
+      .eq("pass", pass)
+      .single();
+
+    if(error || !user){
+      msg.textContent = "❌ Correo o contraseña incorrectos.";
+      msg.style.color = "red";
+      return;
+    }
+
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    msg.textContent = "✅ Bienvenido, " + user.nombre;
+    msg.style.color = "green";
+    setTimeout(() => { window.location.href = "menu.html"; }, 1500);
+  }
+
+  showWelcome();
+</script>
+</body>
+</html>
 

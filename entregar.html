@@ -1,212 +1,171 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Entregar Materiales</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
     body {
         font-family: Arial, sans-serif;
-        background: #eef1f4;
-        padding: 20px;
+        background: #f3f4f6;
         margin: 0;
+        padding: 0;
     }
 
-    .box {
+    .container {
+        max-width: 900px;
+        margin: 40px auto;
         background: white;
         padding: 25px;
-        width: 100%;
-        max-width: 850px;
-        margin: auto;
-        margin-top: 15px;
-        border-radius: 14px;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     h2 {
-        text-align:center;
-        font-size: 24px;
-        margin-bottom: 25px;
+        text-align: center;
+        margin-bottom: 20px;
         color: #333;
     }
 
-    /* Tarjeta de solicitud */
-    .solicitud {
-        margin-bottom: 35px;
-        padding: 20px;
-        border-left: 6px solid #007bff;
-        background: #fafbfc;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .titulo-solicitud {
-        font-size: 20px;
+    .section-title {
         font-weight: bold;
-        color: #007bff;
+        margin-top: 25px;
         margin-bottom: 10px;
+        font-size: 18px;
+        color: #444;
+        border-left: 4px solid #4CAF50;
+        padding-left: 8px;
     }
 
-    .info {
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px 15px;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.1);
-    }
-
-    .info p {
-        margin: 5px 0;
-        font-size: 15px;
-    }
-
-    /* TABLA */
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 12px;
+        margin-top: 15px;
     }
 
-    th {
-        background: #007bff;
-        color: white;
+    table th, table td {
+        border: 1px solid #ddd;
         padding: 10px;
-        font-size: 15px;
+        text-align: left;
+    }
+
+    table th {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .check-col {
         text-align: center;
     }
 
-    td {
-        border: 1px solid #ddd;
-        padding: 10px;
-        font-size: 14px;
-    }
-
-    td:nth-child(1) { width: 50%; }
-    td:nth-child(2) { width: 20%; }
-    td:nth-child(3) { width: 10%; }
-
-    td input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    /* Mensaje advertencia */
-    .alerta {
-        background: #ffdddd;
-        color: #cc0000;
-        padding: 10px;
-        border-left: 5px solid #cc0000;
-        margin-top: 12px;
-        margin-bottom: 10px;
-        border-radius: 6px;
+    #mensaje-error {
         display: none;
+        background: #ffdddd;
+        padding: 12px;
+        color: #b10000;
+        border: 1px solid #ffb4b4;
+        border-radius: 8px;
+        margin-top: 15px;
+        font-size: 15px;
     }
 
-    /* Botones */
-    .btnCompletar {
-        background: #28a745;
-        padding: 14px;
+    .btn-entregar {
         width: 100%;
-        border: none;
-        border-radius: 8px;
-        color: white;
-        font-size: 17px;
-        cursor: pointer;
-        margin-top: 20px;
-        font-weight: bold;
-    }
-    .btnCompletar:hover { background: #218838; }
-
-    .btnVolver {
-        background: #6c757d;
         padding: 14px;
-        width: 100%;
-        border: none;
-        border-radius: 8px;
-        color: white;
+        margin-top: 25px;
         font-size: 17px;
-        cursor: pointer;
-        margin-top: 10px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        border-radius: 10px;
+        cursor: not-allowed;   /* Visualmente deshabilitado */
+        opacity: 0.5;
     }
 
 </style>
 </head>
 <body>
 
-<div class="box">
+<div class="container">
 
-    <h2>Solicitudes Pendientes</h2>
+    <h2>Entregar Materiales</h2>
 
-    <!-- ----- SOLICITUD DE EJEMPLO ----- -->
-    <div class="solicitud">
-        
-        <div class="titulo-solicitud">Solicitud #123</div>
+    <!-- DATOS SOLICITUD -->
+    <div class="section-title">Datos de la Solicitud</div>
+    <table>
+        <tr><th>ID Solicitud</th><td>12345</td></tr>
+        <tr><th>Email</th><td>usuario@correo.com</td></tr>
+        <tr><th>Docente</th><td>Juan Pérez</td></tr>
+        <tr><th>Asignatura</th><td>Electrónica</td></tr>
+        <tr><th>Fecha Solicitud</th><td>2025-11-14</td></tr>
+        <tr><th>Estado</th><td>Pendiente</td></tr>
+    </table>
 
-        <div class="info">
-            <p><b>Fecha solicitud:</b> 2025-01-20</p>
-            <p><b>Docente:</b> Juan Pérez</p>
-            <p><b>Asignatura:</b> Electricidad II</p>
-            <p><b>Email:</b> docente@ejemplo.com</p>
-            <p><b>Estado:</b> pendiente</p>
-        </div>
+    <!-- MATERIALES -->
+    <div class="section-title">Materiales Solicitados</div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Material</th>
-                    <th>Cantidad</th>
-                    <th>✔</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Cable rojo 1.5mm</td>
-                    <td>5 metros</td>
-                    <td style="text-align:center;"><input class="chk"></td>
-                </tr>
-                <tr>
-                    <td>Tester digital</td>
-                    <td>1 unidad</td>
-                    <td style="text-align:center;"><input class="chk"></td>
-                </tr>
-                <tr>
-                    <td>Destornillador plano</td>
-                    <td>2 unidades</td>
-                    <td style="text-align:center;"><input class="chk"></td>
-                </tr>
-            </tbody>
-        </table>
+    <table>
+        <thead>
+            <tr>
+                <th>Material</th>
+                <th>Cantidad</th>
+                <th>Entregado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Cable 2.5mm</td>
+                <td>5</td>
+                <td class="check-col"><input type="checkbox" class="chk"></td>
+            </tr>
+            <tr>
+                <td>Multímetro</td>
+                <td>1</td>
+                <td class="check-col"><input type="checkbox" class="chk"></td>
+            </tr>
+            <tr>
+                <td>Protector 10A</td>
+                <td>3</td>
+                <td class="check-col"><input type="checkbox" class="chk"></td>
+            </tr>
+        </tbody>
+    </table>
 
-        <div class="alerta" id="alerta123">
-            ⚠ Debes marcar <b>todos los materiales</b> antes de completar la entrega.
-        </div>
-
-        <button class="btnCompletar" onclick="verificar(123)">Completar Entrega</button>
-
+    <div id="mensaje-error">
+        Debes seleccionar todos los materiales antes de poder continuar con la entrega.
     </div>
-    <!-- ----- FIN SOLICITUD ----- -->
 
-    <button class="btnVolver" onclick="location.href='menu.html'">Volver</button>
+    <button class="btn-entregar">Entregar Materiales</button>
 
 </div>
 
 <script>
-/* SOLO EFECTO VISUAL - NO HAY SUPABASE */
-function verificar(id) {
-    const checks = document.querySelectorAll(".solicitud input.chk");
-    const alerta = document.getElementById("alerta" + id);
+    const checkboxes = document.querySelectorAll(".chk");
+    const mensaje = document.getElementById("mensaje-error");
+    const btn = document.querySelector(".btn-entregar");
 
-    const faltantes = [...checks].some(c => !c.checked);
+    function validarChecklist() {
+        let completos = true;
 
-    if (faltantes) {
-        alerta.style.display = "block";
-    } else {
-        alerta.style.display = "none";
-        alert("✔ Visualmente completado. (Lógica se agregará luego)");
+        checkboxes.forEach(chk => {
+            if (!chk.checked) completos = false;
+        });
+
+        if (completos) {
+            mensaje.style.display = "none";
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        } else {
+            mensaje.style.display = "block";
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+        }
     }
-}
+
+    checkboxes.forEach(chk => {
+        chk.addEventListener("change", validarChecklist);
+    });
 </script>
 
 </body>

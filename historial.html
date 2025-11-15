@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Historial de Solicitudes Entregadas</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f3f4f6;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+    }
+
+    .filter-box {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .filter-box input, .filter-box button {
+        padding: 10px;
+        font-size: 15px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .filter-box button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    table th {
+        background: #4CAF50;
+        color: white;
+        padding: 10px;
+        text-align: left;
+    }
+
+    table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .btn-materiales {
+        background: #2196F3;
+        color: white;
+    }
+
+    .btn-repetir {
+        background: #ff9800;
+        color: white;
+    }
+
+    /* MODAL */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background: white;
+        width: 500px;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .close-btn {
+        float: right;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bold;
+        color: #900;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Historial de Solicitudes Entregadas</h2>
+
+    <!-- FILTROS -->
+    <div class="filter-box">
+        <input type="date" id="desde">
+        <input type="date" id="hasta">
+        <button>Buscar</button>
+    </div>
+
+    <!-- TABLA DE HISTORIAL -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Docente</th>
+                <th>Asignatura</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1023</td>
+                <td>Juan Pérez</td>
+                <td>Electrónica</td>
+                <td>2025-11-10</td>
+                <td>2025-11-12</td>
+                <td>
+                    <button class="btn btn-materiales" onclick="mostrarModal()">Ver Materiales</button>
+                    <button class="btn btn-repetir">Repetir Solicitud</button>
+                </td>
+            </tr>
+
+            <tr>
+                <td>1021</td>
+                <td>María Soto</td>
+                <td>Automatización</td>
+                <td>2025-11-05</td>
+                <td>2025-11-07</td>
+                <td>
+                    <button class="btn btn-materiales" onclick="mostrarModal()">Ver Materiales</button>
+                    <button class="btn btn-repetir">Repetir Solicitud</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<!-- MODAL VER MATERIALES -->
+<div class="modal" id="modal-materiales">
+    <div class="modal-content">
+        <span class="close-btn" onclick="cerrarModal()">×</span>
+        <div class="modal-header">Materiales Solicitados</div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Cable 2.5mm</td><td>5</td></tr>
+                <tr><td>Multímetro</td><td>1</td></tr>
+                <tr><td>Protector 10A</td><td>3</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function mostrarModal() {
+        document.getElementById("modal-materiales").style.display = "flex";
+    }
+
+    function cerrarModal() {
+        document.getElementById("modal-materiales").style.display = "none";
+    }
+</script>
+
+</body>
+</html>

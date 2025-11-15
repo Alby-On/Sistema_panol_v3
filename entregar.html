@@ -28,9 +28,15 @@
         color: #333;
     }
 
+    .solicitud-box {
+        margin-bottom: 35px;
+        padding-bottom: 25px;
+        border-bottom: 2px solid #ddd;
+    }
+
     .section-title {
         font-weight: bold;
-        margin-top: 25px;
+        margin-top: 20px;
         margin-bottom: 10px;
         font-size: 18px;
         color: #444;
@@ -41,7 +47,7 @@
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 15px;
+        margin-top: 10px;
     }
 
     table th, table td {
@@ -59,7 +65,7 @@
         text-align: center;
     }
 
-    #mensaje-error {
+    .mensaje-error {
         display: none;
         background: #ffdddd;
         padding: 12px;
@@ -73,7 +79,7 @@
     .btn-entregar {
         width: 100%;
         padding: 14px;
-        margin-top: 25px;
+        margin-top: 15px;
         font-size: 17px;
         background: #4CAF50;
         border: none;
@@ -88,83 +94,96 @@
 <body>
 
 <div class="container">
-
     <h2>Entregar Materiales</h2>
 
-    <!-- DATOS SOLICITUD -->
-    <div class="section-title">Datos de la Solicitud</div>
-    <table>
-        <tr><th>ID Solicitud</th><td>12345</td></tr>
-        <tr><th>Email</th><td>usuario@correo.com</td></tr>
-        <tr><th>Docente</th><td>Juan Pérez</td></tr>
-        <tr><th>Asignatura</th><td>Electrónica</td></tr>
-        <tr><th>Fecha Solicitud</th><td>2025-11-14</td></tr>
-        <tr><th>Estado</th><td>Pendiente</td></tr>
-    </table>
+    <!-- Solicitudes Pendientes (Múltiples) -->
+    <div class="solicitud-box" data-id="12345">
+        <div class="section-title">Datos de la Solicitud</div>
+        <table>
+            <tr><th>ID Solicitud</th><td>12345</td></tr>
+            <tr><th>Email</th><td>usuario@correo.com</td></tr>
+            <tr><th>Docente</th><td>Juan Pérez</td></tr>
+            <tr><th>Asignatura</th><td>Electrónica</td></tr>
+            <tr><th>Fecha Solicitud</th><td>2025-11-14</td></tr>
+            <tr><th>Estado</th><td>Pendiente</td></tr>
+        </table>
 
-    <!-- MATERIALES -->
-    <div class="section-title">Materiales Solicitados</div>
+        <div class="section-title">Materiales Solicitados</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Cantidad</th>
+                    <th>Entregado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Cable 2.5mm</td><td>5</td><td class="check-col"><input type="checkbox" class="chk"></td></tr>
+                <tr><td>Multímetro</td><td>1</td><td class="check-col"><input type="checkbox" class="chk"></td></tr>
+                <tr><td>Protector 10A</td><td>3</td><td class="check-col"><input type="checkbox" class="chk"></td></tr>
+            </tbody>
+        </table>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Material</th>
-                <th>Cantidad</th>
-                <th>Entregado</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Cable 2.5mm</td>
-                <td>5</td>
-                <td class="check-col"><input type="checkbox" class="chk"></td>
-            </tr>
-            <tr>
-                <td>Multímetro</td>
-                <td>1</td>
-                <td class="check-col"><input type="checkbox" class="chk"></td>
-            </tr>
-            <tr>
-                <td>Protector 10A</td>
-                <td>3</td>
-                <td class="check-col"><input type="checkbox" class="chk"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div id="mensaje-error">
-        Debes seleccionar todos los materiales antes de poder continuar con la entrega.
+        <div class="mensaje-error">Debes seleccionar todos los materiales antes de poder continuar con la entrega.</div>
+        <button class="btn-entregar">Entregar Materiales</button>
     </div>
 
-    <button class="btn-entregar">Entregar Materiales</button>
+    <div class="solicitud-box" data-id="12346">
+        <div class="section-title">Datos de la Solicitud</div>
+        <table>
+            <tr><th>ID Solicitud</th><td>12346</td></tr>
+            <tr><th>Email</th><td>otro@correo.com</td></tr>
+            <tr><th>Docente</th><td>María Soto</td></tr>
+            <tr><th>Asignatura</th><td>Automatización</td></tr>
+            <tr><th>Fecha Solicitud</th><td>2025-11-13</td></tr>
+            <tr><th>Estado</th><td>Pendiente</td></tr>
+        </table>
+
+        <div class="section-title">Materiales Solicitados</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Cantidad</th>
+                    <th>Entregado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Sensor de temperatura</td><td>2</td><td class="check-col"><input type="checkbox" class="chk"></td></tr>
+                <tr><td>Relay 5V</td><td>4</td><td class="check-col"><input type="checkbox" class="chk"></td></tr>
+            </tbody>
+        </table>
+
+        <div class="mensaje-error">Debes seleccionar todos los materiales antes de poder continuar con la entrega.</div>
+        <button class="btn-entregar">Entregar Materiales</button>
+    </div>
 
 </div>
 
 <script>
-    const checkboxes = document.querySelectorAll(".chk");
-    const mensaje = document.getElementById("mensaje-error");
-    const btn = document.querySelector(".btn-entregar");
+    // Funcionalidad visual para checklist y activación de botón
+    document.querySelectorAll('.solicitud-box').forEach(box => {
+        const checkboxes = box.querySelectorAll('.chk');
+        const mensaje = box.querySelector('.mensaje-error');
+        const btn = box.querySelector('.btn-entregar');
 
-    function validarChecklist() {
-        let completos = true;
-
-        checkboxes.forEach(chk => {
-            if (!chk.checked) completos = false;
-        });
-
-        if (completos) {
-            mensaje.style.display = "none";
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-        } else {
-            mensaje.style.display = "block";
-            btn.style.opacity = "0.5";
-            btn.style.cursor = "not-allowed";
+        function validarChecklist() {
+            let completos = true;
+            checkboxes.forEach(chk => {
+                if (!chk.checked) completos = false;
+            });
+            if (completos) {
+                mensaje.style.display = 'none';
+                btn.style.opacity = 1;
+                btn.style.cursor = 'pointer';
+            } else {
+                mensaje.style.display = 'block';
+                btn.style.opacity = 0.5;
+                btn.style.cursor = 'not-allowed';
+            }
         }
-    }
 
-    checkboxes.forEach(chk => {
-        chk.addEventListener("change", validarChecklist);
+        checkboxes.forEach(chk => chk.addEventListener('change', validarChecklist));
     });
 </script>
 

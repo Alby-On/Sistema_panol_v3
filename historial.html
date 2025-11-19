@@ -127,7 +127,7 @@
     <div class="filter-box">
         <input type="date" id="desde">
         <input type="date" id="hasta">
-        <button>Buscar</button>
+        <button onclick="cargarHistorial()">Buscar</button>
     </div>
 
     <!-- TABLA DE HISTORIAL -->
@@ -142,31 +142,7 @@
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td>1023</td>
-                <td>Juan Pérez</td>
-                <td>Electrónica</td>
-                <td>2025-11-10</td>
-                <td>2025-11-12</td>
-                <td>
-                    <button class="btn btn-materiales" onclick="mostrarModal()">Ver Materiales</button>
-                    <button class="btn btn-repetir">Repetir Solicitud</button>
-                </td>
-            </tr>
-
-            <tr>
-                <td>1021</td>
-                <td>María Soto</td>
-                <td>Automatización</td>
-                <td>2025-11-05</td>
-                <td>2025-11-07</td>
-                <td>
-                    <button class="btn btn-materiales" onclick="mostrarModal()">Ver Materiales</button>
-                    <button class="btn btn-repetir">Repetir Solicitud</button>
-                </td>
-            </tr>
-        </tbody>
+        <tbody id="tabla-historial"></tbody>
     </table>
 
 </div>
@@ -184,24 +160,151 @@
                     <th>Cantidad</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr><td>Cable 2.5mm</td><td>5</td></tr>
-                <tr><td>Multímetro</td><td>1</td></tr>
-                <tr><td>Protector 10A</td><td>3</td></tr>
-            </tbody>
+            <tbody id="tabla-materiales"></tbody>
         </table>
     </div>
 </div>
 
+<script src="supabase.js"></script>
 <script>
-    function mostrarModal() {
+    let materialesCache = {}; // Guarda materiales por solicitud
+    let usuario = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        usuario = user?.email;
+        cargarHistorial();
+    });
+
+    async function cargarHistorial() {
+        const desde = document.getElementById("desde").value;
+        const hasta = document.getElementById("hasta").value;
+
+        let query = supabaseClient
+            .from("solicitudes")
+            .select("*")
+            .eq("email", usuario)
+            .eq("estado", "Entregado");
+
+        if (desde) query = query.gte("fecha_solicitud", desde);
+        if (hasta) query = query.lte("fecha_solicitud", hasta);
+
+        const { data, error } = await query.order("fecha_solicitud", { ascending: false });
+
+        if (error) {
+            console.error("Error:", error);
+            return;
+        }
+
+        renderTabla(data);
+    }
+
+    function renderTabla(solicitudes) {
+        const tbody = document.getElementById("tabla-historial");
+        tbody.innerHTML = "";
+
+        solicitudes.forEach(s => {
+            materialesCache[s.id] = null; // Inicializa cache
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${s.id}</td>
+                    <td>${s.docente}</td>
+                    <td>${s.asignatura}</td>
+                    <td>${s.fecha_solicitud?.substring(0,10)}</td>
+                    <td>${s.fecha_entrega?.substring(0,10)}</td>
+                    <td>
+                        <button class="btn btn-materiales" onclick="verMateriales(${s.id})">Ver Materiales</button>
+                        <button class="btn btn-repetir" onclick="repetirSolicitud(${s.id})">Repetir Solicitud</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function verMateriales(id) {
+        if (!materialesCache[id]) {
+            const { data, error } = await supabaseClient
+                .from("materiales_solicitados")
+                .select("*")
+                .eq("solicitud_id", id);
+
+            if (error) {
+                console.error("Error cargando materiales:", error);
+                return;
+            }
+
+            materialesCache[id] = data;
+        }
+
+        mostrarModal(materialesCache[id]);
+    }
+
+    function mostrarModal(materiales) {
+        const tbody = document.getElementById("tabla-materiales");
+        tbody.innerHTML = "";
+
+        materiales.forEach(m => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${m.material}</td>
+                    <td>${m.cantidad}</td>
+                </tr>
+            `;
+        });
+
         document.getElementById("modal-materiales").style.display = "flex";
     }
 
     function cerrarModal() {
         document.getElementById("modal-materiales").style.display = "none";
     }
+
+    async function repetirSolicitud(id) {
+        const { data: original } = await supabaseClient
+            .from("solicitudes")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (!original) return;
+
+        const nueva = {
+            email: original.email,
+            docente: original.docente,
+            asignatura: original.asignatura,
+            fecha_solicitud: new Date().toISOString(),
+            estado: "Pendiente"
+        };
+
+        const { data: nuevaSolicitud, error } = await supabaseClient
+            .from("solicitudes")
+            .insert([nueva])
+            .select()
+            .single();
+
+        if (error) {
+            alert("Error repitiendo solicitud");
+            return;
+        }
+
+        const { data: materiales } = await supabaseClient
+            .from("materiales_solicitados")
+            .select("*")
+            .eq("solicitud_id", id);
+
+        const copia = materiales.map(m => ({
+            solicitud_id: nuevaSolicitud.id,
+            material: m.material,
+            cantidad: m.cantidad
+        }));
+
+        await supabaseClient.from("materiales_solicitados").insert(copia);
+
+        alert("Solicitud repetida correctamente");
+    }
 </script>
 
 </body>
 </html>
+

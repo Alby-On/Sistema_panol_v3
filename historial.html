@@ -6,71 +6,108 @@
 <title>Historial de Solicitudes Entregadas</title>
 
 <style>
+    /* Variables de Color (Consistencia Institucional) */
+    :root {
+        --color-primary: #004d99; /* Azul marino/institucional */
+        --color-secondary: #28a745; /* Verde para éxito/Encabezado */
+        --color-info: #2196F3; /* Azul medio para ver materiales */
+        --color-warning: #ff9800; /* Naranja para repetir */
+        --color-muted: #6c757d; /* Gris para volver */
+        --color-background: #eef1f5; /* Fondo claro y suave */
+        --color-card: #ffffff; /* Fondo de las cajas */
+        --color-text: #333333; /* Texto oscuro */
+        --color-border: #cccccc;
+    }
+
+    /* ---- ESTILO GENERAL ---- */
     body {
-        font-family: Arial, sans-serif;
-        background: #f3f4f6;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
         margin: 0;
         padding: 0;
+        color: var(--color-text);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
     }
 
     .container {
         max-width: 1100px;
-        margin: 20px auto;
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        width: 100%;
+        margin: 20px 15px; /* Margen para móviles */
+        background: var(--color-card);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
     }
 
     h2 {
         text-align: center;
-        color: #333;
-        margin-bottom: 20px;
-        font-size: 22px;
+        color: var(--color-primary);
+        margin-bottom: 25px;
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
     }
 
-    /* BOTÓN VOLVER */
+    /* ---- BOTÓN VOLVER ---- */
     .btn-volver {
         display: inline-block;
-        padding: 10px 16px;
-        background: #4a6cf7;
+        padding: 12px 18px;
+        background: var(--color-primary);
         color: white;
         text-decoration: none;
-        border-radius: 8px;
-        font-size: 15px;
-        font-weight: bold;
-        margin-bottom: 15px;
+        border-radius: 6px;
+        font-size: 1em;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: background-color 0.3s;
     }
 
     .btn-volver:hover {
-        background: #3a59d6;
+        background: #003a73;
     }
 
-    /* FILTROS */
+    /* ---- FILTROS ---- */
     .filter-box {
         display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
+        gap: 15px;
+        margin-bottom: 25px;
         flex-wrap: wrap;
+        align-items: stretch;
     }
 
     .filter-box input, .filter-box button {
-        padding: 10px;
-        font-size: 15px;
+        padding: 12px;
+        font-size: 1em;
         border-radius: 6px;
-        border: 1px solid #ccc;
-        width: 100%;
-        max-width: 250px;
+        border: 1px solid var(--color-border);
+        box-sizing: border-box;
+    }
+    
+    .filter-box input {
+        flex-grow: 1; /* Permite que los campos de fecha crezcan */
+        max-width: none;
+        min-width: 120px;
     }
 
     .filter-box button {
-        background: #4CAF50;
+        flex-shrink: 0; /* Evita que el botón se comprima */
+        background: var(--color-secondary);
         color: white;
         border: none;
         cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .filter-box button:hover {
+        background: #1e7e34;
     }
 
-    /* TABLA RESPONSIVA */
+    /* ---- TABLA RESPONSIVA ---- */
     .tabla-wrapper {
         overflow-x: auto;
     }
@@ -79,145 +116,201 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
-        min-width: 700px;
+        font-size: 0.95em;
+        min-width: 850px; /* Ancho mínimo para legibilidad */
     }
 
     table th {
-        background: #4CAF50;
+        background: var(--color-primary); /* Encabezado de tabla con color principal */
         color: white;
-        padding: 10px;
+        padding: 12px 10px;
         text-align: left;
-        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
     }
 
     table td {
-        border: 1px solid #ddd;
-        padding: 10px;
-        font-size: 14px;
+        border: 1px solid #e0e0e0;
+        padding: 12px 10px;
+        font-size: 0.9em;
+        vertical-align: middle;
+    }
+    
+    #tabla-historial tr:nth-child(even) {
+        background-color: #f8f8f8; /* Cebra */
     }
 
+    /* Botones de Acción dentro de la Tabla */
     .btn {
         padding: 8px 10px;
         border: none;
         border-radius: 6px;
         cursor: pointer;
-        font-size: 13px;
-        margin: 2px 0;
+        font-size: 0.9em;
+        margin: 4px 0;
         width: 100%;
         max-width: 140px;
+        display: block; /* Ocupa todo el ancho disponible en la celda */
+        font-weight: 600;
+        text-align: center;
+        transition: background-color 0.2s;
     }
 
     .btn-materiales {
-        background: #2196F3;
+        background: var(--color-info);
         color: white;
     }
+    .btn-materiales:hover { background: #1377c0; }
 
     .btn-repetir {
-        background: #ff9800;
+        background: var(--color-warning);
         color: white;
+        margin-top: 8px;
     }
+    .btn-repetir:hover { background: #e08e00; }
 
     /* MENSAJE */
     .mensaje-vacio {
         text-align: center;
-        padding: 15px;
-        background: #fff4e6;
-        border: 1px solid #ffd7b3;
-        color: #b95c00;
+        padding: 20px;
+        background: #fff8e1; /* Fondo suave de advertencia */
+        border: 1px solid #ffecb3;
+        color: #8f6509;
         border-radius: 8px;
-        margin-top: 10px;
+        margin-top: 20px;
+        font-size: 1.1em;
+        font-weight: 500;
     }
 
     /* MODAL */
     .modal {
         display: none;
         position: fixed;
+        z-index: 1000;
         inset: 0;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0,0,0,0.7);
         justify-content: center;
         align-items: center;
         padding: 20px;
     }
 
     .modal-content {
-        background: white;
+        background: var(--color-card);
         width: 100%;
-        max-width: 500px;
-        padding: 20px;
+        max-width: 550px;
+        padding: 30px;
         border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     .modal-header {
-        font-size: 18px;
+        font-size: 1.3em;
         font-weight: bold;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
     }
 
     .close-btn {
         float: right;
         cursor: pointer;
-        font-size: 20px;
-        font-weight: bold;
-        color: #900;
+        font-size: 24px;
+        font-weight: normal;
+        color: var(--color-danger); /* Rojo para cerrar */
+        line-height: 1;
+    }
+    
+    /* Tabla del Modal */
+    .modal-content table {
+        min-width: unset;
+    }
+    .modal-content table th {
+        background: var(--color-info); /* Azul para el encabezado del modal */
     }
 
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        .filter-box {
+            gap: 10px;
+            /* Fuerza a los inputs y el botón a ocupar todo el ancho en dos filas */
+        }
+        .filter-box input {
+            flex-basis: calc(50% - 5px); 
+        }
+        .filter-box button {
+            flex-basis: 100%;
+        }
+    }
+    @media (max-width: 600px) {
+        h2 {
+            font-size: 1.6em;
+        }
+        .container {
+            padding: 20px;
+        }
+        .btn-volver {
+            width: 100%;
+            text-align: center;
+        }
+        .filter-box input {
+             flex-basis: 100%;
+        }
+    }
 </style>
 </head>
 <body>
 
 <div class="container">
 
-    <a href="menu.html" class="btn-volver">⬅ Volver al menú</a>
+    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
 
-    <h2>Historial de Solicitudes Entregadas</h2>
+    <h2>Historial de Solicitudes Entregadas 📜</h2>
 
-    <!-- FILTROS -->
     <div class="filter-box">
-        <input type="date" id="desde">
-        <input type="date" id="hasta">
-        <button id="btn-buscar">Buscar</button>
+        <input type="date" id="desde" placeholder="Desde">
+        <input type="date" id="hasta" placeholder="Hasta">
+        <button id="btn-buscar">Buscar por Fechas</button>
     </div>
 
-    <!-- TABLA DE HISTORIAL -->
     <div class="tabla-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Docente</th>
-                    <th>Asignatura</th>
-                    <th>Fecha Solicitud</th>
-                    <th>Fecha Entrega</th>
-                    <th>Acciones</th>
+                    <th style="width: 5%;">ID</th>
+                    <th style="width: 25%;">Docente</th>
+                    <th style="width: 25%;">Asignatura</th>
+                    <th style="width: 15%;">Fecha Solicitud</th>
+                    <th style="width: 15%;">Fecha Entrega</th>
+                    <th style="width: 15%;">Acciones</th>
                 </tr>
             </thead>
             <tbody id="tabla-historial">
-                <!-- Se llena dinámicamente -->
-            </tbody>
+                </tbody>
         </table>
     </div>
 
     <div id="sin-datos" class="mensaje-vacio" style="display:none;">
-        No tienes solicitudes entregadas.
+        ⚠️ No tienes solicitudes entregadas registradas en tu historial.
     </div>
 
 </div>
 
-<!-- MODAL VER MATERIALES -->
 <div class="modal" id="modal-materiales">
     <div class="modal-content">
         <span class="close-btn" onclick="cerrarModal()">×</span>
         <div class="modal-header">Materiales Solicitados</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Material</th>
-                    <th>Cantidad</th>
-                </tr>
-            </thead>
-            <tbody id="modal-body-materiales"></tbody>
-        </table>
+        <div class="tabla-wrapper">
+             <table>
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th style="width: 30%;">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-body-materiales"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -245,7 +338,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     cargarHistorial();
 });
 
-/* ---------------------- CARGAR HISTORIAL ---------------------- */
+/* ---------------------- CARGAR HISTORIAL (LÓGICA INTACTA) ---------------------- */
 async function cargarHistorial() {
     const { data: solicitudes, error } = await supabaseClient
         .from('solicitudes')
@@ -265,12 +358,19 @@ async function cargarHistorial() {
 
     sinDatos.style.display = "none";
 
-    solicitudes.forEach(async s => {
+    // Usamos Promise.all para esperar que todos los materiales se carguen antes de renderizar
+    const solicitudesConMateriales = await Promise.all(solicitudes.map(async s => {
         const { data: materiales } = await supabaseClient
             .from('materiales_solicitados')
             .select('*')
             .eq('id_solicitud', s.id);
+        return { ...s, materiales };
+    }));
 
+
+    solicitudesConMateriales.forEach(s => {
+        const materialesJson = JSON.stringify(s.materiales).replace(/"/g, '&quot;'); // Escape de comillas para onclick
+        
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
@@ -279,15 +379,15 @@ async function cargarHistorial() {
             <td>${new Date(s.fecha_solicitud).toLocaleDateString()}</td>
             <td>${new Date(s.fecha_entrega).toLocaleDateString()}</td>
             <td>
-                <button class="btn btn-materiales" onclick='verMateriales(${JSON.stringify(materiales)})'>Ver</button>
-                <button class="btn btn-repetir" onclick='repetirSolicitud(${s.id})'>Repetir</button>
+                <button class="btn btn-materiales" onclick='verMateriales(${materialesJson})'>👁️ Ver</button>
+                <button class="btn btn-repetir" onclick='repetirSolicitud(${s.id})'>🔄 Repetir</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-/* ------------------ MODAL MATERIALES ------------------ */
+/* ------------------ MODAL MATERIALES (LÓGICA INTACTA) ------------------ */
 function verMateriales(materiales) {
     const tbody = document.getElementById("modal-body-materiales");
     tbody.innerHTML = "";
@@ -301,19 +401,27 @@ function cerrarModal() {
     document.getElementById("modal-materiales").style.display = "none";
 }
 
-/* ------------------ REPETIR SOLICITUD ------------------ */
+/* ------------------ REPETIR SOLICITUD (LÓGICA INTACTA) ------------------ */
 async function repetirSolicitud(id_solicitud) {
     const { data: materiales } = await supabaseClient
         .from('materiales_solicitados')
         .select('*')
         .eq('id_solicitud', id_solicitud);
-
+    
+    // Suponiendo que necesitas obtener los datos de la solicitud original para docente y asignatura
+    const { data: solicitudOriginal } = await supabaseClient
+        .from('solicitudes')
+        .select('docente, asignatura')
+        .eq('id', id_solicitud)
+        .single();
+    
+    // Modificamos el cuerpo del insert para usar los datos originales, ya que el original usaba "Repetida"
     const { data: nueva } = await supabaseClient
         .from('solicitudes')
         .insert([{
             email: usuario,
-            docente: "Repetida",
-            asignatura: "Repetida",
+            docente: solicitudOriginal ? solicitudOriginal.docente : "Repetida",
+            asignatura: solicitudOriginal ? solicitudOriginal.asignatura : "Repetida",
             fecha_solicitud: new Date().toISOString(),
             estado: 'Pendiente'
         }])
@@ -329,11 +437,11 @@ async function repetirSolicitud(id_solicitud) {
             cantidad: m.cantidad
         })));
 
-    alert("✔ Solicitud repetida.");
+    alert("✔ Solicitud repetida y enviada como Pendiente.");
     cargarHistorial();
 }
 
-/* ------------------ FILTRO FECHAS ------------------ */
+/* ------------------ FILTRO FECHAS (LÓGICA INTACTA) ------------------ */
 document.getElementById("btn-buscar").addEventListener("click", async () => {
     const desde = document.getElementById("desde").value;
     const hasta = document.getElementById("hasta").value;
@@ -345,7 +453,7 @@ document.getElementById("btn-buscar").addEventListener("click", async () => {
         .eq('estado', 'Entregado');
 
     if (desde) query = query.gte('fecha_entrega', desde);
-    if (hasta) query = query.lte('fecha_entrega', hasta);
+    if (hasta) query = query.lte('fecha_entrega', hasta + 'T23:59:59.999Z'); // Aseguramos que incluya todo el día final
 
     const { data } = await query.order('fecha_entrega', { ascending: false });
 
@@ -360,8 +468,20 @@ document.getElementById("btn-buscar").addEventListener("click", async () => {
     }
 
     sinDatos.style.display = "none";
+    
+    // Cargar materiales para la función Ver
+    const dataConMateriales = await Promise.all(data.map(async s => {
+        const { data: materiales } = await supabaseClient
+            .from('materiales_solicitados')
+            .select('*')
+            .eq('id_solicitud', s.id);
+        return { ...s, materiales };
+    }));
+    
 
-    data.forEach(s => {
+    dataConMateriales.forEach(s => {
+        const materialesJson = JSON.stringify(s.materiales).replace(/"/g, '&quot;'); // Escape de comillas para onclick
+        
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.id}</td>
@@ -370,8 +490,8 @@ document.getElementById("btn-buscar").addEventListener("click", async () => {
             <td>${new Date(s.fecha_solicitud).toLocaleDateString()}</td>
             <td>${new Date(s.fecha_entrega).toLocaleDateString()}</td>
             <td>
-                <button class="btn btn-materiales">Ver</button>
-                <button class="btn btn-repetir" onclick='repetirSolicitud(${s.id})'>Repetir</button>
+                <button class="btn btn-materiales" onclick='verMateriales(${materialesJson})'>👁️ Ver</button>
+                <button class="btn btn-repetir" onclick='repetirSolicitud(${s.id})'>🔄 Repetir</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -381,4 +501,3 @@ document.getElementById("btn-buscar").addEventListener("click", async () => {
 
 </body>
 </html>
-

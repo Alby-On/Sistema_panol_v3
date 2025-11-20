@@ -1,81 +1,232 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Solicitud de Materiales - Inicio</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <title>Solicitud de Materiales - Inicio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    .box { background: white; padding: 20px; max-width: 450px; margin: 20px auto; border-radius: 12px; box-shadow: 0 0 12px rgba(0,0,0,0.15); }
-    h2,h3 { text-align:center; margin-bottom:15px; }
-    input, select { width:100%; padding:12px; margin:8px 0 15px; border-radius:7px; border:1px solid #aaa; font-size:16px; box-sizing:border-box; }
-    button { width:100%; padding:12px; border:none; border-radius:7px; font-size:16px; cursor:pointer; margin-top:10px; }
-    button:hover { opacity:0.9; }
-    .btn-primary { background: #007bff; color:white; }
-    .btn-success { background:#28a745; color:white; }
-    .hidden { display:none; }
-    a { color:#007bff; cursor:pointer; text-decoration:underline; }
-    .error { color:red; font-size:14px; margin-bottom:10px; }
-    ul { padding-left:18px; margin-top:-5px; }
-    #mensaje, #loginMsg { font-weight:bold; text-align:center; }
-  </style>
+    <style>
+        /* Variables de Color (Para un look formal y fácil de modificar) */
+        :root {
+            --color-primary: #004d99; /* Azul marino/institucional más oscuro */
+            --color-secondary: #28a745; /* Verde para éxito */
+            --color-background: #eef1f5; /* Fondo más claro y suave */
+            --color-card: #ffffff; /* Fondo de las cajas */
+            --color-text: #333333; /* Texto oscuro */
+            --color-border: #cccccc; /* Borde de inputs */
+            --color-error: #dc3545; /* Rojo para errores */
+        }
+
+        /* Estilos Generales */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente más moderna */
+            background: var(--color-background);
+            margin: 0;
+            padding: 0;
+            color: var(--color-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alineación superior para mejor visibilidad en móvil */
+            min-height: 100vh;
+        }
+
+        /* Caja Principal (Card) */
+        .box {
+            background: var(--color-card);
+            padding: 30px; /* Más espacio interior */
+            width: 100%; /* Ocupa todo el ancho disponible en móviles */
+            max-width: 420px; /* Límite para pantallas grandes */
+            margin: 20px 15px; /* Margen para evitar tocar los bordes del móvil */
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra más suave y profunda */
+            box-sizing: border-box; /* Asegura que el padding no añada ancho extra */
+            transition: transform 0.3s ease; /* Pequeña transición al cargar */
+        }
+
+        /* Encabezados */
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--color-primary);
+            font-size: 1.8em;
+            border-bottom: 2px solid var(--color-primary); /* Línea de separación formal */
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: var(--color-text);
+            font-size: 1.2em;
+        }
+
+        /* Inputs y Selects */
+        input, select {
+            width: 100%;
+            padding: 14px; /* Más padding para facilitar el toque en móvil */
+            margin: 10px 0 18px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            background-color: #f9f9f9;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--color-primary);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
+        }
+
+        /* Botones */
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s, opacity 0.3s;
+            text-transform: uppercase; /* Formaliza el texto del botón */
+        }
+
+        button:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--color-card);
+        }
+
+        .btn-success {
+            background: var(--color-secondary);
+            color: var(--color-card);
+        }
+
+        /* Elementos de Estado y Mensajes */
+        .hidden {
+            display: none !important; /* Uso de !important para asegurar ocultación */
+        }
+
+        a {
+            color: var(--color-primary);
+            cursor: pointer;
+            text-decoration: none; /* Quitamos el subrayado por defecto */
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 5px;
+            transition: color 0.3s;
+        }
+        
+        a:hover {
+            color: #0066cc;
+            text-decoration: underline; /* Lo añadimos al pasar el ratón */
+        }
+
+        .error {
+            color: var(--color-error);
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            padding: 5px;
+            border: 1px dashed var(--color-error);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* Listas (Consideraciones) */
+        ul {
+            padding-left: 20px;
+            margin-top: 0;
+            list-style-type: '👉 '; /* Viñeta más visual */
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        #mensaje, #loginMsg {
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        /* Ajustes Específicos para Móviles (Aunque .box ya es responsive, esto afina) */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 0; /* Menos padding en los bordes del cuerpo */
+            }
+            .box {
+                margin: 10px 10px;
+                padding: 20px;
+            }
+            h2 {
+                font-size: 1.6em;
+            }
+            input, select, button {
+                padding: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<!-- Pantalla de bienvenida -->
 <div class="box" id="welcomeBox">
-  <h2>Bienvenido(a)</h2>
-  <p>Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
-  <h3>Consideraciones:</h3>
-  <ul>
-    <li>Todo material facilitado debe regresar en las mismas condiciones.</li>
-    <li>Los estudiantes deben entregar su <b>TNE</b> o <b>Cédula de Identidad</b>.</li>
-    <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
-  </ul>
-  <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
-  <button class="btn-success" onclick="showRegister()">Registrarse</button>
+    <h2>Bienvenido(a) 🛠️</h2>
+    <p style="text-align:center;">Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
+    <h3>📝 Consideraciones Importantes:</h3>
+    <ul>
+        <li>Todo material facilitado debe **regresar en las mismas condiciones**.</li>
+        <li>Los estudiantes deben entregar su **TNE** o **Cédula de Identidad**.</li>
+        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
+    </ul>
+    <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+    <button class="btn-success" onclick="showRegister()">Registrarse</button>
 </div>
 
-<!-- Login -->
 <div class="box hidden" id="loginBox">
-  <h2>Iniciar Sesión</h2>
-  <input type="email" placeholder="Correo" id="loginEmail">
-  <input type="password" placeholder="Contraseña" id="loginPass">
-  <button class="btn-primary" onclick="login()">Ingresar</button>
-  <p id="loginMsg"></p>
-  <p><a onclick="showRegister()">Registrarme</a></p>
-  <p><a onclick="showWelcome()">Volver</a></p>
+    <h2>🔑 Iniciar Sesión</h2>
+    <input type="email" placeholder="📧 Correo" id="loginEmail">
+    <input type="password" placeholder="🔒 Contraseña" id="loginPass">
+    <button class="btn-primary" onclick="login()">Ingresar</button>
+    <p id="loginMsg"></p>
+    <p style="text-align:center;"><a onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</a></p>
+    <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
 </div>
 
-<!-- Registro -->
 <div class="box hidden" id="registerBox">
-  <h2>Registro</h2>
-  <input type="text" id="regNombre" placeholder="Nombre Completo">
-  <input type="text" id="regRut" placeholder="RUT (Ej: 12.345.678-5)">
-  <p id="rutError" class="error"></p>
+    <h2>📝 Registro de Usuario</h2>
+    <input type="text" id="regNombre" placeholder="👤 Nombre Completo">
+    <input type="text" id="regRut" placeholder="💳 RUT (Ej: 12.345.678-5)">
+    <p id="rutError" class="error"></p>
 
-  <select id="regCarrera">
-    <option value="">Seleccione una carrera</option>
-    <option>Ingeniería Eléctrica</option>
-    <option>Técnico de nivel superior en Electricidad Industrial</option>
-    <option>Ingeniería en Automatización y Robótica</option>
-    <option>Técnico de nivel superior en Automatización y Robótica</option>
-    <option>Ingeniería en Mecatrónica</option>
-    <option>Técnico de nivel superior en Mecatrónica</option>
-    <option>Área Mecánica</option>
-    <option>Otras Áreas</option>
-  </select>
+    <select id="regCarrera">
+        <option value="">🏫 Seleccione una carrera</option>
+        <option>Ingeniería Eléctrica</option>
+        <option>Técnico de nivel superior en Electricidad Industrial</option>
+        <option>Ingeniería en Automatización y Robótica</option>
+        <option>Técnico de nivel superior en Automatización y Robótica</option>
+        <option>Ingeniería en Mecatrónica</option>
+        <option>Técnico de nivel superior en Mecatrónica</option>
+        <option>Área Mecánica</option>
+        <option>Otras Áreas</option>
+    </select>
 
-  <input type="tel" id="regTelefono" placeholder="Teléfono (Ej: +56911111111)">
-  <input type="email" id="regEmail" placeholder="Correo">
-  <input type="password" id="regPass" placeholder="Contraseña">
+    <input type="tel" id="regTelefono" placeholder="📱 Teléfono (Ej: +56911111111)">
+    <input type="email" id="regEmail" placeholder="📧 Correo Electrónico">
+    <input type="password" id="regPass" placeholder="🔒 Contraseña">
 
-  <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
-  <p id="mensaje"></p>
-  <p><a onclick="showLogin()">Ya tengo cuenta</a></p>
-  <p><a onclick="showWelcome()">Volver</a></p>
+    <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+    <p id="mensaje"></p>
+    <p style="text-align:center;"><a onclick="showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
+    <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
 </div>
 
 <script>
@@ -83,24 +234,24 @@
 // CONFIGURAR SUPABASE
 // ----------------------------------------
 const supabaseClient = supabase.createClient(
-  "https://jwcgiuhdugjunndfpdjr.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
+    "https://jwcgiuhdugjunndfpdjr.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
 );
 
 // ----------------------------------------
 // REDIRECCIÓN DESPUÉS DE CONFIRMAR EMAIL
 // ----------------------------------------
 async function handleRedirect() {
-  const hash = window.location.hash;
-  if (hash.includes("access_token")) {
-    const params = new URLSearchParams(hash.slice(1));
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
+    const hash = window.location.hash;
+    if (hash.includes("access_token")) {
+        const params = new URLSearchParams(hash.slice(1));
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token");
 
-    await supabaseClient.auth.setSession({ access_token, refresh_token });
+        await supabaseClient.auth.setSession({ access_token, refresh_token });
 
-    window.location.href = "menu.html";
-  }
+        window.location.href = "menu.html";
+    }
 }
 handleRedirect();
 
@@ -108,123 +259,133 @@ handleRedirect();
 // NAVEGACIÓN
 // ----------------------------------------
 function hideAll() {
-  welcomeBox.classList.add("hidden");
-  loginBox.classList.add("hidden");
-  registerBox.classList.add("hidden");
+    welcomeBox.classList.add("hidden");
+    loginBox.classList.add("hidden");
+    registerBox.classList.add("hidden");
 }
 function showWelcome(){ hideAll(); welcomeBox.classList.remove("hidden"); }
 function showLogin(){ hideAll(); loginBox.classList.remove("hidden"); }
 function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
 
 // ----------------------------------------
-// VALIDACIÓN RUT
+// VALIDACIÓN RUT (Lógica sin tocar)
 // ----------------------------------------
 function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
 function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:'K'; }
 function validarRutCompleto(rutCompleto){
-  if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
-  const r = limpiarRut(rutCompleto);
-  if(!r.includes('-')) return {ok:false,msg:"El RUT debe contener guion."};
-  const [num,dv] = r.split('-');
-  if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
-  return {ok: dvT(parseInt(num,10)).toString() === dv.toUpperCase()};
+    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+    const r = limpiarRut(rutCompleto);
+    if(!r.includes('-')) return {ok:false,msg:"El RUT debe contener guion."};
+    const [num,dv] = r.split('-');
+    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
+    return {ok: dvT(parseInt(num,10)).toString() === dv.toUpperCase()};
 }
 
 // ----------------------------------------
-// FUNCIÓN REGISTRAR
+// FUNCIÓN REGISTRAR (Lógica sin tocar)
 // ----------------------------------------
 async function registrar() {
-  const nombre = regNombre.value.trim();
-  const rut = regRut.value.trim();
-  const carrera = regCarrera.value;
-  const telefono = regTelefono.value.trim();
-  const email = regEmail.value.trim();
-  const pass = regPass.value.trim();
+    const nombre = regNombre.value.trim();
+    const rut = regRut.value.trim();
+    const carrera = regCarrera.value;
+    const telefono = regTelefono.value.trim();
+    const email = regEmail.value.trim();
+    const pass = regPass.value.trim();
 
-  const mensaje = document.getElementById("mensaje");
-  mensaje.style.color = "red";
+    const mensaje = document.getElementById("mensaje");
+    mensaje.style.color = "red";
+    rutError.textContent = ""; // Limpiar error de RUT anterior
 
-  if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
-    mensaje.textContent = "⚠️ Complete todos los campos.";
-    return;
-  }
+    if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
+        mensaje.textContent = "⚠️ Complete todos los campos.";
+        mensaje.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  const rutVal = validarRutCompleto(rut);
-  if (!rutVal.ok) {
-    rutError.textContent = rutVal.msg;
-    return;
-  }
+    const rutVal = validarRutCompleto(rut);
+    if (!rutVal.ok) {
+        rutError.textContent = rutVal.msg;
+        return;
+    }
 
-  if (!/^\+569\d{8}$/.test(telefono)) {
-    mensaje.textContent = "⚠️ Teléfono inválido. Use +569XXXXXXXX";
-    return;
-  }
+    if (!/^\+569\d{8}$/.test(telefono)) {
+        mensaje.textContent = "⚠️ Teléfono inválido. Use +569XXXXXXXX";
+        mensaje.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  // 1. Crear usuario en AUTH
-  const { error: e1 } = await supabaseClient.auth.signUp({
-    email,
-    password: pass
-  });
+    // 1. Crear usuario en AUTH
+    const { error: e1 } = await supabaseClient.auth.signUp({
+        email,
+        password: pass
+    });
 
-  if (e1) {
-    mensaje.textContent = "❌ " + e1.message;
-    return;
-  }
+    if (e1) {
+        mensaje.textContent = "❌ " + e1.message;
+        mensaje.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  // 2. Guardar datos en tabla usuarios
-  const { error: e2 } = await supabaseClient.from("usuarios").insert([
-    { nombre, rut, carrera, telefono, email }
-  ]);
+    // 2. Guardar datos en tabla usuarios
+    const { error: e2 } = await supabaseClient.from("usuarios").insert([
+        { nombre, rut, carrera, telefono, email }
+    ]);
 
-  if (e2) {
-    mensaje.textContent = "❌ Error al guardar perfil: " + e2.message;
-    return;
-  }
+    if (e2) {
+        mensaje.textContent = "❌ Error al guardar perfil: " + e2.message;
+        mensaje.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  mensaje.style.color = "green";
-  mensaje.textContent = "✅ Registro exitoso. Revisa tu correo para confirmar.";
+    mensaje.style.color = "green";
+    mensaje.style.backgroundColor = "#ddffdd";
+    mensaje.textContent = "✅ Registro exitoso. Revisa tu correo para confirmar.";
 }
 
 // ----------------------------------------
-// FUNCIÓN LOGIN
+// FUNCIÓN LOGIN (Lógica sin tocar)
 // ----------------------------------------
 async function login() {
-  const email = loginEmail.value.trim();
-  const pass = loginPass.value.trim();
-  const msg = document.getElementById("loginMsg");
+    const email = loginEmail.value.trim();
+    const pass = loginPass.value.trim();
+    const msg = document.getElementById("loginMsg");
+    msg.style.backgroundColor = "transparent"; // Limpiar fondo
 
-  if (!email || !pass) {
-    msg.textContent = "⚠️ Complete todos los campos.";
-    msg.style.color = "red";
-    return;
-  }
+    if (!email || !pass) {
+        msg.textContent = "⚠️ Complete todos los campos.";
+        msg.style.color = "red";
+        msg.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password: pass
-  });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password: pass
+    });
 
-  if (error) {
-    msg.textContent = "❌ Correo o contraseña incorrectos.";
-    msg.style.color = "red";
-    return;
-  }
+    if (error) {
+        msg.textContent = "❌ Correo o contraseña incorrectos.";
+        msg.style.color = "red";
+        msg.style.backgroundColor = "#ffdddd";
+        return;
+    }
 
-  // Obtener perfil desde la tabla usuarios
-  const { data: perfil } = await supabaseClient
-    .from("usuarios")
-    .select("*")
-    .eq("email", email)
-    .single();
+    // Obtener perfil desde la tabla usuarios
+    const { data: perfil } = await supabaseClient
+        .from("usuarios")
+        .select("*")
+        .eq("email", email)
+        .single();
 
-  localStorage.setItem("currentUser", JSON.stringify(perfil));
+    localStorage.setItem("currentUser", JSON.stringify(perfil));
 
-  msg.textContent = "✅ Bienvenido, " + perfil.nombre;
-  msg.style.color = "green";
+    msg.textContent = "✅ Bienvenido, " + perfil.nombre;
+    msg.style.color = "green";
+    msg.style.backgroundColor = "#ddffdd";
 
-  setTimeout(() => {
-    window.location.href = "menu.html";
-  }, 1200);
+    setTimeout(() => {
+        window.location.href = "menu.html";
+    }, 1200);
 }
 
 showWelcome();
@@ -232,7 +393,6 @@ showWelcome();
 
 </body>
 </html>
-
 
 
 

@@ -226,8 +226,14 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Define los colores hexadecimales necesarios dentro de JS para evitar el error de 'var'
+const COLOR_PENDIENTE = '#dc3545'; // Valor de var(--color-danger)
+const COLOR_ENTREGADO = '#28a745'; // Valor de var(--color-success)
+
+
 // Función principal
 async function init() {
+// ... (resto de la lógica init) ...
     const { data: { session } } = await supabaseClient.auth.getSession();
 
     if (!session) {
@@ -269,6 +275,9 @@ async function cargarSolicitudes(email) {
             .eq('id_solicitud', solicitud.id);
 
         if (errorMat) continue;
+        
+        // Determina el color del estado antes de construir el HTML
+        const estadoColor = solicitud.estado === 'Pendiente' ? COLOR_PENDIENTE : COLOR_ENTREGADO;
 
         const box = document.createElement('div');
         box.classList.add('solicitud-box');
@@ -284,7 +293,7 @@ async function cargarSolicitudes(email) {
                 <tr><th>Docente</th><td>${solicitud.docente}</td></tr>
                 <tr><th>Asignatura</th><td>${solicitud.asignatura}</td></tr>
                 <tr><th>Fecha Solicitud</th><td>${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</td></tr>
-                <tr><th>Estado</th><td style="color: ${solicitud.estado === 'Pendiente' ? var(--color-danger) : var(--color-success)}; font-weight: bold;">${solicitud.estado}</td></tr>
+                <tr><th>Estado</th><td style="color: ${estadoColor}; font-weight: bold;">${solicitud.estado}</td></tr>
             </table>
             </div>
 
@@ -315,7 +324,7 @@ async function cargarSolicitudes(email) {
         `;
 
         container.appendChild(box);
-
+// ... (resto de la lógica del listener y la validación) ...
         const checkboxes = box.querySelectorAll('.chk');
         const mensaje = box.querySelector('.mensaje-error');
         const btn = box.querySelector('.btn-entregar');
@@ -327,12 +336,12 @@ async function cargarSolicitudes(email) {
                 mensaje.style.display = 'none';
                 btn.style.opacity = 1;
                 btn.style.cursor = 'pointer';
-                btn.style.backgroundColor = var(--color-success);
+                btn.style.backgroundColor = 'var(--color-success)';
             } else {
                 mensaje.style.display = 'block';
                 btn.style.opacity = 0.5;
                 btn.style.cursor = 'not-allowed';
-                btn.style.backgroundColor = var(--color-success); // Mantener el color base
+                btn.style.backgroundColor = 'var(--color-success)'; // Mantener el color base
             }
         }
 
@@ -366,7 +375,6 @@ async function cargarSolicitudes(email) {
 
 init();
 </script>
-
 </body>
 </html>
 

@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Panel de Visualización</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
     body {
@@ -19,138 +18,116 @@
 
     .card {
         background: white;
-        padding: 15px;
+        padding: 18px;
         margin-bottom: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+
+    .card strong {
+        color: #222;
     }
 
     .material {
         background: #eef2ff;
-        padding: 5px 10px;
+        padding: 6px 10px;
         border-radius: 5px;
-        margin: 3px 0;
+        margin: 4px 0;
+        font-size: 14px;
+    }
+
+    .comment-box {
+        margin-top: 15px;
     }
 
     textarea {
         width: 100%;
         padding: 8px;
-        border-radius: 5px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
         resize: vertical;
+        font-size: 14px;
     }
 
     button {
         background: #4f46e5;
         color: white;
         border: none;
-        padding: 8px 15px;
+        padding: 10px 16px;
         border-radius: 6px;
         cursor: pointer;
         margin-top: 8px;
+        font-weight: bold;
+    }
+
+    .button-disabled {
+        background: #a5a5a5;
+        cursor: not-allowed;
     }
 </style>
-</head>
 
+</head>
 <body>
 
 <h2>Últimas 5 Solicitudes</h2>
-<div id="solicitudes"></div>
+
+<div class="card">
+    <strong>ID Solicitud:</strong> 123<br>
+    <strong>Usuario:</strong> Juan Pérez<br>
+    <strong>Fecha:</strong> 20-11-2025 14:30<br><br>
+
+    <strong>Materiales:</strong><br>
+    <div class="material">Multímetro — 1</div>
+    <div class="material">Cables — 10</div>
+    <div class="material">Alicate — 1</div>
+</div>
+
+<div class="card">
+    <strong>ID Solicitud:</strong> 122<br>
+    <strong>Usuario:</strong> Ana Torres<br>
+    <strong>Fecha:</strong> 20-11-2025 13:10<br><br>
+
+    <strong>Materiales:</strong><br>
+    <div class="material">Taladro — 1</div>
+    <div class="material">Brocas — 5</div>
+</div>
+
+<div class="card">
+    <strong>ID Solicitud:</strong> 121<br>
+    <strong>Usuario:</strong> Carlos Soto<br>
+    <strong>Fecha:</strong> 20-11-2025 12:05<br><br>
+
+    <strong>Materiales:</strong><br>
+    <div class="material">Tester — 1</div>
+</div>
 
 <h2>Entregas Pendientes de Comentario</h2>
-<div id="entregas"></div>
 
-<script>
-const supabase = supabase.createClient("TU_URL", "TU_ANON_KEY");
+<div class="card">
+    <strong>ID Solicitud:</strong> 118<br>
+    <strong>Usuario:</strong> Juan Pérez<br>
+    <strong>Fecha:</strong> 19-11-2025 16:00<br><br>
 
-// Cargar últimas 5 solicitudes
-async function cargarSolicitudes() {
-    const { data: solicitudes } = await supabase
-        .from("solicitudes")
-        .select("*")
-        .order("id", { ascending: false })
-        .limit(5);
+    <strong>Comentario de Recepción:</strong>
+    <div class="comment-box">
+        <textarea placeholder="Escribe un comentario..."></textarea>
+        <button>Guardar Comentario</button>
+    </div>
+</div>
 
-    const cont = document.getElementById("solicitudes");
-    cont.innerHTML = "";
+<div class="card">
+    <strong>ID Solicitud:</strong> 117<br>
+    <strong>Usuario:</strong> Ana Torres<br>
+    <strong>Fecha:</strong> 19-11-2025 15:20<br><br>
 
-    for (const sol of solicitudes) {
-        // Buscar materiales de esta solicitud
-        const { data: materiales } = await supabase
-            .from("materiales_solicitud")
-            .select("*")
-            .eq("solicitud_id", sol.id);
-
-        let card = `
-        <div class="card">
-            <strong>ID Solicitud:</strong> ${sol.id}<br>
-            <strong>Usuario:</strong> ${sol.usuario}<br>
-            <strong>Fecha:</strong> ${new Date(sol.fecha).toLocaleString()}<br>
-            <strong>Materiales:</strong><br>
-        `;
-
-        materiales.forEach(m => {
-            card += `<div class="material">${m.material} — ${m.cantidad}</div>`;
-        });
-
-        card += `</div>`;
-        cont.innerHTML += card;
-    }
-}
-
-// Cargar entregas que no tienen comentario
-async function cargarEntregas() {
-    const { data: entregas } = await supabase
-        .from("solicitudes")
-        .select("*")
-        .eq("estado", "entregado")
-        .is("comentario_recepcion", null);
-
-    const cont = document.getElementById("entregas");
-    cont.innerHTML = "";
-
-    entregas.forEach(ent => {
-        cont.innerHTML += `
-        <div class="card">
-            <strong>ID Solicitud:</strong> ${ent.id}<br>
-            <strong>Usuario:</strong> ${ent.usuario}<br>
-            <strong>Fecha:</strong> ${new Date(ent.fecha).toLocaleString()}<br>
-
-            <strong>Comentario de Recepción:</strong><br>
-            <textarea id="comentario_${ent.id}" placeholder="Escribe un comentario..."></textarea>
-            <button onclick="guardarComentario(${ent.id})">Guardar Comentario</button>
-        </div>
-        `;
-    });
-}
-
-// Guardar comentario en la BD
-async function guardarComentario(id) {
-    let comentario = document.getElementById(`comentario_${id}`).value;
-
-    const { error } = await supabase
-        .from("solicitudes")
-        .update({ comentario_recepcion: comentario })
-        .eq("id", id);
-
-    if (!error) {
-        alert("Comentario guardado correctamente.");
-        cargarEntregas(); // actualizar la lista
-    } else {
-        alert("Error al guardar el comentario.");
-    }
-}
-
-// Ejecutar al cargar
-cargarSolicitudes();
-cargarEntregas();
-
-// Refrescar cada 20 segundos automáticamente
-setInterval(() => {
-    cargarSolicitudes();
-    cargarEntregas();
-}, 20000);
-</script>
+    <strong>Comentario de Recepción:</strong>
+    <div class="comment-box">
+        <textarea placeholder="Escribe un comentario..."></textarea>
+        <button>Guardar Comentario</button>
+    </div>
+</div>
 
 </body>
 </html>
+
 

@@ -3,49 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <title>Panel de Visualización</title>
-
 <style>
     body {
+        margin: 0;
+        padding: 0;
+        background: #eef1f5;
         font-family: Arial, sans-serif;
-        background: #f3f4f6;
-        padding: 20px;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        padding: 30px;
     }
 
     h2 {
-        margin-top: 40px;
+        margin: 0 0 15px;
         color: #333;
     }
 
-    .card {
+    .panel {
         background: white;
-        padding: 18px;
-        margin-bottom: 15px;
+        padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        height: calc(100vh - 80px);
+        overflow-y: auto;
+    }
+
+    .card {
+        background: #f7f9ff;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 5px solid #4f46e5;
+        border-radius: 8px;
     }
 
     .card strong {
-        color: #222;
+        color: #333;
     }
 
     .material {
-        background: #eef2ff;
-        padding: 6px 10px;
+        background: #e3e5ff;
+        padding: 5px 10px;
         border-radius: 5px;
-        margin: 4px 0;
-        font-size: 14px;
-    }
-
-    .comment-box {
-        margin-top: 15px;
+        margin-top: 5px;
+        display: inline-block;
     }
 
     textarea {
         width: 100%;
-        padding: 8px;
-        border-radius: 6px;
+        padding: 10px;
+        border-radius: 8px;
         border: 1px solid #ccc;
         resize: vertical;
+        margin-top: 10px;
         font-size: 14px;
     }
 
@@ -54,80 +67,78 @@
         color: white;
         border: none;
         padding: 10px 16px;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        margin-top: 8px;
+        margin-top: 10px;
         font-weight: bold;
     }
 
-    .button-disabled {
-        background: #a5a5a5;
-        cursor: not-allowed;
+    button:hover {
+        background: #4338ca;
     }
 </style>
-
 </head>
+
 <body>
 
-<h2>Últimas 5 Solicitudes</h2>
+<div class="container">
 
-<div class="card">
-    <strong>ID Solicitud:</strong> 123<br>
-    <strong>Usuario:</strong> Juan Pérez<br>
-    <strong>Fecha:</strong> 20-11-2025 14:30<br><br>
+    <!-- 🔵 PANEL IZQUIERDO: ÚLTIMAS 5 SOLICITUDES -->
+    <div class="panel">
+        <h2>Últimas 5 Solicitudes</h2>
 
-    <strong>Materiales:</strong><br>
-    <div class="material">Multímetro — 1</div>
-    <div class="material">Cables — 10</div>
-    <div class="material">Alicate — 1</div>
-</div>
+        <!-- Ejemplo de solicitud (esto luego será dinámico) -->
+        <div class="card">
+            <strong>ID Solicitud:</strong> 123<br>
+            <strong>Usuario:</strong> Juan Pérez<br>
+            <strong>Fecha:</strong> 20/11/2025 10:32<br>
+            <strong>Materiales:</strong><br>
 
-<div class="card">
-    <strong>ID Solicitud:</strong> 122<br>
-    <strong>Usuario:</strong> Ana Torres<br>
-    <strong>Fecha:</strong> 20-11-2025 13:10<br><br>
+            <div class="material">Tester — 1</div>
+            <div class="material">Multímetro — 2</div>
+        </div>
 
-    <strong>Materiales:</strong><br>
-    <div class="material">Taladro — 1</div>
-    <div class="material">Brocas — 5</div>
-</div>
+        <div class="card">
+            <strong>ID Solicitud:</strong> 122<br>
+            <strong>Usuario:</strong> Ana Soto<br>
+            <strong>Fecha:</strong> 20/11/2025 09:15<br>
+            <strong>Materiales:</strong><br>
 
-<div class="card">
-    <strong>ID Solicitud:</strong> 121<br>
-    <strong>Usuario:</strong> Carlos Soto<br>
-    <strong>Fecha:</strong> 20-11-2025 12:05<br><br>
+            <div class="material">Cables — 5</div>
+        </div>
 
-    <strong>Materiales:</strong><br>
-    <div class="material">Tester — 1</div>
-</div>
-
-<h2>Entregas Pendientes de Comentario</h2>
-
-<div class="card">
-    <strong>ID Solicitud:</strong> 118<br>
-    <strong>Usuario:</strong> Juan Pérez<br>
-    <strong>Fecha:</strong> 19-11-2025 16:00<br><br>
-
-    <strong>Comentario de Recepción:</strong>
-    <div class="comment-box">
-        <textarea placeholder="Escribe un comentario..."></textarea>
-        <button>Guardar Comentario</button>
+        <!-- puedes duplicar más tarjetas para visualizar -->
     </div>
-</div>
 
-<div class="card">
-    <strong>ID Solicitud:</strong> 117<br>
-    <strong>Usuario:</strong> Ana Torres<br>
-    <strong>Fecha:</strong> 19-11-2025 15:20<br><br>
+    <!-- 🟢 PANEL DERECHO: SOLICITUDES ENTREGADAS -->
+    <div class="panel">
+        <h2>Solicitudes Entregadas</h2>
 
-    <strong>Comentario de Recepción:</strong>
-    <div class="comment-box">
-        <textarea placeholder="Escribe un comentario..."></textarea>
-        <button>Guardar Comentario</button>
+        <!-- Ejemplo de entrega -->
+        <div class="card">
+            <strong>ID Solicitud:</strong> 119<br>
+            <strong>Usuario:</strong> Pedro Martínez<br>
+            <strong>Fecha:</strong> 19/11/2025 16:40<br>
+
+            <strong>Comentario de Recepción:</strong><br>
+            <textarea placeholder="Escribe un comentario aquí..."></textarea>
+            <button>Guardar Comentario</button>
+        </div>
+
+        <div class="card">
+            <strong>ID Solicitud:</strong> 118<br>
+            <strong>Usuario:</strong> Valentina Rojas<br>
+            <strong>Fecha:</strong> 19/11/2025 15:10<br>
+
+            <strong>Comentario de Recepción:</strong><br>
+            <textarea placeholder="Escribe un comentario aquí..."></textarea>
+            <button>Guardar Comentario</button>
+        </div>
+
     </div>
+
 </div>
 
 </body>
 </html>
-
 

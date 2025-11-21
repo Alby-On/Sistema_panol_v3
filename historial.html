@@ -400,45 +400,32 @@ function verMateriales(materiales) {
 function cerrarModal() {
     document.getElementById("modal-materiales").style.display = "none";
 }
-
-/* ------------------ REPETIR SOLICITUD (LÓGICA INTACTA) ------------------ */
+/* ------------------ REPETIR SOLICITUD → ENVIAR A solicitar.html ------------------ */
 async function repetirSolicitud(id_solicitud) {
+
+    // 1. Cargar materiales de la solicitud original
     const { data: materiales } = await supabaseClient
         .from('materiales_solicitados')
         .select('*')
         .eq('id_solicitud', id_solicitud);
-    
-    // Suponiendo que necesitas obtener los datos de la solicitud original para docente y asignatura
+
+    // 2. Obtener docente y asignatura de esa solicitud
     const { data: solicitudOriginal } = await supabaseClient
         .from('solicitudes')
         .select('docente, asignatura')
         .eq('id', id_solicitud)
         .single();
-    
-    // Modificamos el cuerpo del insert para usar los datos originales, ya que el original usaba "Repetida"
-    const { data: nueva } = await supabaseClient
-        .from('solicitudes')
-        .insert([{
-            email: usuario,
-            docente: solicitudOriginal ? solicitudOriginal.docente : "Repetida",
-            asignatura: solicitudOriginal ? solicitudOriginal.asignatura : "Repetida",
-            fecha_solicitud: new Date().toISOString(),
-            estado: 'Pendiente'
-        }])
-        .select();
 
-    const nuevaId = nueva[0].id;
+    // 3. Convertimos los valores para enviarlos como parámetros
+    const params = new URLSearchParams({
+        docente: solicitudOriginal.docente,
+        asignatura: solicitudOriginal.asignatura,
+        materiales: JSON.stringify(materiales.map(m => m.material)),
+        cantidades: JSON.stringify(materiales.map(m => m.cantidad))
+    });
 
-    await supabaseClient
-        .from('materiales_solicitados')
-        .insert(materiales.map(m => ({
-            id_solicitud: nuevaId,
-            material: m.material,
-            cantidad: m.cantidad
-        })));
-
-    alert("✔ Solicitud repetida y enviada como Pendiente.");
-    cargarHistorial();
+    // 4. Redirigir hacia solicitar.html con los datos listos para rellenar
+    window.location.href = `solicitar.html?${params.toString()}`;
 }
 
 /* ------------------ FILTRO FECHAS (LÓGICA INTACTA) ------------------ */

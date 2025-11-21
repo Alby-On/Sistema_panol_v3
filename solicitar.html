@@ -326,6 +326,50 @@ function finishError(msg) {
     btn.disabled = false;
     btn.innerText = "Enviar Solicitud";
 }
+
+/* -------------------------------------------------------------------
+   CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
+------------------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const docente = params.get("docente");
+    const asignatura = params.get("asignatura");
+    const materiales = JSON.parse(params.get("materiales") || "[]");
+    const cantidades = JSON.parse(params.get("cantidades") || "[]");
+
+    // 1️⃣ Rellenar docente automáticamente
+    if (docente) {
+        const selectDocente = document.getElementById("docente");
+        selectDocente.value = docente;
+    }
+
+    // 2️⃣ Rellenar asignatura automáticamente
+    if (asignatura) {
+        document.getElementById("asignatura").value = asignatura;
+    }
+
+    // 3️⃣ Rellenar materiales
+    if (materiales.length > 0) {
+
+        // Limpia las filas actuales
+        const tbody = document.getElementById("tbody");
+        tbody.innerHTML = "";
+
+        // Crea filas según los datos enviados
+        for (let i = 0; i < materiales.length; i++) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><input type="text" value="${materiales[i]}" /></td>
+                <td><input type="number" min="1" value="${cantidades[i] || 1}" /></td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+});
+
 </script>
 
 </body>

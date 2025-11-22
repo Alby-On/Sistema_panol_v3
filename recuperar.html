@@ -71,7 +71,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function enviarCorreo() {
-    const email = document.getElementById("email").value;
+    const email = document.getElementById("email").value.trim();
     const msg = document.getElementById("msg");
 
     if (!email) {
@@ -80,14 +80,14 @@ async function enviarCorreo() {
         return;
     }
 
-    // 🔥 Método compatible 100% con CDN + Supabase v2
+    // 🔥 Método correcto para enviar enlace de reset password
     const { data, error } = await supabaseClient.auth.signInWithOtp({
         email: email,
-       options: {
-    emailRedirectTo: "https://alby-on.github.io/Sistema_panol_v3/reset.html",
-    shouldCreateUser: false,
-    flowType: "recovery"   // 🔥 NECESARIO
-}
+        options: {
+            emailRedirectTo: "https://alby-on.github.io/Sistema_panol_v3/reset.html",
+            shouldCreateUser: false,
+            flowType: "recovery"   // 🔥 Clave para reset password
+        }
     });
 
     if (error) {
@@ -103,4 +103,5 @@ async function enviarCorreo() {
 
 </body>
 </html>
+
 

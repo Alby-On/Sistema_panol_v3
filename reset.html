@@ -1,168 +1,137 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Restablecer Contraseña</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restablecer Contraseña</title>
 
-    <style>
-        :root {
-            --color-primary: #004d99;
-            --color-secondary: #28a745;
-            --color-background: #eef1f5;
-            --color-card: #ffffff;
-            --color-text: #333333;
-            --color-border: #cccccc;
-            --color-error: #dc3545;
-        }
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--color-background);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--color-text);
-        }
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
 
-        .box {
-            background: var(--color-card);
-            padding: 25px;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-        }
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+      width: 320px;
+      text-align: center;
+    }
 
-        h2 {
-            text-align: center;
-            color: var(--color-primary);
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
 
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 10px 0 18px;
-            border-radius: 6px;
-            border: 1px solid var(--color-border);
-            font-size: 1em;
-            background-color: #f9f9f9;
-        }
+    button {
+      width: 100%;
+      margin-top: 15px;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            background: var(--color-primary);
-            color: white;
-        }
+    button:hover {
+      background: #0056b3;
+    }
 
-        button:hover {
-            opacity: 0.9;
-        }
-
-        #msg {
-            margin-top: 15px;
-            font-weight: bold;
-            text-align: center;
-            padding: 8px;
-            border-radius: 5px;
-        }
-
-        a {
-            display: block;
-            text-align: center;
-            margin-top: 15px;
-            text-decoration: none;
-            color: var(--color-primary);
-        }
-    </style>
+    #msg {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
 </head>
+
 <body>
-
-<div class="box">
+  <div class="container">
     <h2>Restablecer Contraseña</h2>
+    <p>Ingresa tu nueva contraseña:</p>
 
-    <div id="formSection">
-        <input type="password" id="newPass" placeholder="🔒 Nueva contraseña">
-        <button onclick="resetPass()">Guardar nueva contraseña</button>
-    </div>
-
-    <div id="msg"></div>
-
-    <a href="index.html">Volver al inicio</a>
-</div>
+    <input type="password" id="nuevaPass" placeholder="Nueva contraseña" />
+    <button onclick="cambiarPassword()">Actualizar Contraseña</button>
+    <p id="msg"></p>
+  </div>
 
 <script>
-// ------------------------------
-// SUPABASE CONFIG
-// ------------------------------
-const supabaseClient = supabase.createClient(
-    "https://jwcgiuhdugjunndfpdjr.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
-);
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-// ------------------------------
-// VALIDAR QUE EL ENLACE ES VÁLIDO
-// ------------------------------
-async function checkRecovery() {
-    const hash = window.location.hash;
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    if (!hash.includes("type=recovery")) {
-        document.getElementById("formSection").innerHTML =
-            "<p style='text-align:center;color:red;'>El enlace no es válido.</p>";
-        return;
-    }
+// ========================================
+// Capturar tokens del magic link
+// ========================================
+async function init() {
+  const hash = window.location.hash;
+  const msg = document.getElementById("msg");
+
+  if (!hash) {
+    msg.textContent = "No se detectó enlace válido. Abre el link enviado a tu correo.";
+    msg.style.color = "red";
+    return;
+  }
+
+  const params = new URLSearchParams(hash.slice(1));
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+
+  if (!access_token || !refresh_token) {
+    msg.textContent = "El enlace es inválido o expiró.";
+    msg.style.color = "red";
+    return;
+  }
+
+  // Establecer sesión temporal con el magic link
+  const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+  if (error) {
+    msg.textContent = "Error al iniciar sesión desde el enlace.";
+    msg.style.color = "red";
+    return;
+  }
 }
-checkRecovery();
 
-// ------------------------------
-// RESTABLECER CONTRASEÑA
-// ------------------------------
-async function resetPass() {
-    const newPassword = document.getElementById("newPass").value.trim();
-    const msg = document.getElementById("msg");
+init();
 
-    if (!newPassword) {
-        msg.textContent = "⚠️ Ingrese una nueva contraseña.";
-        msg.style.color = "red";
-        msg.style.background = "#ffdddd";
-        return;
-    }
+// ========================================
+// Cambiar contraseña
+// ========================================
+async function cambiarPassword() {
+  const nuevaPass = document.getElementById("nuevaPass").value;
+  const msg = document.getElementById("msg");
 
-    // Actualizar contraseña usando el token del enlace
-    const { error } = await supabaseClient.auth.updateUser({
-        password: newPassword
-    });
+  if (!nuevaPass) {
+    msg.textContent = "Ingresa una nueva contraseña.";
+    msg.style.color = "red";
+    return;
+  }
 
-    if (error) {
-        msg.textContent = "❌ Error: " + error.message;
-        msg.style.color = "red";
-        msg.style.background = "#ffdddd";
-        return;
-    }
+  const { error } = await supabase.auth.updateUser({ password: nuevaPass });
+  if (error) {
+    msg.textContent = "Error al actualizar contraseña: " + error.message;
+    msg.style.color = "red";
+    return;
+  }
 
-    msg.textContent = "✅ Contraseña actualizada correctamente.";
-    msg.style.color = "green";
-    msg.style.background = "#ddffdd";
-
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 1500);
+  msg.textContent = "✅ Contraseña actualizada correctamente.";
+  msg.style.color = "green";
 }
 </script>
-
 </body>
 </html>

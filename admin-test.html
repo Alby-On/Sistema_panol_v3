@@ -90,7 +90,8 @@
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ⭐ AQUÍ ESTÁ LA CORRECCIÓN
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // solicitudes entregadas ya gestionadas (ocultarlas)
 let ocultarEntregados = new Set();
@@ -99,7 +100,7 @@ let ocultarEntregados = new Set();
 //  CARGA DATOS
 // **********************
 async function cargarDatos() {
-    const { data, error } = await supabase
+    const { data, error } = await client
         .from("solicitudes")
         .select("*")
         .order("id", { ascending: false });
@@ -172,7 +173,7 @@ async function guardarComentario(id) {
     let texto = document.getElementById("coment_" + id).value.trim();
     if (texto === "") texto = "Sin comentario";
 
-    await supabase
+    await client
         .from("solicitudes")
         .update({ comentario_entrega: texto })
         .eq("id", id);
@@ -185,7 +186,7 @@ async function guardarComentario(id) {
 //  BORRAR SIN COMENTARIO
 // **********************
 async function borrarVisual(id) {
-    await supabase
+    await client
         .from("solicitudes")
         .update({ comentario_entrega: "Sin comentario" })
         .eq("id", id);
@@ -201,7 +202,6 @@ setInterval(cargarDatos, 10000);
 
 // PRIMERA CARGA
 cargarDatos();
-
 </script>
 
 </body>

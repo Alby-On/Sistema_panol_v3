@@ -1,208 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Panel de Solicitudes</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Entregas</title>
 
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        background: #f4f4f4;
-    }
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #f3f3f3;
+        }
 
-    h2 {
-        margin-top: 0;
-    }
+        .solicitud-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-    .contenedor {
-        display: flex;
-        gap: 20px;
-    }
+        textarea {
+            width: 100%;
+            height: 70px;
+            margin-top: 10px;
+            border-radius: 6px;
+            padding: 8px;
+        }
 
-    .columna {
-        flex: 1;
-        background: white;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-        max-height: 90vh;
-        overflow-y: auto;
-    }
+        button {
+            margin-top: 10px;
+            margin-right: 10px;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-    .card {
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 12px;
-        border-radius: 6px;
-        background: #fafafa;
-    }
+        .guardar-btn {
+            background: #4caf50;
+            color: white;
+        }
 
-    .card input, .card textarea {
-        width: 100%;
-        padding: 6px;
-        margin-top: 5px;
-    }
+        .borrar-btn {
+            background: #e53935;
+            color: white;
+        }
+    </style>
 
-    .boton {
-        margin-top: 8px;
-        padding: 8px 12px;
-        cursor: pointer;
-        border: none;
-        border-radius: 5px;
-        background: #007bff;
-        color: white;
-    }
-
-    .boton-borrar {
-        background: #dc3545;
-        margin-left: 5px;
-    }
-</style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
 
-<h1>Panel de Solicitudes</h1>
+    <h2>Solicitudes Entregadas Pendientes de Comentario</h2>
 
-<div class="contenedor">
+    <div id="solicitudes-container">Cargando...</div>
 
-    <!-- 🔵 COLUMNA IZQUIERDA: PENDIENTES -->
-    <div class="columna">
-        <h2>Pendientes</h2>
-        <div id="pendientes"></div>
-    </div>
+    <script>
+        // =============================
+        // CONFIGURAR SUPABASE
+        // =============================
 
-    <!-- 🟢 COLUMNA DERECHA: ENTREGADAS -->
-    <div class="columna">
-        <h2>Entregadas</h2>
-        <div id="entregadas"></div>
-    </div>
+        const supabase = window.supabase.createClient(
+            "https://TU_URL.supabase.co",
+            "TU_KEY"
+        );
 
-</div>
+        const contenedor = document.getElementById("solicitudes-container");
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        // =============================
+        // CARGAR SOLICITUDES
+        // =============================
 
-<script>
-// **********************
-//  CONFIG SUPABASE
-// **********************
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+        async function cargarSolicitudes() {
 
-// ⭐ AQUÍ ESTÁ LA CORRECCIÓN
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            contenedor.innerHTML = "Cargando...";
 
-// solicitudes entregadas ya gestionadas (ocultarlas)
-let ocultarEntregados = new Set();
+            // 1. Trae solicitudes ENTREGADAS con comentario vacío o null
+            const { data, error } = await supabase
+                .from("solicitudes")
+                .select("*")
+                .eq("estado", "Entregado")
+                .or("comentario_entrega.is.null,comentario_entrega.eq.")
+                .order("id", { ascending: false });
 
-// **********************
-//  CARGA DATOS
-// **********************
-async function cargarDatos() {
-    const { data, error } = await client
-        .from("solicitudes")
-        .select("*")
-        .order("id", { ascending: false });
+            if (error) {
+                contenedor.innerHTML = "Error al cargar solicitudes.";
+                console.error(error);
+                return;
+            }
 
-    if (error) {
-        console.error(error);
-        return;
-    }
+            // 2. Filtro extra por seguridad
+            const pendientes = data.filter(s =>
+                !s.comentario_entrega ||
+                s.comentario_entrega.trim() === ""
+            );
 
-    renderPendientes(data);
-    renderEntregadas(data);
-}
+            if (pendientes.length === 0) {
+                contenedor.innerHTML = "<p>No hay solicitudes pendientes.</p>";
+                return;
+            }
 
-// **********************
-//  PENDIENTES
-// **********************
-function renderPendientes(lista) {
-    const cont = document.getElementById("pendientes");
-    cont.innerHTML = "";
+            // 3. Render
+            contenedor.innerHTML = "";
 
-    const pendientes = lista.filter(s => s.estado === "Pendiente");
+            pendientes.forEach(s => {
+                const card = document.createElement("div");
+                card.classList.add("solicitud-card");
 
-    pendientes.forEach(s => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-            <b>ID:</b> ${s.id}<br>
-            <b>Usuario:</b> ${s.usuario || "N/A"}<br>
-            <b>Asignatura:</b> ${s.asignatura || "N/A"}<br>
-            <b>Materiales:</b> ${s.materiales || "N/A"}<br>
-        `;
-        cont.appendChild(div);
-    });
-}
+                card.innerHTML = `
+                    <p><strong>ID:</strong> ${s.id}</p>
+                    <p><strong>Usuario:</strong> ${s.usuario}</p>
+                    <p><strong>Asignatura:</strong> ${s.asignatura ?? "(No definida)"}</p>
+                    <p><strong>Materiales:</strong> ${s.materiales}</p>
+                    <textarea placeholder="Comentario de entrega"></textarea>
 
-// **********************
-//  ENTREGADAS
-// **********************
-function renderEntregadas(lista) {
-    const cont = document.getElementById("entregadas");
-    cont.innerHTML = "";
+                    <button class="guardar-btn" data-id="${s.id}">Guardar</button>
+                    <button class="borrar-btn" data-id="${s.id}">Borrar</button>
+                `;
 
-    const entregadas = lista.filter(s => 
-        s.estado === "Entregado" && !ocultarEntregados.has(s.id)
-    );
+                contenedor.appendChild(card);
+            });
+        }
 
-    entregadas.forEach(s => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-            <b>ID:</b> ${s.id}<br>
-            <b>Usuario:</b> ${s.usuario || "N/A"}<br>
-            <b>Asignatura:</b> ${s.asignatura || "N/A"}<br>
-            <b>Materiales:</b> ${s.materiales || "N/A"}<br><br>
+        cargarSolicitudes();
 
-            <label><b>Comentario entrega:</b></label>
-            <textarea id="coment_${s.id}" placeholder="Opcional..."></textarea>
 
-            <button class="boton" onclick="guardarComentario(${s.id})">Guardar</button>
-            <button class="boton boton-borrar" onclick="borrarVisual(${s.id})">Borrar</button>
-        `;
-        cont.appendChild(div);
-    });
-}
+        // =============================
+        // GUARDAR COMENTARIO
+        // =============================
 
-// **********************
-//  GUARDAR COMENTARIO
-// **********************
-async function guardarComentario(id) {
-    let texto = document.getElementById("coment_" + id).value.trim();
-    if (texto === "") texto = "Sin comentario";
+        document.addEventListener("click", async (e) => {
 
-    await client
-        .from("solicitudes")
-        .update({ comentario_entrega: texto })
-        .eq("id", id);
+            // BOTÓN GUARDAR
+            if (e.target.classList.contains("guardar-btn")) {
+                const id = e.target.dataset.id;
+                const comentario = e.target.previousElementSibling.value.trim();
 
-    ocultarEntregados.add(id);
-    cargarDatos();
-}
+                await supabase
+                    .from("solicitudes")
+                    .update({
+                        comentario_entrega: comentario !== "" ? comentario : "Sin comentarios"
+                    })
+                    .eq("id", id);
 
-// **********************
-//  BORRAR SIN COMENTARIO
-// **********************
-async function borrarVisual(id) {
-    await client
-        .from("solicitudes")
-        .update({ comentario_entrega: "Sin comentario" })
-        .eq("id", id);
+                cargarSolicitudes(); // desaparece de la lista
+            }
 
-    ocultarEntregados.add(id);
-    cargarDatos();
-}
+            // BOTÓN BORRAR (equivale a Sin comentarios)
+            if (e.target.classList.contains("borrar-btn")) {
+                const id = e.target.dataset.id;
 
-// **********************
-//  AUTO-REFRESH CADA 10s
-// **********************
-setInterval(cargarDatos, 10000);
+                await supabase
+                    .from("solicitudes")
+                    .update({
+                        comentario_entrega: "Sin comentarios"
+                    })
+                    .eq("id", id);
 
-// PRIMERA CARGA
-cargarDatos();
-</script>
+                cargarSolicitudes(); // refresca lista
+            }
+        });
+    </script>
 
 </body>
 </html>

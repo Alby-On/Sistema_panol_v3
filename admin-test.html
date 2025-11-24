@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- ==========================
-     CREAR CLIENTE SUPABASE (DEBE IR DESPUÉS)
+     CREAR CLIENTE SUPABASE
 =========================== -->
 <script>
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
@@ -75,7 +75,8 @@ async function getSolicitudesEntregadas() {
             asignatura,
             fecha_solicitud,
             fecha_entrega,
-            estado
+            estado,
+            comentario_entrega
         `)
         .eq("estado", "Entregado")
         .or('comentario_entrega.is.null,comentario_entrega.eq.""')
@@ -86,6 +87,24 @@ async function getSolicitudesEntregadas() {
         return [];
     }
     return data;
+}
+
+/* -------------------------
+   ACTUALIZAR COMENTARIO EN BASE
+---------------------------- */
+async function actualizarComentario(id, comentario) {
+    const { data, error } = await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: comentario })
+        .eq("id", id);
+
+    if (error) {
+        console.error("Error actualizando comentario:", error);
+        alert("Error al guardar comentario");
+    } else {
+        alert("Comentario guardado correctamente");
+        cargarPanelSolicitudes(); // refresca la lista para ocultar la solicitud
+    }
 }
 
 /* -------------------------
@@ -127,7 +146,7 @@ async function cargarPanelSolicitudes() {
         `;
     });
 
-    /* ---- MOSTRAR ENTREGADAS CON CUADRO DE TEXTO Y 2 BOTONES ---- */
+    /* ---- MOSTRAR ENTREGADAS ---- */
     entregadas.forEach(s => {
         colEnt.innerHTML += `
             <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
@@ -137,16 +156,29 @@ async function cargarPanelSolicitudes() {
                 <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br>
                 <b>Fecha entrega:</b> ${s.fecha_entrega}<br><br>
 
-                <!-- CUADRO DE TEXTO PARA COMENTARIO -->
                 <textarea id="comentario-${s.id}" placeholder="Escribe un comentario..." style="width:100%; padding:5px; margin-bottom:5px;"></textarea>
                 
-                <!-- BOTONES -->
                 <div style="display:flex; gap:5px;">
                     <button id="btnEnviarComentario-${s.id}" style="padding:5px 10px;">Enviar comentario</button>
                     <button id="btnSinComentario-${s.id}" style="padding:5px 10px;">Sin comentarios</button>
                 </div>
             </div>
         `;
+
+        // Listener para "Enviar comentario"
+        document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", () => {
+            const texto = document.getElementById(`comentario-${s.id}`).value.trim();
+            if (texto === "") {
+                alert("El comentario está vacío");
+                return;
+            }
+            actualizarComentario(s.id, texto);
+        });
+
+        // Listener para "Sin comentarios"
+        document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", () => {
+            actualizarComentario(s.id, "Sin comentario");
+        });
     });
 }
 
@@ -155,4 +187,5 @@ async function cargarPanelSolicitudes() {
 ---------------------------- */
 document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
 </script>
+
 

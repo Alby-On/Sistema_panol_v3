@@ -146,7 +146,7 @@ async function cargarPanelSolicitudes() {
         `;
     });
 
-    /* ---- MOSTRAR ENTREGADAS ---- */
+    /* ---- MOSTRAR ENTREGADAS CON TEXTAREA Y BOTONES ---- */
     entregadas.forEach(s => {
         colEnt.innerHTML += `
             <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
@@ -166,18 +166,18 @@ async function cargarPanelSolicitudes() {
         `;
 
         // Listener para "Enviar comentario"
-        document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", () => {
+        document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
             const texto = document.getElementById(`comentario-${s.id}`).value.trim();
             if (texto === "") {
                 alert("El comentario está vacío");
                 return;
             }
-            actualizarComentario(s.id, texto);
+            await actualizarComentario(s.id, texto);
         });
 
         // Listener para "Sin comentarios"
-        document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", () => {
-            actualizarComentario(s.id, "Sin comentario");
+        document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
+            await actualizarComentario(s.id, "Sin comentario");
         });
     });
 }

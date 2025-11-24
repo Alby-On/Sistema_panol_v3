@@ -11,7 +11,6 @@
             padding: 20px;
             background: #f3f3f3;
         }
-
         .solicitud-card {
             background: white;
             padding: 15px;
@@ -19,7 +18,6 @@
             margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
         textarea {
             width: 100%;
             height: 70px;
@@ -27,7 +25,6 @@
             border-radius: 6px;
             padding: 8px;
         }
-
         button {
             margin-top: 10px;
             margin-right: 10px;
@@ -37,18 +34,17 @@
             cursor: pointer;
             font-weight: bold;
         }
-
         .guardar-btn {
             background: #4caf50;
             color: white;
         }
-
         .borrar-btn {
             background: #e53935;
             color: white;
         }
     </style>
 
+    <!-- Librería correcta Supabase v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -60,26 +56,26 @@
 
     <script>
         // =============================
-        // CONFIGURAR SUPABASE
+        // INICIALIZAR SUPABASE CORRECTAMENTE
         // =============================
+        const { createClient } = supabase;
 
-   const supabaseClient = supabase.createClient(
-    "https://jwcgiuhdugjunndfpdjr.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
-);
+        const client = createClient(
+            "https://jwcgiuhdugjunndfpdjr.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
+        );
 
         const contenedor = document.getElementById("solicitudes-container");
 
         // =============================
         // CARGAR SOLICITUDES
         // =============================
-
         async function cargarSolicitudes() {
 
             contenedor.innerHTML = "Cargando...";
 
-            // 1. Trae solicitudes ENTREGADAS con comentario vacío o null
-            const { data, error } = await supabase
+            // Traer solicitudes entregadas sin comentario
+            const { data, error } = await client
                 .from("solicitudes")
                 .select("*")
                 .eq("estado", "Entregado")
@@ -92,10 +88,8 @@
                 return;
             }
 
-            // 2. Filtro extra por seguridad
             const pendientes = data.filter(s =>
-                !s.comentario_entrega ||
-                s.comentario_entrega.trim() === ""
+                !s.comentario_entrega || s.comentario_entrega.trim() === ""
             );
 
             if (pendientes.length === 0) {
@@ -103,7 +97,6 @@
                 return;
             }
 
-            // 3. Render
             contenedor.innerHTML = "";
 
             pendientes.forEach(s => {
@@ -115,6 +108,7 @@
                     <p><strong>Usuario:</strong> ${s.usuario}</p>
                     <p><strong>Asignatura:</strong> ${s.asignatura ?? "(No definida)"}</p>
                     <p><strong>Materiales:</strong> ${s.materiales}</p>
+
                     <textarea placeholder="Comentario de entrega"></textarea>
 
                     <button class="guardar-btn" data-id="${s.id}">Guardar</button>
@@ -127,44 +121,43 @@
 
         cargarSolicitudes();
 
-
         // =============================
-        // GUARDAR COMENTARIO
+        // EVENTOS: GUARDAR / BORRAR
         // =============================
-
         document.addEventListener("click", async (e) => {
 
-            // BOTÓN GUARDAR
+            // GUARDAR
             if (e.target.classList.contains("guardar-btn")) {
                 const id = e.target.dataset.id;
                 const comentario = e.target.previousElementSibling.value.trim();
 
-                await supabase
+                await client
                     .from("solicitudes")
                     .update({
                         comentario_entrega: comentario !== "" ? comentario : "Sin comentarios"
                     })
                     .eq("id", id);
 
-                cargarSolicitudes(); // desaparece de la lista
+                cargarSolicitudes();
             }
 
-            // BOTÓN BORRAR (equivale a Sin comentarios)
+            // BORRAR (Sin comentarios)
             if (e.target.classList.contains("borrar-btn")) {
                 const id = e.target.dataset.id;
 
-                await supabase
+                await client
                     .from("solicitudes")
                     .update({
                         comentario_entrega: "Sin comentarios"
                     })
                     .eq("id", id);
 
-                cargarSolicitudes(); // refresca lista
+                cargarSolicitudes();
             }
         });
     </script>
 
 </body>
 </html>
+
 

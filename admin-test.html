@@ -1,3 +1,19 @@
+<!-- ==========================
+     CONEXIÓN A SUPABASE
+=========================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+
+
+<!-- ==========================
+     ESTRUCTURA DE 2 COLUMNAS
+=========================== -->
 <div style="display:flex; gap:20px; padding:20px;">
 
     <!-- COLUMNA IZQUIERDA — PENDIENTES -->
@@ -13,6 +29,7 @@
     </div>
 
 </div>
+
 
 
 <script>
@@ -48,7 +65,7 @@ async function getSolicitudesPendientes() {
 
 /* -------------------------
    CARGAR SOLICITUDES ENTREGADAS
-   (estado = Entregado AND comentario_entrega NULL o "")
+   condición: Entregado + comentario_entrega NULL o ""
 ---------------------------- */
 async function getSolicitudesEntregadas() {
     const { data, error } = await supabase
@@ -76,7 +93,7 @@ async function getSolicitudesEntregadas() {
 
 
 /* -------------------------
-   RENDERIZAR TODO EN LA PÁGINA
+   RENDERIZAR COLUMNAS
 ---------------------------- */
 async function cargarPanelSolicitudes() {
     const colPend = document.getElementById("colPendientes");
@@ -107,6 +124,7 @@ async function cargarPanelSolicitudes() {
                 <b>Docente:</b> ${s.docente}<br>
                 <b>Asignatura:</b> ${s.asignatura}<br>
                 <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br><br>
+
                 <b>Materiales:</b>
                 <ul>${matHTML}</ul>
             </div>
@@ -128,10 +146,10 @@ async function cargarPanelSolicitudes() {
 }
 
 
+
 /* -------------------------
    EJECUTAR AL CARGAR PÁGINA
 ---------------------------- */
 document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
 </script>
-
 

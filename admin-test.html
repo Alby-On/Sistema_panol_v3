@@ -66,41 +66,39 @@
         color: var(--color-card);
         text-align: center;
     }
-    #tabla tbody tr:nth-child(even) {
+    #tablaRecientes tbody tr:nth-child(even),
+    #tablaEntregadas tbody tr:nth-child(even) {
         background-color: #f8f8f8;
     }
     textarea {
-        width: 90%;
+        width: 80%;
         min-height: 40px;
         padding: 5px;
         resize: vertical;
         margin-bottom: 5px;
         font-size: 0.9em;
     }
-    .btnComentario {
+    .btnComentario, .btnBorrar {
         padding: 6px 10px;
-        background-color: var(--color-info);
         color: white;
         border: none;
         border-radius: 5px;
         cursor: pointer;
         font-size: 0.9em;
+        margin-left: 5px;
     }
-    .btnComentario:hover {
-        background-color: #138496;
+    .btnComentario {
+        background-color: var(--color-info);
     }
+    .btnComentario:hover { background-color: #138496; }
+    .btnBorrar {
+        background-color: var(--color-danger);
+    }
+    .btnBorrar:hover { background-color: #c82333; }
     @media(max-width: 600px) {
-        .box {
-            margin: 10px;
-            padding: 15px;
-        }
-        th, td {
-            font-size: 0.85em;
-            padding: 6px;
-        }
-        textarea {
-            width: 100%;
-        }
+        .box { margin: 10px; padding: 15px; }
+        th, td { font-size: 0.85em; padding: 6px; }
+        textarea { width: 100%; }
     }
 </style>
 </head>
@@ -108,7 +106,7 @@
 <div class="box">
     <h2>Panel de Solicitudes</h2>
 
-    <h3>Solicitudes Recientes</h3>
+    <h3>Solicitudes Recientes (Pendientes)</h3>
     <table id="tablaRecientes">
         <thead>
             <tr>
@@ -118,9 +116,7 @@
                 <th>Estado</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Se llenará dinámicamente -->
-        </tbody>
+        <tbody></tbody>
     </table>
 
     <h3>Solicitudes Entregadas</h3>
@@ -133,9 +129,7 @@
                 <th>Comentario (Opcional)</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Se llenará dinámicamente -->
-        </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
@@ -145,14 +139,14 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Mock usuario, puedes reemplazarlo con tu localStorage
+// Mock usuario, reemplazar con tu localStorage si aplica
 const user = { email: "usuario@ejemplo.com" };
 
-// Función para renderizar solicitudes recientes
+// Renderizar solicitudes recientes (Pendientes)
 function renderRecientes(solicitudes) {
     const tbody = document.querySelector("#tablaRecientes tbody");
     tbody.innerHTML = "";
-    solicitudes.slice(0,10).forEach(s => {
+    solicitudes.filter(s => s.estado === "Pendiente").slice(0,10).forEach(s => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${s.docente}</td>
@@ -164,12 +158,13 @@ function renderRecientes(solicitudes) {
     });
 }
 
-// Función para renderizar solicitudes entregadas con comentario opcional
+// Renderizar solicitudes entregadas con comentario opcional y botón borrar
 function renderEntregadas(solicitudes) {
     const tbody = document.querySelector("#tablaEntregadas tbody");
     tbody.innerHTML = "";
     solicitudes.slice(0,10).forEach((s, index) => {
         const tr = document.createElement("tr");
+        tr.id = `entregada-${index}`;
         tr.innerHTML = `
             <td>${s.docente}</td>
             <td>${s.asignatura}</td>
@@ -177,23 +172,30 @@ function renderEntregadas(solicitudes) {
             <td>
                 <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario || ""}</textarea>
                 <button class="btnComentario" onclick="guardarComentario(${index})">💬 Enviar</button>
+                <button class="btnBorrar" onclick="borrarFila(${index})">🗑 Borrar</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Array mock para manejar comentarios localmente
+// Array para manejar comentarios localmente
 let solicitudesEntregadas = [];
 
 // Guardar comentario opcional
 function guardarComentario(index) {
     const texto = document.getElementById(`comentario-${index}`).value.trim();
-    solicitudesEntregadas[index].comentario = texto; // se guarda aunque esté vacío
-    alert("Comentario guardado (mock visual).");
+    solicitudesEntregadas[index].comentario = texto; // Guardar aunque esté vacío
+    alert("Comentario guardado (visual).");
 }
 
-// Función para obtener datos en tiempo real
+// Borrar solo de pantalla
+function borrarFila(index) {
+    const fila = document.getElementById(`entregada-${index}`);
+    if (fila) fila.remove();
+}
+
+// Obtener datos
 async function fetchSolicitudes() {
     try {
         const { data: recientes, error: errorRecientes } = await supabase
@@ -222,11 +224,10 @@ async function fetchSolicitudes() {
 // Inicializar fetch
 fetchSolicitudes();
 
-// Actualizar cada 5 segundos (simula tiempo real)
+// Actualizar cada 5 segundos
 setInterval(fetchSolicitudes, 5000);
 </script>
 </body>
 </html>
-
 
 

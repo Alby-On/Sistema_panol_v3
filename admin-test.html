@@ -3,253 +3,204 @@
 <head>
 <meta charset="UTF-8">
 <title>Panel de Solicitudes</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
     body {
+        font-family: Arial, sans-serif;
         margin: 0;
         padding: 20px;
-        font-family: Arial, sans-serif;
         background: #f4f4f4;
     }
 
     h2 {
-        text-align: center;
-        margin-bottom: 10px;
-        color: #004d99;
+        margin-top: 0;
     }
 
-    /* CONTENEDOR PRINCIPAL EN 2 COLUMNAS */
     .contenedor {
         display: flex;
         gap: 20px;
-        justify-content: center;
     }
 
     .columna {
+        flex: 1;
         background: white;
+        border-radius: 8px;
         padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        width: 48%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
-    table {
+    .card {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+        background: #fafafa;
+    }
+
+    .card input, .card textarea {
         width: 100%;
-        border-collapse: collapse;
+        padding: 6px;
         margin-top: 5px;
     }
 
-    th {
-        background: #004d99;
-        color: white;
-        padding: 10px;
-        text-align: left;
-    }
-
-    td {
-        border: 1px solid #ddd;
-        padding: 8px;
-    }
-
-    textarea {
-        width: 95%;
-        min-height: 40px;
-    }
-
-    button {
-        padding: 5px 10px;
+    .boton {
+        margin-top: 8px;
+        padding: 8px 12px;
         cursor: pointer;
         border: none;
         border-radius: 5px;
+        background: #007bff;
         color: white;
     }
 
-    .btnGuardar {
-        background: #17a2b8;
-    }
-
-    .btnBorrar {
+    .boton-borrar {
         background: #dc3545;
+        margin-left: 5px;
     }
-
 </style>
 </head>
 <body>
 
-<h2>Panel de Solicitudes</h2>
+<h1>Panel de Solicitudes</h1>
 
 <div class="contenedor">
 
-    <!-- ============================
-         COLUMNA 1: SOLICITUDES PENDIENTES
-    ============================= -->
+    <!-- 🔵 COLUMNA IZQUIERDA: PENDIENTES -->
     <div class="columna">
-        <h3>Solicitudes Pendientes</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody id="tbodyRecientes"></tbody>
-        </table>
+        <h2>Pendientes</h2>
+        <div id="pendientes"></div>
     </div>
 
-    <!-- ============================
-         COLUMNA 2: ENTREGADAS
-    ============================= -->
+    <!-- 🟢 COLUMNA DERECHA: ENTREGADAS -->
     <div class="columna">
-        <h3>Solicitudes Entregadas</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Comentario</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tbodyEntregadas"></tbody>
-        </table>
+        <h2>Entregadas</h2>
+        <div id="entregadas"></div>
     </div>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ============================================
-   CONFIG SUPABASE
-=============================================== */
+// **********************
+//  CONFIG SUPABASE
+// **********************
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ============================================
-   CONTROL LOCAL DE OCULTOS Y EDICIÓN
-=============================================== */
-let ocultas = [];
-let comentarioEnEdicion = null;
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* Detectar si está escribiendo */
-document.addEventListener("focusin", e => {
-    if (e.target.tagName === "TEXTAREA") {
-        comentarioEnEdicion = e.target.id;
-    }
-});
-document.addEventListener("focusout", e => {
-    if (e.target.tagName === "TEXTAREA") {
-        comentarioEnEdicion = null;
-    }
-});
+// solicitudes entregadas ya gestionadas (ocultarlas)
+let ocultarEntregados = new Set();
 
-/* ============================================
-   FETCH PRINCIPAL
-=============================================== */
-async function fetchSolicitudes() {
-
-    const { data: solicitudes, error } = await supabase
+// **********************
+//  CARGA DATOS
+// **********************
+async function cargarDatos() {
+    const { data, error } = await supabase
         .from("solicitudes")
         .select("*")
-        .order("fecha_solicitud", { ascending: false })
-        .limit(50);
+        .order("id", { ascending: false });
 
-    if (error) return console.error(error);
-
-    const pendientes = solicitudes.filter(s => s.estado === "Pendiente");
-    const entregadas = solicitudes.filter(s => s.estado === "Entregado");
-
-    renderRecientes(pendientes);
-
-    if (!comentarioEnEdicion) {
-        renderEntregadas(entregadas);
+    if (error) {
+        console.error(error);
+        return;
     }
+
+    renderPendientes(data);
+    renderEntregadas(data);
 }
 
-/* ============================================
-   RENDERIZAR PENDIENTES
-=============================================== */
-function renderRecientes(lista) {
-    const tbody = document.getElementById("tbodyRecientes");
-    tbody.innerHTML = "";
+// **********************
+//  PENDIENTES
+// **********************
+function renderPendientes(lista) {
+    const cont = document.getElementById("pendientes");
+    cont.innerHTML = "";
 
-    lista
-        .filter(s => !ocultas.includes(s.id))
-        .slice(0, 10)
-        .forEach(s => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${s.id}</td>
-                    <td>${s.usuario}</td>
-                    <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-                </tr>
-            `;
-        });
+    const pendientes = lista.filter(s => s.estado === "Pendiente");
+
+    pendientes.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <b>ID:</b> ${s.id}<br>
+            <b>Usuario:</b> ${s.usuario || "N/A"}<br>
+            <b>Asignatura:</b> ${s.asignatura || "N/A"}<br>
+            <b>Materiales:</b> ${s.materiales || "N/A"}<br>
+        `;
+        cont.appendChild(div);
+    });
 }
 
-/* ============================================
-   RENDERIZAR ENTREGADAS
-=============================================== */
+// **********************
+//  ENTREGADAS
+// **********************
 function renderEntregadas(lista) {
-    const tbody = document.getElementById("tbodyEntregadas");
-    tbody.innerHTML = "";
+    const cont = document.getElementById("entregadas");
+    cont.innerHTML = "";
 
-    lista
-        .filter(s => !ocultas.includes(s.id))
-        .slice(0, 20)
-        .forEach(s => {
-            tbody.innerHTML += `
-                <tr id="fila-${s.id}">
-                    <td>${s.id}</td>
-                    <td>${s.usuario}</td>
-                    <td>
-                        <textarea id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
-                    </td>
-                    <td>
-                        <button class="btnGuardar" onclick="guardarComentario(${s.id})">Guardar</button>
-                        <button class="btnBorrar" onclick="ocultar(${s.id})">Borrar</button>
-                    </td>
-                </tr>
-            `;
-        });
+    const entregadas = lista.filter(s => 
+        s.estado === "Entregado" && !ocultarEntregados.has(s.id)
+    );
+
+    entregadas.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <b>ID:</b> ${s.id}<br>
+            <b>Usuario:</b> ${s.usuario || "N/A"}<br>
+            <b>Asignatura:</b> ${s.asignatura || "N/A"}<br>
+            <b>Materiales:</b> ${s.materiales || "N/A"}<br><br>
+
+            <label><b>Comentario entrega:</b></label>
+            <textarea id="coment_${s.id}" placeholder="Opcional..."></textarea>
+
+            <button class="boton" onclick="guardarComentario(${s.id})">Guardar</button>
+            <button class="boton boton-borrar" onclick="borrarVisual(${s.id})">Borrar</button>
+        `;
+        cont.appendChild(div);
+    });
 }
 
-/* ============================================
-   GUARDAR COMENTARIO Y OCULTAR
-=============================================== */
+// **********************
+//  GUARDAR COMENTARIO
+// **********************
 async function guardarComentario(id) {
-    let comentario = document.getElementById(`comentario-${id}`).value.trim();
-    if (comentario === "") comentario = "Sin Comentarios";
+    let texto = document.getElementById("coment_" + id).value.trim();
+    if (texto === "") texto = "Sin comentario";
 
     await supabase
         .from("solicitudes")
-        .update({ comentario_entrega: comentario })
+        .update({ comentario_entrega: texto })
         .eq("id", id);
 
-    ocultar(id); 
+    ocultarEntregados.add(id);
+    cargarDatos();
 }
 
-/* ============================================
-   OCULTAR SOLO EN PANTALLA
-=============================================== */
-function ocultar(id) {
-    if (!ocultas.includes(id)) {
-        ocultas.push(id);
-        localStorage.setItem("ocultas", JSON.stringify(ocultas));
-    }
+// **********************
+//  BORRAR SIN COMENTARIO
+// **********************
+async function borrarVisual(id) {
+    await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: "Sin comentario" })
+        .eq("id", id);
 
-    const fila = document.getElementById(`fila-${id}`);
-    if (fila) fila.remove();
+    ocultarEntregados.add(id);
+    cargarDatos();
 }
 
-/* ============================================
-   AUTO-UPDATE CADA 5 SEG
-=============================================== */
-setInterval(fetchSolicitudes, 5000);
-fetchSolicitudes();
+// **********************
+//  AUTO-REFRESH CADA 10s
+// **********************
+setInterval(cargarDatos, 10000);
+
+// PRIMERA CARGA
+cargarDatos();
 
 </script>
 

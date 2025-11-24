@@ -2,142 +2,175 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Panel de Visualización</title>
+<title>Panel de Solicitudes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
+    :root {
+        --color-primary: #004d99;
+        --color-secondary: #28a745;
+        --color-info: #17a2b8;
+        --color-danger: #dc3545;
+        --color-muted: #6c757d;
+        --color-background: #eef1f5;
+        --color-card: #ffffff;
+        --color-text: #333333;
+        --color-border: #cccccc;
+    }
+
     body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
         margin: 0;
-        padding: 0;
-        background: #eef1f5;
-        font-family: Arial, sans-serif;
+        padding: 20px;
+        color: var(--color-text);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
     }
 
     .container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-        padding: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .box {
+        background: var(--color-card);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        flex: 1 1 45%;
+        box-sizing: border-box;
+        min-width: 300px;
     }
 
     h2 {
-        margin: 0 0 15px;
-        color: #333;
-    }
-
-    .panel {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        height: calc(100vh - 80px);
-        overflow-y: auto;
-    }
-
-    .card {
-        background: #f7f9ff;
-        padding: 15px;
+        text-align: center;
+        color: var(--color-primary);
+        font-size: 1.6em;
         margin-bottom: 15px;
-        border-left: 5px solid #4f46e5;
-        border-radius: 8px;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 8px;
     }
 
-    .card strong {
-        color: #333;
-    }
-
-    .material {
-        background: #e3e5ff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        margin-top: 5px;
-        display: inline-block;
-    }
-
-    textarea {
+    table {
         width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        border: 1px solid var(--color-border);
         padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        resize: vertical;
-        margin-top: 10px;
-        font-size: 14px;
+        text-align: left;
     }
 
-    button {
-        background: #4f46e5;
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 10px;
+    th {
+        background: var(--color-primary);
+        color: var(--color-card);
+        text-align: center;
+        font-size: 0.9em;
+        text-transform: uppercase;
+    }
+
+    tbody tr:nth-child(even) {
+        background: #f8f8f8;
+    }
+
+    .estado {
         font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: white;
+        text-align: center;
     }
 
-    button:hover {
-        background: #4338ca;
+    .pendiente { background-color: var(--color-info); }
+    .entregada { background-color: var(--color-secondary); }
+
+    @media (max-width: 800px) {
+        .container {
+            flex-direction: column;
+        }
     }
 </style>
 </head>
-
 <body>
 
 <div class="container">
-
-    <!-- 🔵 PANEL IZQUIERDO: ÚLTIMAS 5 SOLICITUDES -->
-    <div class="panel">
-        <h2>Últimas 5 Solicitudes</h2>
-
-        <!-- Ejemplo de solicitud (esto luego será dinámico) -->
-        <div class="card">
-            <strong>ID Solicitud:</strong> 123<br>
-            <strong>Usuario:</strong> Juan Pérez<br>
-            <strong>Fecha:</strong> 20/11/2025 10:32<br>
-            <strong>Materiales:</strong><br>
-
-            <div class="material">Tester — 1</div>
-            <div class="material">Multímetro — 2</div>
-        </div>
-
-        <div class="card">
-            <strong>ID Solicitud:</strong> 122<br>
-            <strong>Usuario:</strong> Ana Soto<br>
-            <strong>Fecha:</strong> 20/11/2025 09:15<br>
-            <strong>Materiales:</strong><br>
-
-            <div class="material">Cables — 5</div>
-        </div>
-
-        <!-- puedes duplicar más tarjetas para visualizar -->
+    <!-- Solicitudes recientes -->
+    <div class="box">
+        <h2>Solicitudes Recientes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Docente</th>
+                    <th>Asignatura</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="recientes">
+                <!-- Aquí se llenarán las solicitudes recientes -->
+            </tbody>
+        </table>
     </div>
 
-    <!-- 🟢 PANEL DERECHO: SOLICITUDES ENTREGADAS -->
-    <div class="panel">
+    <!-- Solicitudes entregadas -->
+    <div class="box">
         <h2>Solicitudes Entregadas</h2>
-
-        <!-- Ejemplo de entrega -->
-        <div class="card">
-            <strong>ID Solicitud:</strong> 119<br>
-            <strong>Usuario:</strong> Pedro Martínez<br>
-            <strong>Fecha:</strong> 19/11/2025 16:40<br>
-
-            <strong>Comentario de Recepción:</strong><br>
-            <textarea placeholder="Escribe un comentario aquí..."></textarea>
-            <button>Guardar Comentario</button>
-        </div>
-
-        <div class="card">
-            <strong>ID Solicitud:</strong> 118<br>
-            <strong>Usuario:</strong> Valentina Rojas<br>
-            <strong>Fecha:</strong> 19/11/2025 15:10<br>
-
-            <strong>Comentario de Recepción:</strong><br>
-            <textarea placeholder="Escribe un comentario aquí..."></textarea>
-            <button>Guardar Comentario</button>
-        </div>
-
+        <table>
+            <thead>
+                <tr>
+                    <th>Docente</th>
+                    <th>Asignatura</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="entregadas">
+                <!-- Aquí se llenarán las solicitudes entregadas -->
+            </tbody>
+        </table>
     </div>
-
 </div>
+
+<script>
+    // 🌟 Mock de datos para la visualización inicial
+    const solicitudesRecientes = [
+        { docente: "AARÓN EDUARDO SEPÚLVEDA", asignatura: "Instalaciones II", fecha: "2025-11-24", estado: "Pendiente" },
+        { docente: "ALEJANDRO MOENA", asignatura: "Automatización I", fecha: "2025-11-24", estado: "Pendiente" }
+        // ... hasta 10 elementos
+    ];
+
+    const solicitudesEntregadas = [
+        { docente: "BRAYAN DEL VALLE", asignatura: "Robótica II", fecha: "2025-11-23", estado: "Entregada" },
+        { docente: "DANIELA MARTÍNEZ", asignatura: "Electrónica I", fecha: "2025-11-23", estado: "Entregada" }
+        // ... hasta 10 elementos
+    ];
+
+    function renderTabla(id, data) {
+        const tbody = document.getElementById(id);
+        tbody.innerHTML = "";
+        data.forEach(s => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${s.docente}</td>
+                <td>${s.asignatura}</td>
+                <td>${s.fecha}</td>
+                <td><span class="estado ${s.estado.toLowerCase()}">${s.estado}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    renderTabla("recientes", solicitudesRecientes);
+    renderTabla("entregadas", solicitudesEntregadas);
+</script>
 
 </body>
 </html>

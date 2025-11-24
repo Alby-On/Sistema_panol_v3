@@ -1,40 +1,199 @@
-<!-- ==========================
-     CARGAR LIBRERÍA SUPABASE
-=========================== -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Revisión de Solicitudes</title>
 
-<!-- ==========================
-     CREAR CLIENTE SUPABASE
-=========================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Variables de Color (Consistencia Institucional) */
+        :root {
+            --color-primary: #004d99; /* Azul marino/institucional */
+            --color-success: #28a745;
+            --color-danger: #dc3545;
+            --color-warning: #ffc107;
+            --color-background: #eef1f5; /* Fondo claro y suave */
+            --color-card: #ffffff; /* Fondo de las tarjetas */
+            --color-text: #333333;
+            --color-border: #d0d5dd;
+        }
+
+        /* ---- ESTILO GENERAL ---- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--color-background);
+            margin: 0;
+            color: var(--color-text);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--color-primary);
+            padding: 20px 0 10px;
+            margin-bottom: 10px;
+        }
+
+        /* ---- CONTENEDOR PRINCIPAL (2 COLUMNAS) ---- */
+        .panel-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* ---- ESTILO DE COLUMNAS (PENDIENTES/ENTREGADAS) ---- */
+        .panel-columna {
+            flex: 1;
+            background: var(--color-card);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            min-width: 300px; /* Mínimo para evitar compresión excesiva */
+        }
+
+        .panel-columna h2 {
+            text-align: center;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.4em;
+            color: var(--color-primary);
+        }
+
+        /* ---- ESTILO DE CADA TARJETA DE SOLICITUD ---- */
+        .solicitud-card {
+            border: 1px solid #e0e0e0;
+            background: #fdfdfd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            font-size: 0.95em;
+        }
+
+        .solicitud-card strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+            color: var(--color-primary);
+        }
+        
+        .solicitud-card b {
+            font-weight: 600;
+        }
+
+        /* Estilo para Materiales */
+        .materiales-list {
+            margin: 8px 0 0 15px;
+            padding: 0;
+            list-style-type: disc;
+        }
+        .materiales-list li {
+            margin-bottom: 3px;
+            color: var(--color-text);
+        }
+
+        /* Estilo para Textarea */
+        .comentario-textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Estilo para Botones de Acción */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #003a73;
+        }
+        
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        /* Estilo para mensajes de carga/vacio */
+        .mensaje-estado {
+            text-align: center;
+            padding: 15px;
+            background: #fff4e6;
+            border: 1px solid #ffd7b3;
+            color: #b95c00;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 992px) {
+            .panel-container {
+                flex-direction: column; /* Apilar en pantallas más pequeñas */
+                padding: 10px;
+            }
+            .panel-columna {
+                min-width: unset;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📋 Panel de Gestión de Solicitudes</h1>
+
+    <div class="panel-container">
+
+        <div class="panel-columna">
+            <h2>⏳ Solicitudes Pendientes</h2>
+            <div id="colPendientes" class="mensaje-estado">Cargando...</div>
+        </div>
+
+        <div class="panel-columna">
+            <h2>💬 Entregadas por Comentar</h2>
+            <div id="colEntregadas" class="mensaje-estado">Cargando...</div>
+        </div>
+
+    </div>
+
 <script>
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwzNv6YdJbBsRY";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
-<!-- ==========================
-     ESTRUCTURA DE 2 COLUMNAS
-=========================== -->
-<div style="display:flex; gap:20px; padding:20px;">
-
-    <!-- COLUMNA IZQUIERDA — PENDIENTES -->
-    <div style="flex:1; border:1px solid #ddd; padding:15px; border-radius:10px;">
-        <h2>Solicitudes Pendientes</h2>
-        <div id="colPendientes">Cargando...</div>
-    </div>
-
-    <!-- COLUMNA DERECHA — ENTREGADAS -->
-    <div style="flex:1; border:1px solid #ddd; padding:15px; border-radius:10px;">
-        <h2>Solicitudes Entregadas</h2>
-        <div id="colEntregadas">Cargando...</div>
-    </div>
-
-</div>
-
 <script>
 /* -------------------------
-   CARGAR SOLICITUDES PENDIENTES
+   CARGAR SOLICITUDES PENDIENTES (LÓGICA INTACTA)
 ---------------------------- */
 async function getSolicitudesPendientes() {
     const { data, error } = await supabase
@@ -62,8 +221,8 @@ async function getSolicitudesPendientes() {
 }
 
 /* -------------------------
-   CARGAR SOLICITUDES ENTREGADAS
-   condición: Entregado + comentario_entrega NULL o ""
+   CARGAR SOLICITUDES ENTREGADAS (LÓGICA INTACTA)
+   condición: Entregado + comentario_entrega NULL o ""
 ---------------------------- */
 async function getSolicitudesEntregadas() {
     const { data, error } = await supabase
@@ -90,7 +249,7 @@ async function getSolicitudesEntregadas() {
 }
 
 /* -------------------------
-   ACTUALIZAR COMENTARIO EN BASE
+   ACTUALIZAR COMENTARIO EN BASE (LÓGICA INTACTA)
 ---------------------------- */
 async function actualizarComentario(id, comentario) {
     const { data, error } = await supabase
@@ -108,14 +267,14 @@ async function actualizarComentario(id, comentario) {
 }
 
 /* -------------------------
-   RENDERIZAR COLUMNAS
+   RENDERIZAR COLUMNAS (LÓGICA INTACTA)
 ---------------------------- */
 async function cargarPanelSolicitudes() {
     const colPend = document.getElementById("colPendientes");
     const colEnt  = document.getElementById("colEntregadas");
 
-    colPend.innerHTML = "Cargando...";
-    colEnt.innerHTML = "Cargando...";
+    colPend.innerHTML = `<div class="mensaje-estado">Cargando...</div>`;
+    colEnt.innerHTML = `<div class="mensaje-estado">Cargando...</div>`;
 
     const pendientes = await getSolicitudesPendientes();
     const entregadas = await getSolicitudesEntregadas();
@@ -124,68 +283,87 @@ async function cargarPanelSolicitudes() {
     colEnt.innerHTML = "";
 
     /* ---- MOSTRAR PENDIENTES ---- */
-    pendientes.forEach(s => {
-        let matHTML = "";
+    if (pendientes.length === 0) {
+        colPend.innerHTML = `<div class="mensaje-estado" style="background: #e6ffe6; border-color: #b8ffb8; color: var(--color-success);">✅ No hay solicitudes pendientes.</div>`;
+    } else {
+        pendientes.forEach(s => {
+            // Formatear fecha
+            const fechaSolicitud = new Date(s.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            
+            let matHTML = "";
+            if (s.materiales_solicitados?.length > 0) {
+                matHTML = s.materiales_solicitados
+                    .map(m => `<li>${m.material} — <strong>${m.cantidad}</strong></li>`)
+                    .join("");
+            }
 
-        if (s.materiales_solicitados?.length > 0) {
-            matHTML = s.materiales_solicitados
-                .map(m => `<li>${m.material} — ${m.cantidad}</li>`)
-                .join("");
-        }
+            colPend.innerHTML += `
+                <div class="solicitud-card">
+                    <strong>Solicitud N° ${s.id}</strong>
+                    <p style="margin: 5px 0 5px 0;">
+                        <b>Docente:</b> ${s.docente}<br>
+                        <b>Asignatura:</b> ${s.asignatura}<br>
+                        <b>Fecha solicitud:</b> ${fechaSolicitud}
+                    </p>
+                    <b>Materiales:</b>
+                    <ul class="materiales-list">${matHTML}</ul>
+                </div>
+            `;
+        });
+    }
 
-        colPend.innerHTML += `
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
-                <strong>ID: ${s.id}</strong><br>
-                <b>Docente:</b> ${s.docente}<br>
-                <b>Asignatura:</b> ${s.asignatura}<br>
-                <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br><br>
-
-                <b>Materiales:</b>
-                <ul>${matHTML}</ul>
-            </div>
-        `;
-    });
 
     /* ---- MOSTRAR ENTREGADAS CON TEXTAREA Y BOTONES ---- */
-    entregadas.forEach(s => {
-        colEnt.innerHTML += `
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
-                <strong>ID: ${s.id}</strong><br>
-                <b>Docente:</b> ${s.docente}<br>
-                <b>Asignatura:</b> ${s.asignatura}<br>
-                <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br>
-                <b>Fecha entrega:</b> ${s.fecha_entrega}<br><br>
+    if (entregadas.length === 0) {
+        colEnt.innerHTML = `<div class="mensaje-estado" style="background: #e6ffe6; border-color: #b8ffb8; color: var(--color-success);">👍 No hay entregas pendientes de comentario.</div>`;
+    } else {
+        entregadas.forEach(s => {
+            // Formatear fechas
+            const fechaSolicitud = new Date(s.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const fechaEntrega = new Date(s.fecha_entrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-                <textarea id="comentario-${s.id}" placeholder="Escribe un comentario..." style="width:100%; padding:5px; margin-bottom:5px;"></textarea>
-                
-                <div style="display:flex; gap:5px;">
-                    <button id="btnEnviarComentario-${s.id}" style="padding:5px 10px;">Enviar comentario</button>
-                    <button id="btnSinComentario-${s.id}" style="padding:5px 10px;">Sin comentarios</button>
+            colEnt.innerHTML += `
+                <div class="solicitud-card">
+                    <strong>Solicitud N° ${s.id}</strong>
+                    <p style="margin: 5px 0 5px 0; font-size: 0.9em;">
+                        <b>Docente:</b> ${s.docente}<br>
+                        <b>Asignatura:</b> ${s.asignatura}<br>
+                        <b>Fecha solicitud:</b> ${fechaSolicitud}<br>
+                        <b>Fecha entrega:</b> <span style="color: var(--color-success); font-weight: bold;">${fechaEntrega}</span>
+                    </p>
+
+                    <textarea id="comentario-${s.id}" class="comentario-textarea" placeholder="Escribe un comentario sobre la devolución/estado..."></textarea>
+                    
+                    <div class="btn-group">
+                        <button id="btnEnviarComentario-${s.id}" class="btn-action btn-primary">Guardar Comentario</button>
+                        <button id="btnSinComentario-${s.id}" class="btn-action btn-success">Sin Comentarios</button>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        // Listener para "Enviar comentario"
-        document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
-            const texto = document.getElementById(`comentario-${s.id}`).value.trim();
-            if (texto === "") {
-                alert("El comentario está vacío");
-                return;
-            }
-            await actualizarComentario(s.id, texto);
-        });
+            // Listener para "Enviar comentario"
+            document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
+                const texto = document.getElementById(`comentario-${s.id}`).value.trim();
+                if (texto === "") {
+                    alert("El comentario está vacío");
+                    return;
+                }
+                await actualizarComentario(s.id, texto);
+            });
 
-        // Listener para "Sin comentarios"
-        document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
-            await actualizarComentario(s.id, "Sin comentario");
+            // Listener para "Sin comentarios"
+            document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
+                await actualizarComentario(s.id, "Sin comentario");
+            });
         });
-    });
+    }
 }
 
 /* -------------------------
-   EJECUTAR AL CARGAR PÁGINA
+   EJECUTAR AL CARGAR PÁGINA (LÓGICA INTACTA)
 ---------------------------- */
 document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
 </script>
-
+</body>
+</html>
 

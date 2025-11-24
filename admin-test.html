@@ -236,7 +236,10 @@ async function guardarComentario(id) {
    OCULTAR SOLO EN PANTALLA
 =============================================== */
 function ocultar(id) {
-    if (!ocultas.includes(id)) ocultas.push(id);
+    if (!ocultas.includes(id)) {
+        ocultas.push(id);
+        localStorage.setItem("ocultas", JSON.stringify(ocultas));
+    }
 
     const fila = document.getElementById(`fila-${id}`);
     if (fila) fila.remove();

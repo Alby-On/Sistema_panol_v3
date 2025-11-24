@@ -5,267 +5,250 @@
 <title>Panel de Solicitudes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-    :root {
-        --color-primary: #004d99;
-        --color-secondary: #28a745;
-        --color-info: #17a2b8;
-        --color-danger: #dc3545;
-        --color-muted: #6c757d;
-        --color-background: #eef1f5;
-        --color-card: #ffffff;
-        --color-text: #333333;
-        --color-border: #cccccc;
-    }
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--color-background);
         margin: 0;
-        padding: 0;
-        color: var(--color-text);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-    }
-    .box {
-        background: var(--color-card);
         padding: 20px;
-        width: 100%;
-        max-width: 1000px;
-        margin: 20px 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
     }
+
     h2 {
         text-align: center;
-        margin-bottom: 20px;
-        color: var(--color-primary);
-        font-size: 1.8em;
-        border-bottom: 2px solid var(--color-primary);
-        padding-bottom: 10px;
+        margin-bottom: 10px;
+        color: #004d99;
     }
-    h3 { 
-        margin-top: 25px; 
-        color: var(--color-primary);
+
+    /* CONTENEDOR PRINCIPAL EN 2 COLUMNAS */
+    .contenedor {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
     }
+
+    .columna {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 48%;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 10px;
+        margin-top: 5px;
     }
-    th, td {
-        border: 1px solid #e0e0e0;
+
+    th {
+        background: #004d99;
+        color: white;
         padding: 10px;
         text-align: left;
-        vertical-align: top;
     }
-    th {
-        background: var(--color-primary);
-        color: var(--color-card);
-        text-align: center;
+
+    td {
+        border: 1px solid #ddd;
+        padding: 8px;
     }
-    #tablaRecientes tbody tr:nth-child(even),
-    #tablaEntregadas tbody tr:nth-child(even) {
-        background-color: #f8f8f8;
-    }
+
     textarea {
-        width: 80%;
+        width: 95%;
         min-height: 40px;
-        padding: 5px;
-        resize: vertical;
-        margin-bottom: 5px;
-        font-size: 0.9em;
     }
-    .btnComentario, .btnBorrar {
-        padding: 6px 10px;
-        color: white;
+
+    button {
+        padding: 5px 10px;
+        cursor: pointer;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.9em;
-        margin-left: 5px;
+        color: white;
     }
-    .btnComentario { background-color: var(--color-info); }
-    .btnComentario:hover { background-color: #138496; }
-    .btnBorrar { background-color: var(--color-danger); }
-    .btnBorrar:hover { background-color: #c82333; }
-    @media(max-width: 600px) {
-        .box { margin: 10px; padding: 15px; }
-        th, td { font-size: 0.85em; padding: 6px; }
-        textarea { width: 100%; }
+
+    .btnGuardar {
+        background: #17a2b8;
     }
+
+    .btnBorrar {
+        background: #dc3545;
+    }
+
 </style>
 </head>
 <body>
-<div class="box">
-    <h2>Panel de Solicitudes</h2>
 
-    <h3>Solicitudes Recientes (Pendientes)</h3>
-    <table id="tablaRecientes">
-        <thead>
-            <tr>
-                <th>Docente</th>
-                <th>Asignatura</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<h2>Panel de Solicitudes</h2>
 
-    <h3>Solicitudes Entregadas</h3>
-    <table id="tablaEntregadas">
-        <thead>
-            <tr>
-                <th>Docente</th>
-                <th>Asignatura</th>
-                <th>Fecha</th>
-                <th>Comentario (Opcional)</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<div class="contenedor">
+
+    <!-- ============================
+         COLUMNA 1: SOLICITUDES PENDIENTES
+    ============================= -->
+    <div class="columna">
+        <h3>Solicitudes Pendientes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyRecientes"></tbody>
+        </table>
+    </div>
+
+    <!-- ============================
+         COLUMNA 2: ENTREGADAS
+    ============================= -->
+    <div class="columna">
+        <h3>Solicitudes Entregadas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Comentario</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyEntregadas"></tbody>
+        </table>
+    </div>
+
 </div>
-<script>
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
+
+<script>
+/* ============================================
+   CONFIG SUPABASE
+=============================================== */
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_KEY = "TU_KEY_AQUI";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Obtener lista de IDs ocultos desde localStorage
-function getOcultos() {
-    return JSON.parse(localStorage.getItem("ocultos_entregadas") || "[]");
-}
+/* ============================================
+   CONTROL LOCAL DE OCULTOS Y EDICIÓN
+=============================================== */
+let ocultas = [];
+let comentarioEnEdicion = null;
 
-// Agregar un id a ocultos
-function agregarOculto(id) {
-    const ocultos = getOcultos();
-    if (!ocultos.includes(id)) {
-        ocultos.push(id);
-        localStorage.setItem("ocultos_entregadas", JSON.stringify(ocultos));
+/* Detectar si está escribiendo */
+document.addEventListener("focusin", e => {
+    if (e.target.tagName === "TEXTAREA") {
+        comentarioEnEdicion = e.target.id;
     }
-}
+});
+document.addEventListener("focusout", e => {
+    if (e.target.tagName === "TEXTAREA") {
+        comentarioEnEdicion = null;
+    }
+});
 
-// ------------------------------
-// RENDERIZAR SOLICITUDES PENDIENTES
-// ------------------------------
-function renderRecientes(solicitudes) {
-    const tbody = document.querySelector("#tablaRecientes tbody");
-    tbody.innerHTML = "";
+/* ============================================
+   FETCH PRINCIPAL
+=============================================== */
+async function fetchSolicitudes() {
 
-    solicitudes
-        .filter(s => s.estado === "Pendiente")
-        .slice(0,10)
-        .forEach(s => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${s.docente}</td>
-                <td>${s.asignatura}</td>
-                <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-                <td>${s.estado}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-}
-
-// ------------------------------
-// RENDERIZAR SOLICITUDES ENTREGADAS
-// ------------------------------
-function renderEntregadas(solicitudes) {
-    const tbody = document.querySelector("#tablaEntregadas tbody");
-    tbody.innerHTML = "";
-
-    const ocultos = getOcultos();
-
-    solicitudes
-        .filter(s => !ocultos.includes(s.id)) // 👈 evitar mostrar borrados
-        .slice(0,10)
-        .forEach((s, index) => {
-            const tr = document.createElement("tr");
-            tr.id = `entregada-${s.id}`;
-            tr.innerHTML = `
-                <td>${s.docente}</td>
-                <td>${s.asignatura}</td>
-                <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-                <td>
-                    <textarea placeholder="Escriba un comentario..." 
-                        id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
-                    <button class="btnComentario" onclick="guardarComentario(${s.id})">💬 Enviar</button>
-                    <button class="btnBorrar" onclick="borrarFila(${s.id})">🗑 Borrar</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-}
-
-// ------------------------------
-// GUARDAR COMENTARIO
-// ------------------------------
-async function guardarComentario(idSolicitud) {
-    let texto = document.getElementById(`comentario-${idSolicitud}`).value.trim();
-    if (!texto) texto = "Sin Comentarios";
-
-    const { error } = await supabase
+    const { data: solicitudes, error } = await supabase
         .from("solicitudes")
-        .update({ comentario_entrega: texto })
-        .eq("id", idSolicitud);
+        .select("*")
+        .order("fecha_solicitud", { ascending: false })
+        .limit(50);
 
-    if (error) {
-        alert("Error al guardar comentario: " + error.message);
-        return;
+    if (error) return console.error(error);
+
+    const pendientes = solicitudes.filter(s => s.estado === "Pendiente");
+    const entregadas = solicitudes.filter(s => s.estado === "Entregado");
+
+    renderRecientes(pendientes);
+
+    if (!comentarioEnEdicion) {
+        renderEntregadas(entregadas);
     }
-
-    // Ocultar fila tras guardar comentario
-    agregarOculto(idSolicitud);
-    borrarFila(idSolicitud);
-
-    alert("Comentario guardado y solicitud ocultada.");
 }
 
-// ------------------------------
-// BORRAR SOLO DE LA PANTALLA
-// ------------------------------
-function borrarFila(id) {
-    agregarOculto(id);
-    const fila = document.getElementById(`entregada-${id}`);
+/* ============================================
+   RENDERIZAR PENDIENTES
+=============================================== */
+function renderRecientes(lista) {
+    const tbody = document.getElementById("tbodyRecientes");
+    tbody.innerHTML = "";
+
+    lista
+        .filter(s => !ocultas.includes(s.id))
+        .slice(0, 10)
+        .forEach(s => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${s.id}</td>
+                    <td>${s.usuario}</td>
+                    <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+                </tr>
+            `;
+        });
+}
+
+/* ============================================
+   RENDERIZAR ENTREGADAS
+=============================================== */
+function renderEntregadas(lista) {
+    const tbody = document.getElementById("tbodyEntregadas");
+    tbody.innerHTML = "";
+
+    lista
+        .filter(s => !ocultas.includes(s.id))
+        .slice(0, 20)
+        .forEach(s => {
+            tbody.innerHTML += `
+                <tr id="fila-${s.id}">
+                    <td>${s.id}</td>
+                    <td>${s.usuario}</td>
+                    <td>
+                        <textarea id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
+                    </td>
+                    <td>
+                        <button class="btnGuardar" onclick="guardarComentario(${s.id})">Guardar</button>
+                        <button class="btnBorrar" onclick="ocultar(${s.id})">Borrar</button>
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+/* ============================================
+   GUARDAR COMENTARIO Y OCULTAR
+=============================================== */
+async function guardarComentario(id) {
+    let comentario = document.getElementById(`comentario-${id}`).value.trim();
+    if (comentario === "") comentario = "Sin Comentarios";
+
+    await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: comentario })
+        .eq("id", id);
+
+    ocultar(id); 
+}
+
+/* ============================================
+   OCULTAR SOLO EN PANTALLA
+=============================================== */
+function ocultar(id) {
+    if (!ocultas.includes(id)) ocultas.push(id);
+
+    const fila = document.getElementById(`fila-${id}`);
     if (fila) fila.remove();
 }
 
-// ------------------------------
-// FETCH PRINCIPAL
-// ------------------------------
-async function fetchSolicitudes() {
-    try {
-        const { data: recientes } = await supabase
-            .from("solicitudes")
-            .select("*")
-            .order("fecha_solicitud", { ascending: false })
-            .limit(10);
-
-        const { data: entregadas } = await supabase
-            .from("solicitudes")
-            .select("*")
-            .eq("estado", "Entregado")
-            .order("fecha_solicitud", { ascending: false })
-            .limit(50); // traer más por si algunas están ocultas
-
-        renderRecientes(recientes);
-        renderEntregadas(entregadas);
-
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// Ejecutar al cargar
+/* ============================================
+   AUTO-UPDATE CADA 5 SEG
+=============================================== */
+setInterval(fetchSolicitudes, 5000);
 fetchSolicitudes();
 
-// Auto refrescar cada 5 seg
-setInterval(fetchSolicitudes, 5000);
 </script>
-
 
 </body>
 </html>

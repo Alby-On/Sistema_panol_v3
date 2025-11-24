@@ -12,8 +12,7 @@
         :root {
             --color-primary: #004d99; /* Azul marino/institucional */
             --color-success: #28a745;
-            --color-danger: #dc3545;
-            --color-warning: #ffc107;
+            --color-secondary: #6c757d;
             --color-background: #eef1f5; /* Fondo claro y suave */
             --color-card: #ffffff; /* Fondo de las tarjetas */
             --color-text: #333333;
@@ -51,7 +50,8 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            min-width: 300px; /* Mínimo para evitar compresión excesiva */
+            min-width: 300px; 
+            border: 1px solid var(--color-border); /* Borde de la columna */
         }
 
         .panel-columna h2 {
@@ -106,42 +106,43 @@
             box-sizing: border-box;
             resize: vertical;
             min-height: 80px;
+            font-family: inherit;
         }
 
         /* Estilo para Botones de Acción */
         .btn-group {
             display: flex;
             gap: 10px;
-            margin-top: 10px;
         }
 
         .btn-action {
             flex: 1;
-            padding: 10px;
+            padding: 8px 10px; /* Reducido para encajar mejor */
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
             font-size: 0.9em;
             transition: background-color 0.3s;
+            color: white;
         }
 
+        /* Botón Principal (Enviar comentario) */
         .btn-primary {
             background: var(--color-primary);
-            color: white;
         }
         .btn-primary:hover {
             background: #003a73;
         }
         
-        .btn-success {
-            background: var(--color-success);
-            color: white;
+        /* Botón Secundario (Sin comentarios) */
+        .btn-secondary-action {
+            background: var(--color-secondary); /* Gris institucional */
         }
-        .btn-success:hover {
-            background: #1e7e34;
+        .btn-secondary-action:hover {
+            background: #5a6268;
         }
-
+        
         /* Estilo para mensajes de carga/vacio */
         .mensaje-estado {
             text-align: center;
@@ -151,6 +152,12 @@
             color: #b95c00;
             border-radius: 8px;
             margin-top: 10px;
+        }
+        
+        .mensaje-estado.success {
+            background: #e6ffe6; 
+            border-color: #b8ffb8; 
+            color: var(--color-success);
         }
 
         /* ---- RESPONSIVE ---- */
@@ -178,17 +185,20 @@
         </div>
 
         <div class="panel-columna">
-            <h2>💬 Entregadas por Comentar</h2>
+            <h2>✅ Solicitudes Entregadas</h2>
             <div id="colEntregadas" class="mensaje-estado">Cargando...</div>
         </div>
 
     </div>
 
 <script>
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwzNv6YdJbBsRY";
+    /* -------------------------
+     CREAR CLIENTE SUPABASE (LÓGICA INTACTA)
+    ---------------------------- */
+    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
 <script>
@@ -222,7 +232,6 @@ async function getSolicitudesPendientes() {
 
 /* -------------------------
    CARGAR SOLICITUDES ENTREGADAS (LÓGICA INTACTA)
-   condición: Entregado + comentario_entrega NULL o ""
 ---------------------------- */
 async function getSolicitudesEntregadas() {
     const { data, error } = await supabase
@@ -267,7 +276,7 @@ async function actualizarComentario(id, comentario) {
 }
 
 /* -------------------------
-   RENDERIZAR COLUMNAS (LÓGICA INTACTA)
+   RENDERIZAR COLUMNAS (LÓGICA DE RENDERIZADO MODIFICADA SÓLO PARA USAR CLASES)
 ---------------------------- */
 async function cargarPanelSolicitudes() {
     const colPend = document.getElementById("colPendientes");
@@ -284,12 +293,9 @@ async function cargarPanelSolicitudes() {
 
     /* ---- MOSTRAR PENDIENTES ---- */
     if (pendientes.length === 0) {
-        colPend.innerHTML = `<div class="mensaje-estado" style="background: #e6ffe6; border-color: #b8ffb8; color: var(--color-success);">✅ No hay solicitudes pendientes.</div>`;
+        colPend.innerHTML = `<div class="mensaje-estado success">✅ No hay solicitudes pendientes.</div>`;
     } else {
         pendientes.forEach(s => {
-            // Formatear fecha
-            const fechaSolicitud = new Date(s.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            
             let matHTML = "";
             if (s.materiales_solicitados?.length > 0) {
                 matHTML = s.materiales_solicitados
@@ -297,14 +303,14 @@ async function cargarPanelSolicitudes() {
                     .join("");
             }
 
+            // USO DE CLASE .solicitud-card
             colPend.innerHTML += `
                 <div class="solicitud-card">
-                    <strong>Solicitud N° ${s.id}</strong>
-                    <p style="margin: 5px 0 5px 0;">
-                        <b>Docente:</b> ${s.docente}<br>
-                        <b>Asignatura:</b> ${s.asignatura}<br>
-                        <b>Fecha solicitud:</b> ${fechaSolicitud}
-                    </p>
+                    <strong>Solicitud N° ${s.id}</strong><br>
+                    <b>Docente:</b> ${s.docente}<br>
+                    <b>Asignatura:</b> ${s.asignatura}<br>
+                    <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br><br>
+
                     <b>Materiales:</b>
                     <ul class="materiales-list">${matHTML}</ul>
                 </div>
@@ -312,36 +318,30 @@ async function cargarPanelSolicitudes() {
         });
     }
 
-
     /* ---- MOSTRAR ENTREGADAS CON TEXTAREA Y BOTONES ---- */
     if (entregadas.length === 0) {
-        colEnt.innerHTML = `<div class="mensaje-estado" style="background: #e6ffe6; border-color: #b8ffb8; color: var(--color-success);">👍 No hay entregas pendientes de comentario.</div>`;
+        colEnt.innerHTML = `<div class="mensaje-estado success">👍 No hay entregas pendientes de comentario.</div>`;
     } else {
         entregadas.forEach(s => {
-            // Formatear fechas
-            const fechaSolicitud = new Date(s.fecha_solicitud).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const fechaEntrega = new Date(s.fecha_entrega).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
+            // USO DE CLASES .solicitud-card, .comentario-textarea, .btn-group
             colEnt.innerHTML += `
                 <div class="solicitud-card">
-                    <strong>Solicitud N° ${s.id}</strong>
-                    <p style="margin: 5px 0 5px 0; font-size: 0.9em;">
-                        <b>Docente:</b> ${s.docente}<br>
-                        <b>Asignatura:</b> ${s.asignatura}<br>
-                        <b>Fecha solicitud:</b> ${fechaSolicitud}<br>
-                        <b>Fecha entrega:</b> <span style="color: var(--color-success); font-weight: bold;">${fechaEntrega}</span>
-                    </p>
+                    <strong>Solicitud N° ${s.id}</strong><br>
+                    <b>Docente:</b> ${s.docente}<br>
+                    <b>Asignatura:</b> ${s.asignatura}<br>
+                    <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br>
+                    <b>Fecha entrega:</b> ${s.fecha_entrega}<br><br>
 
-                    <textarea id="comentario-${s.id}" class="comentario-textarea" placeholder="Escribe un comentario sobre la devolución/estado..."></textarea>
+                    <textarea id="comentario-${s.id}" class="comentario-textarea" placeholder="Escribe un comentario..."></textarea>
                     
                     <div class="btn-group">
-                        <button id="btnEnviarComentario-${s.id}" class="btn-action btn-primary">Guardar Comentario</button>
-                        <button id="btnSinComentario-${s.id}" class="btn-action btn-success">Sin Comentarios</button>
+                        <button id="btnEnviarComentario-${s.id}" class="btn-action btn-primary">Enviar comentario</button>
+                        <button id="btnSinComentario-${s.id}" class="btn-action btn-secondary-action">Sin comentarios</button>
                     </div>
                 </div>
             `;
 
-            // Listener para "Enviar comentario"
+            // Listener para "Enviar comentario" (LÓGICA INTACTA)
             document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
                 const texto = document.getElementById(`comentario-${s.id}`).value.trim();
                 if (texto === "") {
@@ -351,7 +351,7 @@ async function cargarPanelSolicitudes() {
                 await actualizarComentario(s.id, texto);
             });
 
-            // Listener para "Sin comentarios"
+            // Listener para "Sin comentarios" (LÓGICA INTACTA)
             document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
                 await actualizarComentario(s.id, "Sin comentario");
             });
@@ -366,4 +366,3 @@ document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
 </script>
 </body>
 </html>
-

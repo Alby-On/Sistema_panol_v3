@@ -135,101 +135,118 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Mock usuario, reemplazar con tu localStorage si aplica
-const user = { email: "usuario@ejemplo.com" };
+// Guardar IDs de solicitudes borradas desde la pantalla
+let borradas = [];
 
 // Renderizar solicitudes recientes (Pendientes)
 function renderRecientes(solicitudes) {
     const tbody = document.querySelector("#tablaRecientes tbody");
     tbody.innerHTML = "";
-    solicitudes.filter(s => s.estado === "Pendiente").slice(0,10).forEach(s => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${s.docente}</td>
-            <td>${s.asignatura}</td>
-            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-            <td>${s.estado}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+
+    solicitudes
+        .filter(s => s.estado === "Pendiente")
+        .slice(0,10)
+        .forEach(s => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${s.docente}</td>
+                <td>${s.asignatura}</td>
+                <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+                <td>${s.estado}</td>
+            `;
+            tbody.appendChild(tr);
+        });
 }
 
-// Renderizar solicitudes entregadas con comentario opcional y botón borrar
+// Renderizar solicitudes entregadas
 function renderEntregadas(solicitudes) {
     const tbody = document.querySelector("#tablaEntregadas tbody");
     tbody.innerHTML = "";
-    solicitudes.slice(0,10).forEach((s, index) => {
-        const tr = document.createElement("tr");
-        tr.id = `entregada-${index}`;
-        tr.innerHTML = `
-            <td>${s.docente}</td>
-            <td>${s.asignatura}</td>
-            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
-            <td>
-                <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario_entrega || ""}</textarea>
-                <button class="btnComentario" onclick="guardarComentario(${s.id}, ${index})">💬 Enviar</button>
-                <button class="btnBorrar" onclick="borrarFila(${index})">🗑 Borrar</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+
+    solicitudes
+        .filter(s => !borradas.includes(s.id))   // 👈 Ocultar borradas
+        .slice(0,10)
+        .forEach((s, index) => {
+            const tr = document.createElement("tr");
+            tr.id = `entregada-${s.id}`; // 👈 Mejor identificador (por ID real)
+
+            tr.innerHTML = `
+                <td>${s.docente}</td>
+                <td>${s.asignatura}</td>
+                <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+                <td>
+                    <textarea placeholder="Escriba un comentario..." id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
+                    <button class="btnComentario" onclick="guardarComentario(${s.id})">💬 Enviar</button>
+                    <button class="btnBorrar" onclick="borrarFila(${s.id})">🗑 Borrar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
 }
 
 // Guardar comentario en la base de datos
-async function guardarComentario(idSolicitud, index) {
-    let texto = document.getElementById(`comentario-${index}`).value.trim();
+async function guardarComentario(idSolicitud) {
+    let texto = document.getElementById(`comentario-${idSolicitud}`).value.trim();
     if (!texto) texto = "Sin Comentarios";
+
     const { error } = await supabase
         .from("solicitudes")
         .update({ comentario_entrega: texto })
         .eq("id", idSolicitud);
+
     if (error) {
         alert("Error al guardar comentario: " + error.message);
         console.error(error);
-    } else {
-        alert("Comentario guardado correctamente.");
-        // Actualizar visual
-        fetchSolicitudes();
+        return;
     }
+
+    // 🟦 Quitar de pantalla inmediatamente
+    borrarFila(idSolicitud);
+
+    alert("Comentario guardado correctamente.");
 }
 
-// Borrar solo de pantalla
-function borrarFila(index) {
-    const fila = document.getElementById(`entregada-${index}`);
+// 🗑 Borrar solo de pantalla y NO volver a mostrarla
+function borrarFila(idSolicitud) {
+    borradas.push(idSolicitud); // 👈 recordar ID como borrado
+
+    const fila = document.getElementById(`entregada-${idSolicitud}`);
     if (fila) fila.remove();
 }
 
-// Obtener datos
+// Obtener datos desde Supabase
 async function fetchSolicitudes() {
     try {
-        const { data: recientes, error: errorRecientes } = await supabase
+        const { data: recientes, error: e1 } = await supabase
             .from("solicitudes")
             .select("*")
             .order("fecha_solicitud", { ascending: false })
             .limit(10);
-        if (errorRecientes) throw errorRecientes;
+        if (e1) throw e1;
 
-        const { data: entregadas, error: errorEntregadas } = await supabase
+        const { data: entregadas, error: e2 } = await supabase
             .from("solicitudes")
             .select("*")
             .eq("estado", "Entregado")
             .order("fecha_solicitud", { ascending: false })
             .limit(10);
-        if (errorEntregadas) throw errorEntregadas;
+        if (e2) throw e2;
 
         renderRecientes(recientes);
         renderEntregadas(entregadas);
+
     } catch (err) {
         console.error(err);
     }
 }
 
-// Inicializar fetch
+// Cargar datos
 fetchSolicitudes();
 
 // Actualizar cada 5 segundos
 setInterval(fetchSolicitudes, 5000);
 </script>
+
 </body>
 </html>
 

@@ -1,4 +1,138 @@
-<!-- Solicitudes entregadas -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel de Solicitudes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    :root {
+        --color-primary: #004d99;
+        --color-secondary: #28a745;
+        --color-info: #17a2b8;
+        --color-danger: #dc3545;
+        --color-muted: #6c757d;
+        --color-background: #eef1f5;
+        --color-card: #ffffff;
+        --color-text: #333333;
+        --color-border: #cccccc;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
+        margin: 0;
+        padding: 0;
+        color: var(--color-text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .box {
+        background: var(--color-card);
+        padding: 25px;
+        width: 100%;
+        max-width: 900px;
+        margin: 20px 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: var(--color-primary);
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    th, td {
+        border: 1px solid #e0e0e0;
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background: var(--color-primary);
+        color: var(--color-card);
+        text-align: center;
+        font-size: 0.9em;
+    }
+    tbody tr:nth-child(even) {
+        background-color: #f8f8f8;
+    }
+
+    .estado {
+        padding: 4px 8px;
+        border-radius: 6px;
+        text-align: center;
+        color: white;
+        font-weight: bold;
+    }
+    .pendiente { background-color: #ffc107; }
+    .entregada { background-color: #28a745; }
+
+    textarea {
+        width: 100%;
+        min-height: 50px;
+        padding: 5px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        resize: vertical;
+    }
+
+    .btnComentario {
+        margin-top: 5px;
+        background: var(--color-info);
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+        .box {
+            margin: 10px;
+            padding: 15px;
+        }
+        h2 { font-size: 1.6em; }
+        th, td { padding: 8px; font-size: 0.9em; }
+    }
+</style>
+</head>
+<body>
+
+<!-- Panel de últimas solicitudes -->
+<div class="box">
+    <h2>Últimas Solicitudes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Docente</th>
+                <th>Asignatura</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody id="ultimasSolicitudes">
+            <!-- Aquí se llenarán las últimas solicitudes -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Panel de solicitudes entregadas con comentarios -->
 <div class="box">
     <h2>Solicitudes Entregadas</h2>
     <table>
@@ -8,7 +142,7 @@
                 <th>Asignatura</th>
                 <th>Fecha</th>
                 <th>Estado</th>
-                <th>Comentario</th> <!-- Nueva columna -->
+                <th>Comentario</th>
             </tr>
         </thead>
         <tbody id="entregadas">
@@ -18,13 +152,36 @@
 </div>
 
 <script>
+    // Datos mock para pruebas visuales
+    const ultimasSolicitudes = [
+        { docente: "AARÓN SEPÚLVEDA", asignatura: "Instalaciones Eléctricas II", fecha: "2025-11-24", estado: "Pendiente" },
+        { docente: "DANIELA MARTÍNEZ", asignatura: "Electrónica I", fecha: "2025-11-24", estado: "Pendiente" },
+        { docente: "PEDRO PEDRERO", asignatura: "Robótica I", fecha: "2025-11-24", estado: "Pendiente" }
+    ];
+
     const solicitudesEntregadas = [
         { docente: "BRAYAN DEL VALLE", asignatura: "Robótica II", fecha: "2025-11-23", estado: "Entregada", comentario: "" },
         { docente: "DANIELA MARTÍNEZ", asignatura: "Electrónica I", fecha: "2025-11-23", estado: "Entregada", comentario: "" }
-        // ... hasta 10 elementos
     ];
 
-    function renderTablaEntregadas() {
+    // Render últimas solicitudes
+    function renderUltimas() {
+        const tbody = document.getElementById("ultimasSolicitudes");
+        tbody.innerHTML = "";
+        ultimasSolicitudes.forEach(s => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${s.docente}</td>
+                <td>${s.asignatura}</td>
+                <td>${s.fecha}</td>
+                <td><span class="estado ${s.estado.toLowerCase()}">${s.estado}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Render solicitudes entregadas
+    function renderEntregadas() {
         const tbody = document.getElementById("entregadas");
         tbody.innerHTML = "";
         solicitudesEntregadas.forEach((s, index) => {
@@ -35,8 +192,8 @@
                 <td>${s.fecha}</td>
                 <td><span class="estado ${s.estado.toLowerCase()}">${s.estado}</span></td>
                 <td>
-                    <textarea placeholder="Escriba un comentario..." id="comentario-${index}" style="width: 100%; min-height: 50px; padding: 5px; border-radius: 6px; border: 1px solid var(--color-border);"></textarea>
-                    <button onclick="guardarComentario(${index})" style="margin-top: 5px; background: var(--color-info); color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer;">💬 Enviar</button>
+                    <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario}</textarea>
+                    <button class="btnComentario" onclick="guardarComentario(${index})">💬 Enviar</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -48,10 +205,14 @@
         if(!texto) return alert("Debe ingresar un comentario.");
         solicitudesEntregadas[index].comentario = texto;
         alert("Comentario guardado (mock visual).");
-        // Aquí luego se puede enviar a Supabase
     }
 
-    renderTablaEntregadas();
+    // Render inicial
+    renderUltimas();
+    renderEntregadas();
 </script>
+
+</body>
+</html>
 
 

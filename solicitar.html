@@ -240,32 +240,105 @@
 </div>
 
 <script>
-/* 🔗 Conexión a Supabase IGUAL que en index.html */
+/* 🔗 Conexión a Supabase */
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user) window.location.href = "index.html";
 
-/* ➕ Añadir fila (LÓGICA INTACTA) */
+/* 🌟 LISTA DE MATERIALES */
+const materialesLista = [
+"Alargador","Alcohol isopropílico","Alicate Cortante","Alicate - Punta","Alicate - Universal",
+"Amarras plásticas","Analizador de calidad energía eléctrica MI2392","Analizador de calidad energía eléctrica MI2492",
+"Ampolleta E27","Amperimetro de tenaza","Antiparras","Arduino UNO","Arduino UNO - Sensores Varios",
+"Bateria de 9v","Broca Metal","Broca madera","Brochas","Caja Chuqui","Caja de derivación","Caja EMT","Caja de herramientas",
+"Calibrador de Corriente - Lazos Novus DC80L","Calibrador de corriente - Victor 05","Calibrador de procesos Fluke 725",
+"Calibrador de presión Fluke 717 500g","Calibrador de presión manual SIKA P40.2","Calibrador de RTD Novus DC80R",
+"Calibrador de termocupla Novus DC80T","Camara termografica Fluke Tis45","Cables Jumper","Cable 1,5mm","Cable 2,5mm",
+"Cable de impresora","Cable de poder","Cable de RED industrial Verde","Cable HDMI","Cimpreadora Cables de red",
+"Circuitos Integrados - Varios","Casco de seguridad eléctrico","Cautín","Certificado de instalaciones Fluke 1664FC",
+"Certificador de redes LAN Fluke DTX1800","Certificador de redes LAN Metrel","Cinta Aislante","Cinta auto fundente de goma",
+"Condensador Cerámico - Varios","Condensador Electrolítico - Varios","Cosenofimetro - Pinza de potencia Hioki 3286-20",
+"Crisol estaño","Desatornillador de Cruz","Desatornillador de Paleta","Diodos - Varios","ESP32","Enchufe Simple",
+"Enchufe Triple","Esmeril Angular","Etiquetador Brother","Equipo soldadura puesta a tierra","Filamento 3D","Ferrules",
+"Ferrulera","Fuente de poder Riel din","Frecuencímetro","Fusionadora Fibra Óptica","Gas Butano","Geólogo Institucional",
+"Guantes","Goniómetro","Horno Pozo Seco","Interruptor 9/12","Interruptor 9/15","Interruptor 9/24","Interruptor 9/32",
+"Interruptor automático","Interruptor automático trifásico","Interruptor Diferencial","Interruptor Saime","Juego Llaves Allen",
+"Juego Llaves Torx","Juego de dados","Jumper","Kit cableado estructural","Led - Varios","Lima - Varios","Limpia contacto",
+"Llave Francesa","Llave Inglesa","Llaves Punta corona","Luxómetro Amprobe LM-120","Marco de sierra","Maqueta de domótica - Schneider",
+"Maqueta de domótica - Varios","Martillo","Mazo de goma","Medidor de Aislación Megabras MI1050e","Medidor de Aislación AEMC",
+"Medidor de factor de potencia PCE-PCM","Medidor Eléctrico","Medidor de Aislación Hioki IR4056-20","Módulos LAB VOLT",
+"Motor 12v DC","Motor 24v DC","Multimetro Analógico","Multimetro digital","Nock Out Hidráulico","Nivel","Osciloscopio Digital",
+"Osciloscopio Digital de mano","Parada de Emergencia","Pasta de soldar","Pesa","Pelacables","PG - Siemens","Pila AA","Pila AAA",
+"Pistola de calor","Probador de fase","Protoboard","Punta taladro PH2","Remachadora POP","Relé - Varios","Resistencias - Varios",
+"Robot móvil York","Rollo cable de RED cat6","Serrucho","Set EPP","Sensores - Varios","Sonda Osciloscopio","Soplete",
+"Tacómetro Amprobe Tach-20","Tarjeta de adquisición de datos MyDAQ","Taladro Inalámbrico","Termocupla - Varios",
+"Transductor de presión Danfos MBS1700","Transistores - Varios","Terminales - Varios","Transformador de 12v",
+"Transformador de 9v","Estaño","Fusibles - tipo Hilo","Fusibles - Varios","Teslameter Tunkia TD8620","Telurómetro Megbras MTD - 20KWr",
+"Telurómetro Megger DET4TCR2","Wattmetro Fluke 345"
+];
+
+/* 🌟 AUTOCOMPLETADO PARA INPUTS DE MATERIAL */
+function enableAutocomplete(input) {
+    const lista = document.createElement("ul");
+    lista.style.position = "absolute";
+    lista.style.border = "1px solid #ccc";
+    lista.style.background = "white";
+    lista.style.listStyle = "none";
+    lista.style.padding = "0";
+    lista.style.margin = "0";
+    lista.style.maxHeight = "150px";
+    lista.style.overflowY = "auto";
+    lista.style.width = input.offsetWidth + "px";
+    lista.style.zIndex = 10;
+    input.parentNode.style.position = "relative";
+    input.parentNode.appendChild(lista);
+
+    input.addEventListener("input", () => {
+        const val = input.value.toLowerCase();
+        lista.innerHTML = '';
+        if (!val) return;
+        materialesLista.filter(m => m.toLowerCase().includes(val))
+            .forEach(m => {
+                const li = document.createElement("li");
+                li.textContent = m;
+                li.style.padding = "5px";
+                li.style.cursor = "pointer";
+                li.onmousedown = () => { // para que funcione antes de perder focus
+                    input.value = m;
+                    lista.innerHTML = '';
+                };
+                lista.appendChild(li);
+            });
+    });
+
+    input.addEventListener("blur", () => {
+        setTimeout(() => { lista.innerHTML = ''; }, 100);
+    });
+}
+
+/* ➕ Añadir fila */
 function addRow() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
         <td><input type="text" placeholder="Ej: Cables de prueba"></td>
         <td><input type="number" min="1" value="1"></td>`;
     document.getElementById("tbody").appendChild(tr);
+
+    const inputNuevo = tr.querySelector("input[type=text]");
+    enableAutocomplete(inputNuevo);
 }
 
-/* ➖ Eliminar fila (LÓGICA INTACTA) */
+/* ➖ Eliminar fila */
 function removeRow() {
     const tbody = document.getElementById("tbody");
     if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
     else alert("Debe haber al menos un material.");
 }
 
-/* 📤 Enviar Solicitud (LÓGICA INTACTA) */
+/* 📤 Enviar Solicitud */
 async function enviar() {
     const btn = document.querySelector(".btnEnviar");
     btn.disabled = true;
@@ -331,33 +404,18 @@ function finishError(msg) {
    CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
 ------------------------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
-
     const params = new URLSearchParams(window.location.search);
-
     const docente = params.get("docente");
     const asignatura = params.get("asignatura");
     const materiales = JSON.parse(params.get("materiales") || "[]");
     const cantidades = JSON.parse(params.get("cantidades") || "[]");
 
-    // 1️⃣ Rellenar docente automáticamente
-    if (docente) {
-        const selectDocente = document.getElementById("docente");
-        selectDocente.value = docente;
-    }
+    if (docente) document.getElementById("docente").value = docente;
+    if (asignatura) document.getElementById("asignatura").value = asignatura;
 
-    // 2️⃣ Rellenar asignatura automáticamente
-    if (asignatura) {
-        document.getElementById("asignatura").value = asignatura;
-    }
-
-    // 3️⃣ Rellenar materiales
+    const tbody = document.getElementById("tbody");
     if (materiales.length > 0) {
-
-        // Limpia las filas actuales
-        const tbody = document.getElementById("tbody");
         tbody.innerHTML = "";
-
-        // Crea filas según los datos enviados
         for (let i = 0; i < materiales.length; i++) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -368,9 +426,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Activar autocompletado en todos los inputs de material
+    document.querySelectorAll("#tbody input[type=text]").forEach(input => enableAutocomplete(input));
 });
-
 </script>
 
 </body>
 </html>
+

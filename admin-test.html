@@ -38,19 +38,64 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         box-sizing: border-box;
     }
-    h2 { text-align: center; margin-bottom: 20px; color: var(--color-primary); font-size: 1.8em; border-bottom: 2px solid var(--color-primary); padding-bottom: 10px; }
-    h3 { margin-top: 25px; color: var(--color-primary); }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; vertical-align: top; }
-    th { background: var(--color-primary); color: var(--color-card); text-align: center; }
-    #tablaRecientes tbody tr:nth-child(even), #tablaEntregadas tbody tr:nth-child(even) { background-color: #f8f8f8; }
-    textarea { width: 80%; min-height: 40px; padding: 5px; resize: vertical; margin-bottom: 5px; font-size: 0.9em; }
-    .btnComentario, .btnBorrar { padding: 6px 10px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; margin-left: 5px; }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: var(--color-primary);
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+    h3 { 
+        margin-top: 25px; 
+        color: var(--color-primary);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    th, td {
+        border: 1px solid #e0e0e0;
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background: var(--color-primary);
+        color: var(--color-card);
+        text-align: center;
+    }
+    #tablaRecientes tbody tr:nth-child(even),
+    #tablaEntregadas tbody tr:nth-child(even) {
+        background-color: #f8f8f8;
+    }
+    textarea {
+        width: 80%;
+        min-height: 40px;
+        padding: 5px;
+        resize: vertical;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+    .btnComentario, .btnBorrar {
+        padding: 6px 10px;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin-left: 5px;
+    }
     .btnComentario { background-color: var(--color-info); }
     .btnComentario:hover { background-color: #138496; }
     .btnBorrar { background-color: var(--color-danger); }
     .btnBorrar:hover { background-color: #c82333; }
-    @media(max-width: 600px) { .box { margin: 10px; padding: 15px; } th, td { font-size: 0.85em; padding: 6px; } textarea { width: 100%; } }
+    @media(max-width: 600px) {
+        .box { margin: 10px; padding: 15px; }
+        th, td { font-size: 0.85em; padding: 6px; }
+        textarea { width: 100%; }
+    }
 </style>
 </head>
 <body>
@@ -60,7 +105,12 @@
     <h3>Solicitudes Recientes (Pendientes)</h3>
     <table id="tablaRecientes">
         <thead>
-            <tr><th>Docente</th><th>Asignatura</th><th>Fecha</th><th>Estado</th></tr>
+            <tr>
+                <th>Docente</th>
+                <th>Asignatura</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+            </tr>
         </thead>
         <tbody></tbody>
     </table>
@@ -68,7 +118,12 @@
     <h3>Solicitudes Entregadas</h3>
     <table id="tablaEntregadas">
         <thead>
-            <tr><th>Docente</th><th>Asignatura</th><th>Fecha</th><th>Comentario (Opcional)</th></tr>
+            <tr>
+                <th>Docente</th>
+                <th>Asignatura</th>
+                <th>Fecha</th>
+                <th>Comentario (Opcional)</th>
+            </tr>
         </thead>
         <tbody></tbody>
     </table>
@@ -76,29 +131,34 @@
 
 <script>
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGpwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Mock usuario, reemplazar con tu localStorage si aplica
 const user = { email: "usuario@ejemplo.com" };
 
-// IDs de solicitudes borradas del frontend
-let borradas = JSON.parse(localStorage.getItem("solicitudesBorradas") || "[]");
-
+// Renderizar solicitudes recientes (Pendientes)
 function renderRecientes(solicitudes) {
     const tbody = document.querySelector("#tablaRecientes tbody");
     tbody.innerHTML = "";
     solicitudes.filter(s => s.estado === "Pendiente").slice(0,10).forEach(s => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${s.docente}</td><td>${s.asignatura}</td><td>${new Date(s.fecha_solicitud).toLocaleString()}</td><td>${s.estado}</td>`;
+        tr.innerHTML = `
+            <td>${s.docente}</td>
+            <td>${s.asignatura}</td>
+            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+            <td>${s.estado}</td>
+        `;
         tbody.appendChild(tr);
     });
 }
 
+// Renderizar solicitudes entregadas con comentario opcional y botón borrar
 function renderEntregadas(solicitudes) {
     const tbody = document.querySelector("#tablaEntregadas tbody");
     tbody.innerHTML = "";
-    solicitudes.slice(0,10).forEach((s,index) => {
-        if (borradas.includes(s.id)) return; // no mostrar si fue borrada en pantalla
+    solicitudes.slice(0,10).forEach((s, index) => {
         const tr = document.createElement("tr");
         tr.id = `entregada-${index}`;
         tr.innerHTML = `
@@ -108,7 +168,7 @@ function renderEntregadas(solicitudes) {
             <td>
                 <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario_entrega || ""}</textarea>
                 <button class="btnComentario" onclick="guardarComentario(${s.id}, ${index})">💬 Enviar</button>
-                <button class="btnBorrar" onclick="borrarFila(${s.id})">🗑 Borrar</button>
+                <button class="btnBorrar" onclick="borrarFila(${index})">🗑 Borrar</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -119,30 +179,55 @@ function renderEntregadas(solicitudes) {
 async function guardarComentario(idSolicitud, index) {
     let texto = document.getElementById(`comentario-${index}`).value.trim();
     if (!texto) texto = "Sin Comentarios";
-    const { error } = await supabase.from("solicitudes").update({ comentario_entrega: texto }).eq("id", idSolicitud);
-    if (error) { alert("Error al guardar comentario: " + error.message); console.error(error); }
-    else { alert("Comentario guardado correctamente."); fetchSolicitudes(); }
+    const { error } = await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: texto })
+        .eq("id", idSolicitud);
+    if (error) {
+        alert("Error al guardar comentario: " + error.message);
+        console.error(error);
+    } else {
+        alert("Comentario guardado correctamente.");
+        // Actualizar visual
+        fetchSolicitudes();
+    }
 }
 
-// Borrar de pantalla y guardar en localStorage
-function borrarFila(idSolicitud) {
-    borradas.push(idSolicitud);
-    localStorage.setItem("solicitudesBorradas", JSON.stringify(borradas));
-    fetchSolicitudes();
+// Borrar solo de pantalla
+function borrarFila(index) {
+    const fila = document.getElementById(`entregada-${index}`);
+    if (fila) fila.remove();
 }
 
 // Obtener datos
 async function fetchSolicitudes() {
     try {
-        const { data: recientes } = await supabase.from("solicitudes").select("*").order("fecha_solicitud",{ascending:false}).limit(10);
-        const { data: entregadas } = await supabase.from("solicitudes").select("*").eq("estado","Entregado").order("fecha_solicitud",{ascending:false}).limit(10);
+        const { data: recientes, error: errorRecientes } = await supabase
+            .from("solicitudes")
+            .select("*")
+            .order("fecha_solicitud", { ascending: false })
+            .limit(10);
+        if (errorRecientes) throw errorRecientes;
+
+        const { data: entregadas, error: errorEntregadas } = await supabase
+            .from("solicitudes")
+            .select("*")
+            .eq("estado", "Entregado")
+            .order("fecha_solicitud", { ascending: false })
+            .limit(10);
+        if (errorEntregadas) throw errorEntregadas;
 
         renderRecientes(recientes);
         renderEntregadas(entregadas);
-    } catch(err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+    }
 }
 
+// Inicializar fetch
 fetchSolicitudes();
+
+// Actualizar cada 5 segundos
 setInterval(fetchSolicitudes, 5000);
 </script>
 </body>

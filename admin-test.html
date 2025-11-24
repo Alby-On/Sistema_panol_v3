@@ -128,17 +128,29 @@
         <tbody></tbody>
     </table>
 </div>
-
 <script>
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Guardar IDs de solicitudes borradas desde la pantalla
-let borradas = [];
+// Obtener lista de IDs ocultos desde localStorage
+function getOcultos() {
+    return JSON.parse(localStorage.getItem("ocultos_entregadas") || "[]");
+}
 
-// Renderizar solicitudes recientes (Pendientes)
+// Agregar un id a ocultos
+function agregarOculto(id) {
+    const ocultos = getOcultos();
+    if (!ocultos.includes(id)) {
+        ocultos.push(id);
+        localStorage.setItem("ocultos_entregadas", JSON.stringify(ocultos));
+    }
+}
+
+// ------------------------------
+// RENDERIZAR SOLICITUDES PENDIENTES
+// ------------------------------
 function renderRecientes(solicitudes) {
     const tbody = document.querySelector("#tablaRecientes tbody");
     tbody.innerHTML = "";
@@ -158,24 +170,28 @@ function renderRecientes(solicitudes) {
         });
 }
 
-// Renderizar solicitudes entregadas
+// ------------------------------
+// RENDERIZAR SOLICITUDES ENTREGADAS
+// ------------------------------
 function renderEntregadas(solicitudes) {
     const tbody = document.querySelector("#tablaEntregadas tbody");
     tbody.innerHTML = "";
 
+    const ocultos = getOcultos();
+
     solicitudes
-        .filter(s => !borradas.includes(s.id))   // 👈 Ocultar borradas
+        .filter(s => !ocultos.includes(s.id)) // 👈 evitar mostrar borrados
         .slice(0,10)
         .forEach((s, index) => {
             const tr = document.createElement("tr");
-            tr.id = `entregada-${s.id}`; // 👈 Mejor identificador (por ID real)
-
+            tr.id = `entregada-${s.id}`;
             tr.innerHTML = `
                 <td>${s.docente}</td>
                 <td>${s.asignatura}</td>
                 <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
                 <td>
-                    <textarea placeholder="Escriba un comentario..." id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
+                    <textarea placeholder="Escriba un comentario..." 
+                        id="comentario-${s.id}">${s.comentario_entrega || ""}</textarea>
                     <button class="btnComentario" onclick="guardarComentario(${s.id})">💬 Enviar</button>
                     <button class="btnBorrar" onclick="borrarFila(${s.id})">🗑 Borrar</button>
                 </td>
@@ -184,7 +200,9 @@ function renderEntregadas(solicitudes) {
         });
 }
 
-// Guardar comentario en la base de datos
+// ------------------------------
+// GUARDAR COMENTARIO
+// ------------------------------
 async function guardarComentario(idSolicitud) {
     let texto = document.getElementById(`comentario-${idSolicitud}`).value.trim();
     if (!texto) texto = "Sin Comentarios";
@@ -196,41 +214,42 @@ async function guardarComentario(idSolicitud) {
 
     if (error) {
         alert("Error al guardar comentario: " + error.message);
-        console.error(error);
         return;
     }
 
-    // 🟦 Quitar de pantalla inmediatamente
+    // Ocultar fila tras guardar comentario
+    agregarOculto(idSolicitud);
     borrarFila(idSolicitud);
 
-    alert("Comentario guardado correctamente.");
+    alert("Comentario guardado y solicitud ocultada.");
 }
 
-// 🗑 Borrar solo de pantalla y NO volver a mostrarla
-function borrarFila(idSolicitud) {
-    borradas.push(idSolicitud); // 👈 recordar ID como borrado
-
-    const fila = document.getElementById(`entregada-${idSolicitud}`);
+// ------------------------------
+// BORRAR SOLO DE LA PANTALLA
+// ------------------------------
+function borrarFila(id) {
+    agregarOculto(id);
+    const fila = document.getElementById(`entregada-${id}`);
     if (fila) fila.remove();
 }
 
-// Obtener datos desde Supabase
+// ------------------------------
+// FETCH PRINCIPAL
+// ------------------------------
 async function fetchSolicitudes() {
     try {
-        const { data: recientes, error: e1 } = await supabase
+        const { data: recientes } = await supabase
             .from("solicitudes")
             .select("*")
             .order("fecha_solicitud", { ascending: false })
             .limit(10);
-        if (e1) throw e1;
 
-        const { data: entregadas, error: e2 } = await supabase
+        const { data: entregadas } = await supabase
             .from("solicitudes")
             .select("*")
             .eq("estado", "Entregado")
             .order("fecha_solicitud", { ascending: false })
-            .limit(10);
-        if (e2) throw e2;
+            .limit(50); // traer más por si algunas están ocultas
 
         renderRecientes(recientes);
         renderEntregadas(entregadas);
@@ -240,12 +259,13 @@ async function fetchSolicitudes() {
     }
 }
 
-// Cargar datos
+// Ejecutar al cargar
 fetchSolicitudes();
 
-// Actualizar cada 5 segundos
+// Auto refrescar cada 5 seg
 setInterval(fetchSolicitudes, 5000);
 </script>
+
 
 </body>
 </html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Panel de Solicitudes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
     :root {
         --color-primary: #004d99;
@@ -17,7 +17,6 @@
         --color-text: #333333;
         --color-border: #cccccc;
     }
-
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background: var(--color-background);
@@ -25,40 +24,40 @@
         padding: 0;
         color: var(--color-text);
         display: flex;
-        flex-direction: column;
-        align-items: center;
+        justify-content: center;
+        align-items: flex-start;
         min-height: 100vh;
     }
-
     .box {
         background: var(--color-card);
-        padding: 25px;
+        padding: 20px;
         width: 100%;
-        max-width: 900px;
+        max-width: 1000px;
         margin: 20px 15px;
         border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         box-sizing: border-box;
     }
-
     h2 {
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         color: var(--color-primary);
         font-size: 1.8em;
         border-bottom: 2px solid var(--color-primary);
         padding-bottom: 10px;
     }
-
+    h3 { 
+        margin-top: 25px; 
+        color: var(--color-primary);
+    }
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        margin-top: 10px;
     }
     th, td {
         border: 1px solid #e0e0e0;
-        padding: 12px;
+        padding: 10px;
         text-align: left;
         vertical-align: top;
     }
@@ -66,58 +65,51 @@
         background: var(--color-primary);
         color: var(--color-card);
         text-align: center;
-        font-size: 0.9em;
     }
-    tbody tr:nth-child(even) {
+    #tabla tbody tr:nth-child(even) {
         background-color: #f8f8f8;
     }
-
-    .estado {
-        padding: 4px 8px;
-        border-radius: 6px;
-        text-align: center;
-        color: white;
-        font-weight: bold;
-    }
-    .pendiente { background-color: #ffc107; }
-    .entregada { background-color: #28a745; }
-
     textarea {
-        width: 100%;
-        min-height: 50px;
+        width: 90%;
+        min-height: 40px;
         padding: 5px;
-        border-radius: 6px;
-        border: 1px solid var(--color-border);
         resize: vertical;
+        margin-bottom: 5px;
+        font-size: 0.9em;
     }
-
     .btnComentario {
-        margin-top: 5px;
-        background: var(--color-info);
+        padding: 6px 10px;
+        background-color: var(--color-info);
         color: white;
         border: none;
-        padding: 6px 10px;
         border-radius: 5px;
         cursor: pointer;
-        font-weight: bold;
+        font-size: 0.9em;
     }
-
-    @media (max-width: 600px) {
+    .btnComentario:hover {
+        background-color: #138496;
+    }
+    @media(max-width: 600px) {
         .box {
             margin: 10px;
             padding: 15px;
         }
-        h2 { font-size: 1.6em; }
-        th, td { padding: 8px; font-size: 0.9em; }
+        th, td {
+            font-size: 0.85em;
+            padding: 6px;
+        }
+        textarea {
+            width: 100%;
+        }
     }
 </style>
 </head>
 <body>
-
-<!-- Panel de últimas solicitudes -->
 <div class="box">
-    <h2>Últimas Solicitudes</h2>
-    <table>
+    <h2>Panel de Solicitudes</h2>
+
+    <h3>Solicitudes Recientes</h3>
+    <table id="tablaRecientes">
         <thead>
             <tr>
                 <th>Docente</th>
@@ -126,93 +118,115 @@
                 <th>Estado</th>
             </tr>
         </thead>
-        <tbody id="ultimasSolicitudes">
-            <!-- Aquí se llenarán las últimas solicitudes -->
+        <tbody>
+            <!-- Se llenará dinámicamente -->
         </tbody>
     </table>
-</div>
 
-<!-- Panel de solicitudes entregadas con comentarios -->
-<div class="box">
-    <h2>Solicitudes Entregadas</h2>
-    <table>
+    <h3>Solicitudes Entregadas</h3>
+    <table id="tablaEntregadas">
         <thead>
             <tr>
                 <th>Docente</th>
                 <th>Asignatura</th>
                 <th>Fecha</th>
-                <th>Estado</th>
-                <th>Comentario</th>
+                <th>Comentario (Opcional)</th>
             </tr>
         </thead>
-        <tbody id="entregadas">
-            <!-- Aquí se llenarán las solicitudes entregadas -->
+        <tbody>
+            <!-- Se llenará dinámicamente -->
         </tbody>
     </table>
 </div>
 
 <script>
-    // Datos mock para pruebas visuales
-    const ultimasSolicitudes = [
-        { docente: "AARÓN SEPÚLVEDA", asignatura: "Instalaciones Eléctricas II", fecha: "2025-11-24", estado: "Pendiente" },
-        { docente: "DANIELA MARTÍNEZ", asignatura: "Electrónica I", fecha: "2025-11-24", estado: "Pendiente" },
-        { docente: "PEDRO PEDRERO", asignatura: "Robótica I", fecha: "2025-11-24", estado: "Pendiente" }
-    ];
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    const solicitudesEntregadas = [
-        { docente: "BRAYAN DEL VALLE", asignatura: "Robótica II", fecha: "2025-11-23", estado: "Entregada", comentario: "" },
-        { docente: "DANIELA MARTÍNEZ", asignatura: "Electrónica I", fecha: "2025-11-23", estado: "Entregada", comentario: "" }
-    ];
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Render últimas solicitudes
-    function renderUltimas() {
-        const tbody = document.getElementById("ultimasSolicitudes");
-        tbody.innerHTML = "";
-        ultimasSolicitudes.forEach(s => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${s.docente}</td>
-                <td>${s.asignatura}</td>
-                <td>${s.fecha}</td>
-                <td><span class="estado ${s.estado.toLowerCase()}">${s.estado}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
+// Mock usuario, puedes reemplazarlo con tu localStorage
+const user = { email: "usuario@ejemplo.com" };
+
+// Función para renderizar solicitudes recientes
+function renderRecientes(solicitudes) {
+    const tbody = document.querySelector("#tablaRecientes tbody");
+    tbody.innerHTML = "";
+    solicitudes.slice(0,10).forEach(s => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${s.docente}</td>
+            <td>${s.asignatura}</td>
+            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+            <td>${s.estado}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Función para renderizar solicitudes entregadas con comentario opcional
+function renderEntregadas(solicitudes) {
+    const tbody = document.querySelector("#tablaEntregadas tbody");
+    tbody.innerHTML = "";
+    solicitudes.slice(0,10).forEach((s, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${s.docente}</td>
+            <td>${s.asignatura}</td>
+            <td>${new Date(s.fecha_solicitud).toLocaleString()}</td>
+            <td>
+                <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario || ""}</textarea>
+                <button class="btnComentario" onclick="guardarComentario(${index})">💬 Enviar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Array mock para manejar comentarios localmente
+let solicitudesEntregadas = [];
+
+// Guardar comentario opcional
+function guardarComentario(index) {
+    const texto = document.getElementById(`comentario-${index}`).value.trim();
+    solicitudesEntregadas[index].comentario = texto; // se guarda aunque esté vacío
+    alert("Comentario guardado (mock visual).");
+}
+
+// Función para obtener datos en tiempo real
+async function fetchSolicitudes() {
+    try {
+        const { data: recientes, error: errorRecientes } = await supabase
+            .from("solicitudes")
+            .select("*")
+            .order("fecha_solicitud", { ascending: false })
+            .limit(10);
+        if (errorRecientes) throw errorRecientes;
+
+        const { data: entregadas, error: errorEntregadas } = await supabase
+            .from("solicitudes")
+            .select("*")
+            .eq("estado", "Entregado")
+            .order("fecha_solicitud", { ascending: false })
+            .limit(10);
+        if (errorEntregadas) throw errorEntregadas;
+
+        renderRecientes(recientes);
+        solicitudesEntregadas = entregadas;
+        renderEntregadas(entregadas);
+    } catch (err) {
+        console.error(err);
     }
+}
 
-    // Render solicitudes entregadas
-    function renderEntregadas() {
-        const tbody = document.getElementById("entregadas");
-        tbody.innerHTML = "";
-        solicitudesEntregadas.forEach((s, index) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${s.docente}</td>
-                <td>${s.asignatura}</td>
-                <td>${s.fecha}</td>
-                <td><span class="estado ${s.estado.toLowerCase()}">${s.estado}</span></td>
-                <td>
-                    <textarea placeholder="Escriba un comentario..." id="comentario-${index}">${s.comentario}</textarea>
-                    <button class="btnComentario" onclick="guardarComentario(${index})">💬 Enviar</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+// Inicializar fetch
+fetchSolicitudes();
 
-    function guardarComentario(index) {
-        const texto = document.getElementById(`comentario-${index}`).value.trim();
-        if(!texto) return alert("Debe ingresar un comentario.");
-        solicitudesEntregadas[index].comentario = texto;
-        alert("Comentario guardado (mock visual).");
-    }
-
-    // Render inicial
-    renderUltimas();
-    renderEntregadas();
+// Actualizar cada 5 segundos (simula tiempo real)
+setInterval(fetchSolicitudes, 5000);
 </script>
-
 </body>
 </html>
+
 
 

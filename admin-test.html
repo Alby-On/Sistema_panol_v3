@@ -5,39 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel de Solicitudes</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body class="bg-gray-50 p-4 md:p-8 font-sans">
-  <header class="max-w-7xl mx-auto mb-8">
-    <h1 class="text-4xl font-extrabold text-gray-800 text-center border-b-2 border-gray-200 pb-3">
-      📋 Panel de Gestión de Materiales
-    </h1>
-  </header>
+<body class="bg-gray-100 p-6">
+  <h1 class="text-3xl font-bold text-center mb-6">Panel de Solicitudes</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
-    
-        <div class="bg-white shadow-xl rounded-2xl border-t-4 border-yellow-500 overflow-hidden">
-      <div class="bg-yellow-50 p-4 border-b border-yellow-200">
-        <h2 class="text-2xl font-bold text-yellow-700">⏳ Solicitudes Pendientes</h2>
-              </div>
-      <div id="listaPendientes" class="p-4 space-y-5 max-h-[80vh] overflow-y-auto"></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
+
+        <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-yellow-500">
+      <h2 class="text-2xl font-bold mb-4 text-yellow-600">Solicitudes Pendientes</h2>
+      <div id="listaPendientes" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
     </div>
 
-        <div class="bg-white shadow-xl rounded-2xl border-t-4 border-green-600 overflow-hidden">
-      <div class="bg-green-50 p-4 border-b border-green-200">
-        <h2 class="text-2xl font-bold text-green-700">✅ Entregadas (Sin Comentario)</h2>
-      </div>
-      <div id="listaEntregadas" class="p-4 space-y-5 max-h-[80vh] overflow-y-auto"></div>
+        <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-green-600">
+      <h2 class="text-2xl font-bold mb-4 text-green-700">Solicitudes Entregadas (Sin Comentario)</h2>
+      <div id="listaEntregadas" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
     </div>
 
   </div>
 
 <script>
     // =============================
-    //   CONFIGURAR SUPABASE (LÓGICA INTACTA)
+    //   CONFIGURAR SUPABASE
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
@@ -45,89 +37,58 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =============================
-    //   EJECUTAR CUANDO DOM ESTÉ LISTO (LÓGICA INTACTA)
+    //   EJECUTAR CUANDO DOM ESTÉ LISTO
     // =============================
     document.addEventListener("DOMContentLoaded", () => {
 
-        // =================================
-        //   CREAR TARJETAS (MEJORAS VISUALES)
-        // =================================
+        // =============================
+        //   CREAR TARJETAS (Visualmente más prolijas)
+        // =============================
         function crearCardPendiente(s, materiales) {
-            // Estilo mejorado para la lista de materiales
-            const materialesHTML = materiales.map(m => 
-                `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
-            ).join("");
+            // Añado una clase 'mb-1' y uso 'font-medium' para hacer los datos más compactos
+            const materialesHTML = materiales.map(m => `<li class="text-gray-700">${m.material} — <span class="font-semibold">${m.cantidad} ud</span></li>`).join("");
             
-            // Lógica de la unión (INTACTA)
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
-              <div id="solicitud_${s.id}" class="bg-white border border-gray-200 rounded-lg p-5 shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.01]">
-                
-                                <div class="flex justify-between items-center mb-4 border-b pb-3 border-yellow-200">
-                  <span class="text-sm font-mono text-yellow-700 bg-yellow-100 px-3 py-1 rounded-full font-bold">
-                    SOLICITUD #${s.id}
-                  </span>
-                </div>
+              <div id="solicitud_${s.id}" class="p-4 bg-white border border-gray-200 rounded-lg shadow-md space-y-1">
+                <p class="text-sm text-gray-500 mb-1"><strong class="text-gray-700">ID:</strong> ${s.id}</p>
+                <p class="text-gray-800 font-medium"><strong>Solicitante:</strong> ${nombreSolicitante}</p>
+                <p class="text-gray-800 font-medium"><strong>Docente:</strong> ${s.docente}</p>
+                <p class="text-gray-800 font-medium"><strong>Asignatura:</strong> ${s.asignatura}</p>
 
-                                <div class="space-y-2 text-sm text-gray-700">
-                  <p><span class="font-bold text-gray-900">👥 Solicitante:</span> ${nombreSolicitante}</p>
-                  <p><span class="font-bold text-gray-900">👨‍🏫 Docente:</span> ${s.docente}</p>
-                  <p><span class="font-bold text-gray-900">📚 Asignatura:</span> ${s.asignatura}</p>
-                </div>
-
-                                <div class="mt-4 pt-4 border-t border-gray-100">
-                  <p class="font-bold text-gray-800 mb-2">📦 Materiales Requeridos:</p>
-                  <ul class="ml-4 space-y-1 list-disc text-sm text-gray-600">
-                    ${materialesHTML}
-                  </ul>
-                </div>
+                <p class="mt-2 pt-2 border-t font-semibold text-gray-700">Materiales:</p>
+                <ul class="ml-4 list-disc text-sm space-y-0.5">${materialesHTML}</ul>
               </div>
             `;
         }
 
         function crearCardEntregada(s, materiales) {
-            // Estilo mejorado para la lista de materiales
-            const materialesHTML = materiales.map(m => 
-                `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
-            ).join("");
+            // Añado una clase 'mb-1' y uso 'font-medium' para hacer los datos más compactos
+            const materialesHTML = materiales.map(m => `<li class="text-gray-700">${m.material} — <span class="font-semibold">${m.cantidad} ud</span></li>`).join("");
             
-            // Lógica de la unión (INTACTA)
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
-              <div id="solicitud_${s.id}" class="bg-white border border-gray-200 rounded-lg p-5 shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.01]">
-                
-                                <div class="flex justify-between items-center mb-4 border-b pb-3 border-green-200">
-                  <span class="text-sm font-mono text-green-700 bg-green-100 px-3 py-1 rounded-full font-bold">
-                    SOLICITUD #${s.id}
-                  </span>
-                </div>
+              <div id="solicitud_${s.id}" class="p-4 bg-white border border-gray-200 rounded-lg shadow-md space-y-1">
+                <p class="text-sm text-gray-500 mb-1"><strong class="text-gray-700">ID:</strong> ${s.id}</p>
+                <p class="text-gray-800 font-medium"><strong>Solicitante:</strong> ${nombreSolicitante}</p>
+                <p class="text-gray-800 font-medium"><strong>Docente:</strong> ${s.docente}</p>
+                <p class="text-gray-800 font-medium"><strong>Asignatura:</strong> ${s.asignatura}</p>
 
-                                <div class="space-y-2 text-sm text-gray-700 mb-4">
-                  <p><span class="font-bold text-gray-900">👥 Solicitante:</span> ${nombreSolicitante}</p>
-                  <p><span class="font-bold text-gray-900">👨‍🏫 Docente:</span> ${s.docente}</p>
-                  <p><span class="font-bold text-gray-900">📚 Asignatura:</span> ${s.asignatura}</p>
-                </div>
-                
-                                <div class="mt-4 pt-4 border-t border-gray-100">
-                  <p class="font-bold text-gray-800 mb-2">✅ Materiales Entregados:</p>
-                  <ul class="ml-4 space-y-1 list-disc text-sm text-gray-600">
-                    ${materialesHTML}
-                  </ul>
-                </div>
+                <p class="mt-2 pt-2 border-t font-semibold text-gray-700">Materiales:</p>
+                <ul class="ml-4 list-disc text-sm space-y-0.5">${materialesHTML}</ul>
 
-                                <div class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                  <p class="text-sm font-bold text-gray-700 mb-2">📝 Registrar Comentario de Entrega:</p>
-                  <textarea id="coment_${s.id}" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500 resize-none" placeholder="Escribe un comentario o nota final..."></textarea>
-                  <div class="flex justify-end gap-3 mt-3">
-                    <button onclick="guardarSinComentario(${s.id})"
-                      class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-semibold hover:bg-gray-600 transition duration-150">
-                      Sin comentario
-                    </button>
+                <div class="mt-3 pt-2 border-t">
+                  <textarea id="coment_${s.id}" class="w-full p-2 border border-gray-300 rounded-lg text-sm" placeholder="Escribe un comentario..."></textarea>
+                  <div class="flex gap-2 mt-2">
                     <button onclick="guardarComentario(${s.id})"
-                      class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition duration-150">
+                      class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
                       Enviar comentario
+                    </button>
+                    <button onclick="guardarSinComentario(${s.id})"
+                      class="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">
+                      Sin comentario
                     </button>
                   </div>
                 </div>
@@ -136,11 +97,10 @@
         }
 
         // =============================
-        //   CARGAR LISTAS (LÓGICA INTACTA)
+        //   CARGAR LISTAS (Lógica intacta)
         // =============================
-        // *** Las funciones cargarPendientes y cargarEntregadas mantienen su lógica interna, ***
-        // *** pero ahora llaman a las funciones crearCard... visualmente mejoradas. ***
 
+        // --- Carga de Pendientes ---
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
             
@@ -161,11 +121,13 @@
             cont.innerHTML = html;
         }
 
+        // --- Carga de Entregadas (Lógica intacta) ---
         async function cargarEntregadas() {
             const cont = document.getElementById("listaEntregadas");
             const comentariosGuardados = {};
             
             let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
+
             document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
                 const id = textarea.id.replace("coment_", "");
                 comentariosGuardados[id] = textarea.value;
@@ -188,7 +150,7 @@
             }
 
             cont.innerHTML = nuevoHtml;
-            
+
             solicitudes.forEach(s => {
                 const id = s.id.toString();
                 if (comentariosGuardados[id]) {
@@ -215,7 +177,7 @@
         }
 
         // =============================
-        //  FUNCIONES DE COMENTARIO (LÓGICA INTACTA)
+        //  FUNCIONES DE COMENTARIO (Lógica intacta)
         // =============================
         window.guardarComentario = async function(id) {
             const txt = document.getElementById(`coment_${id}`).value.trim();
@@ -236,7 +198,7 @@
         }
 
         // =============================
-        //   AUTO-ACTUALIZACIÓN 5s (LÓGICA INTACTA)
+        //   AUTO-ACTUALIZACIÓN 5s (Lógica intacta)
         // =============================
         cargarTodo();
         setInterval(cargarTodo, 5000);

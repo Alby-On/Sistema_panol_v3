@@ -1,36 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel de Solicitudes</title>
-
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-
-<body class="bg-gray-100 p-6">
-  <h1 class="text-3xl font-bold text-center mb-6">Panel de Solicitudes</h1>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
-
-    <!-- Pendientes -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-yellow-500">
-      <h2 class="text-2xl font-bold mb-4 text-yellow-600">Solicitudes Pendientes</h2>
-      <div id="listaPendientes" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
-    </div>
-
-    <!-- Entregadas sin comentario -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-green-600">
-      <h2 class="text-2xl font-bold mb-4 text-green-700">Solicitudes Entregadas (Sin Comentario)</h2>
-      <div id="listaEntregadas" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
-    </div>
-
-  </div>
-
- <script>
+<script>
     // =============================
     //   CONFIGURAR SUPABASE
     // ... (sin cambios)
@@ -39,6 +7,10 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Variable global para mantener la lista actual de IDs en cada contenedor
+    let currentPendingIds = [];
+    let currentEntregadaIds = [];
 
     // =============================
     //   EJECUTAR CUANDO DOM ESTÉ LISTO
@@ -51,6 +23,7 @@
         // =============================
         function crearCardPendiente(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
+            // Nota: Se ha añadido el ID `solicitud_${s.id}` a las tarjetas para poder identificarlas
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
                 <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
@@ -95,41 +68,78 @@
         //   CARGAR LISTAS
         // =============================
 
-        // --- Carga de Pendientes (sin cambio) ---
+        // --- Función auxiliar para insertar/remover elementos sin reemplazar el contenedor ---
+        function actualizarContenedor(contenedorId, nuevasSolicitudes, creadorCardFn, currentIdsArray) {
+            const cont = document.getElementById(contenedorId);
+            const nuevosIds = nuevasSolicitudes.map(s => s.id);
+
+            // 1. Eliminar tarjetas que ya no están en la lista (fueron completadas o movidas)
+            cont.querySelectorAll(":scope > div").forEach(card => {
+                const id = parseInt(card.id.replace("solicitud_", ""));
+                if (!nuevosIds.includes(id)) {
+                    card.remove();
+                }
+            });
+
+            // 2. Insertar o mover tarjetas nuevas/existentes
+            const fragment = document.createDocumentFragment();
+            nuevasSolicitudes.forEach(s => {
+                let card = document.getElementById(`solicitud_${s.id}`);
+                
+                // Si la tarjeta NO existe, la creamos
+                if (!card) {
+                    const temp = document.createElement('div');
+                    // Usamos insertAdjacentHTML para que el HTML se convierta en nodos DOM
+                    temp.innerHTML = creadorCardFn(s, s.materiales);
+                    card = temp.firstChild; 
+                }
+                
+                // Agregamos la tarjeta (nueva o existente) al fragmento, 
+                // manteniendo el orden de las nuevas solicitudes.
+                fragment.appendChild(card);
+            });
+
+            // 3. Reemplazar el contenido completo del contenedor con el fragmento
+            // Esto asegura que el orden es correcto, pero reusa los nodos existentes
+            // que estaban siendo editados (sin borrar el contenido de los textarea).
+            cont.innerHTML = '';
+            cont.appendChild(fragment);
+
+            // 4. Actualizar la lista de IDs actuales (para seguimiento)
+            if (contenedorId === 'listaPendientes') {
+                currentPendingIds = nuevosIds;
+            } else if (contenedorId === 'listaEntregadas') {
+                currentEntregadaIds = nuevosIds;
+            }
+        }
+
+        // --- Carga de Pendientes ---
         async function cargarPendientes() {
-            const cont = document.getElementById("listaPendientes");
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*")
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
 
-            let html = '';
+            // Obtener materiales para todas las solicitudes
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
-                html += crearCardPendiente(s, materiales);
+                s.materiales = materiales;
             }
-            cont.innerHTML = html;
+            
+            // Usar la función de actualización inteligente
+            actualizarContenedor("listaPendientes", solicitudes, crearCardPendiente, currentPendingIds);
         }
 
-        // --- Carga de Entregadas (con lógica para preservar foco y comentarios) ---
+        // --- Carga de Entregadas (con lógica para preservar foco) ---
         async function cargarEntregadas() {
-            const cont = document.getElementById("listaEntregadas");
-            const comentariosGuardados = {};
-            
-            // 1. Identificar el elemento que tiene el foco (si existe)
+            // 1. Identificar el elemento que tiene el foco (antes de cualquier cambio)
             let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
 
-            // 2. Guardar el contenido de los comentarios (textarea) existentes
-            document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
-                const id = textarea.id.replace("coment_", "");
-                comentariosGuardados[id] = textarea.value;
-            });
-
-            // 3. Obtener los nuevos datos de Supabase
+            // 2. Obtener los nuevos datos de Supabase
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*")
@@ -137,31 +147,20 @@
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
 
-            // 4. Generar el nuevo HTML
-            let nuevoHtml = "";
+            // Obtener materiales para todas las solicitudes
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
-                nuevoHtml += crearCardEntregada(s, materiales);
+                s.materiales = materiales;
             }
 
-            // 5. Reemplazar el HTML del contenedor
-            cont.innerHTML = nuevoHtml;
+            // 3. Usar la función de actualización inteligente
+            // Esta función reusa los elementos <div> existentes, preservando el textarea.value
+            actualizarContenedor("listaEntregadas", solicitudes, crearCardEntregada, currentEntregadaIds);
 
-            // 6. Restaurar el contenido de los comentarios guardados
-            solicitudes.forEach(s => {
-                const id = s.id.toString();
-                if (comentariosGuardados[id]) {
-                    const textarea = document.getElementById(`coment_${id}`);
-                    if (textarea) {
-                        textarea.value = comentariosGuardados[id];
-                    }
-                }
-            });
-
-            // 7. Restaurar el foco en el elemento que estaba siendo editado
+            // 4. Restaurar el foco en el elemento que estaba siendo editado
             if (focusedElementId) {
                 const restoredFocusElement = document.getElementById(focusedElementId);
                 if (restoredFocusElement) {
@@ -175,8 +174,8 @@
         }
 
         async function cargarTodo() {
-            await cargarPendientes();
-            await cargarEntregadas();
+            // Se utiliza Promise.all para que ambas cargas se hagan en paralelo
+            await Promise.all([cargarPendientes(), cargarEntregadas()]);
         }
 
         // =============================
@@ -209,7 +208,3 @@
 
     }); // fin DOMContentLoaded
 </script>
-</body>
-</html>
-
-</html>

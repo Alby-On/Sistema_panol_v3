@@ -1,217 +1,270 @@
-<!-- ==========================
-     CARGAR LIBRERÍA SUPABASE
-=========================== -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitudes Pañol</title>
+
+    <!-- ======================  
+          ESTILOS  
+    ====================== -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .contenedor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .columna {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 10px #00000020;
+        }
+
+        .titulo-col {
+            font-size: 22px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .solicitud-card {
+            background: #fafafa;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 5px #00000015;
+        }
+
+        .solicitud-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        .solicitud-card ul {
+            padding-left: 18px;
+        }
+
+        .text-box {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            resize: none;
+            height: 70px;
+        }
+
+        .btn-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .btn-enviar {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-sin {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Gestión de Solicitudes — Pañol</h1>
+
+    <div class="contenedor">
+        <!-- ===================== COL 1 ===================== -->
+        <div class="columna" id="colPendientes">
+            <div class="titulo-col">Solicitudes Pendientes</div>
+        </div>
+
+        <!-- ===================== COL 2 ===================== -->
+        <div class="columna" id="colEntregadas">
+            <div class="titulo-col">Solicitudes Entregadas (sin comentario)</div>
+        </div>
+    </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- VARIABLES PARA PROTEGER TEXTO EN ESCRITURA -->
 <script>
-let comentarioActivo = null;
-let textoComentarioActivo = "";
-</script>
+/* ============================
+   CONFIGURACIÓN SUPABASE
+============================= */
+const SUPABASE_URL = "TU_URL";
+const SUPABASE_ANON_KEY = "TU_API_KEY";
 
-<!-- ==========================
-     CREAR CLIENTE SUPABASE
-=========================== -->
-<script>
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
+/* ============================
+   FUNCIÓN PRINCIPAL
+============================= */
+async function cargarSolicitudes() {
+    const colPend = document.getElementById("colPendientes");
+    const colEnt = document.getElementById("colEntregadas");
 
-<!-- ==========================
-     ESTRUCTURA DE 2 COLUMNAS
-=========================== -->
-<div style="display:flex; gap:20px; padding:20px;">
+    colPend.innerHTML = '<div class="titulo-col">Solicitudes Pendientes</div>';
+    colEnt.innerHTML = '<div class="titulo-col">Solicitudes Entregadas (sin comentario)</div>';
 
-    <!-- COLUMNA IZQUIERDA — PENDIENTES -->
-    <div style="flex:1; border:1px solid #ddd; padding:15px; border-radius:10px;">
-        <h2>Solicitudes Pendientes</h2>
-        <div id="colPendientes">Cargando...</div>
-    </div>
-
-    <!-- COLUMNA DERECHA — ENTREGADAS -->
-    <div style="flex:1; border:1px solid #ddd; padding:15px; border-radius:10px;">
-        <h2>Solicitudes Entregadas</h2>
-        <div id="colEntregadas">Cargando...</div>
-    </div>
-
-</div>
-
-<script>
-/* -------------------------
-   CARGAR SOLICITUDES PENDIENTES
----------------------------- */
-async function getSolicitudesPendientes() {
-    const { data, error } = await supabase
+    /* ============================
+       1. OBTENER SOLICITUDES
+    ============================= */
+    const { data: solicitudes, error: err1 } = await supabase
         .from("solicitudes")
-        .select(`
-            id,
-            email,
-            docente,
-            asignatura,
-            fecha_solicitud,
-            estado,
-            materiales_solicitados (
-                material,
-                cantidad
-            )
-        `)
-        .eq("estado", "Pendiente")
-        .order("fecha_solicitud", { ascending: true });
+        .select("*")
+        .order("id", { ascending: false })
+        .limit(40); // para evitar cargar miles
 
-    if (error) return [];
-    return data;
+    if (err1) {
+        console.error(err1);
+        return;
+    }
+
+    /* ============================
+       2. OBTENER MATERIALES
+    ============================= */
+    const { data: materiales, error: err2 } = await supabase
+        .from("materiales_solicitados")
+        .select("*");
+
+    if (err2) {
+        console.error(err2);
+        return;
+    }
+
+    /* =====================================================
+       3. UNIR SOLICITUDES + SUS MATERIALES ASOCIADOS
+    ====================================================== */
+    const solicitudesCompletas = solicitudes.map(s => {
+        const mats = materiales.filter(m => m.id_solicitud === s.id);
+        return { ...s, materiales: mats };
+    });
+
+    /* =====================================================
+       4. DIVIDIR LISTAS
+    ====================================================== */
+    const pendientes = solicitudesCompletas.filter(s => s.estado === "Pendiente");
+
+    const entregadasSinComentario = solicitudesCompletas.filter(
+        s => s.estado === "Entregado" && (s.comentario_entrega === null || s.comentario_entrega === "")
+    );
+
+    /* =====================================================
+       5. RENDER PENDIENTES
+    ====================================================== */
+    pendientes.forEach(s => {
+        const card = document.createElement("div");
+        card.className = "solicitud-card";
+
+        card.innerHTML = `
+            <h3>Solicitud #${s.id}</h3>
+            <p><strong>Docente:</strong> ${s.docente}</p>
+            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+            <p><strong>Fecha solicitud:</strong> ${s.fecha_solicitud}</p>
+
+            <h4>Materiales solicitados:</h4>
+            <ul>
+                ${s.materiales.map(m => `<li>${m.material} — ${m.cantidad} u.</li>`).join("")}
+            </ul>
+        `;
+
+        colPend.appendChild(card);
+    });
+
+    /* =====================================================
+       6. RENDER ENTREGADAS SIN COMENTARIO
+    ====================================================== */
+    entregadasSinComentario.forEach(s => {
+        const card = document.createElement("div");
+        card.className = "solicitud-card";
+
+        card.innerHTML = `
+            <h3>Solicitud #${s.id}</h3>
+            <p><strong>Docente:</strong> ${s.docente}</p>
+            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+            <p><strong>Fecha entrega:</strong> ${s.fecha_entrega}</p>
+
+            <h4>Materiales entregados:</h4>
+            <ul>
+                ${s.materiales.map(m => `<li>${m.material} — ${m.cantidad} u.</li>`).join("")}
+            </ul>
+
+            <textarea id="comentario_${s.id}" class="text-box" placeholder="Escribe un comentario..."></textarea>
+
+            <div class="btn-box">
+                <button class="btn btn-enviar" onclick="enviarComentario(${s.id})">Enviar comentario</button>
+                <button class="btn btn-sin" onclick="enviarSinComentario(${s.id})">Sin comentario</button>
+            </div>
+        `;
+
+        colEnt.appendChild(card);
+    });
 }
 
-/* -------------------------
-   CARGAR SOLICITUDES ENTREGADAS (comentario NULL o "")
----------------------------- */
-async function getSolicitudesEntregadas() {
-    const { data, error } = await supabase
-        .from("solicitudes")
-        .select(`
-            id,
-            email,
-            docente,
-            asignatura,
-            fecha_solicitud,
-            fecha_entrega,
-            estado,
-            comentario_entrega
-        `)
-        .eq("estado", "Entregado")
-        .or('comentario_entrega.is.null,comentario_entrega.eq.""')
-        .order("fecha_entrega", { ascending: false });
+/* ============================
+   GUARDAR COMENTARIO
+============================= */
+async function enviarComentario(id) {
+    const txt = document.getElementById(`comentario_${id}`).value.trim();
 
-    if (error) return [];
-    return data;
-}
+    if (!txt) {
+        alert("Escribe un comentario");
+        return;
+    }
 
-/* -------------------------
-   ACTUALIZAR COMENTARIO EN BASE
----------------------------- */
-async function actualizarComentario(id, comentario) {
-    const { error } = await supabase
+    await supabase
         .from("solicitudes")
-        .update({ comentario_entrega: comentario })
+        .update({ comentario_entrega: txt })
         .eq("id", id);
 
-    if (error) {
-        alert("Error al guardar comentario");
-    } else {
-        alert("Comentario guardado correctamente");
-        comentarioActivo = null;
-        textoComentarioActivo = "";
-        cargarPanelSolicitudes();
-    }
+    alert("Comentario guardado");
+    cargarSolicitudes(); // refrescar lista
 }
 
-/* -------------------------
-   RENDERIZAR COLUMNAS
----------------------------- */
-async function cargarPanelSolicitudes() {
-    const colPend = document.getElementById("colPendientes");
-    const colEnt  = document.getElementById("colEntregadas");
+/* ============================
+   GUARDAR SIN COMENTARIO
+============================= */
+async function enviarSinComentario(id) {
+    await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: "Sin comentario" })
+        .eq("id", id);
 
-    colPend.innerHTML = "Cargando...";
-    colEnt.innerHTML = "Cargando...";
-
-    const pendientes = await getSolicitudesPendientes();
-    const entregadas = await getSolicitudesEntregadas();
-
-    colPend.innerHTML = "";
-    colEnt.innerHTML = "";
-
-    /* ---- MOSTRAR PENDIENTES ---- */
-    pendientes.forEach(s => {
-        let matHTML = "";
-
-        if (s.materiales_solicitados?.length > 0) {
-            matHTML = s.materiales_solicitados
-                .map(m => `<li>${m.material} — ${m.cantidad}</li>`)
-                .join("");
-        }
-
-        colPend.innerHTML += `
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
-                <strong>ID: ${s.id}</strong><br>
-                <b>Docente:</b> ${s.docente}<br>
-                <b>Asignatura:</b> ${s.asignatura}<br>
-                <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br><br>
-
-                <b>Materiales:</b>
-                <ul>${matHTML}</ul>
-            </div>
-        `;
-    });
-
-    /* ---- MOSTRAR ENTREGADAS ---- */
-    entregadas.forEach(s => {
-        colEnt.innerHTML += `
-            <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
-                <strong>ID: ${s.id}</strong><br>
-                <b>Docente:</b> ${s.docente}<br>
-                <b>Asignatura:</b> ${s.asignatura}<br>
-                <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br>
-                <b>Fecha entrega:</b> ${s.fecha_entrega}<br><br>
-
-                <textarea id="comentario-${s.id}" placeholder="Escribe un comentario..." 
-                    style="width:100%; padding:5px; margin-bottom:5px;"></textarea>
-                
-                <div style="display:flex; gap:5px;">
-                    <button id="btnEnviarComentario-${s.id}" style="padding:5px 10px;">Enviar comentario</button>
-                    <button id="btnSinComentario-${s.id}" style="padding:5px 10px;">Sin comentarios</button>
-                </div>
-            </div>
-        `;
-
-        /* ---- Guardar texto mientras escribes ---- */
-        const tx = document.getElementById(`comentario-${s.id}`);
-        tx.addEventListener("input", () => {
-            comentarioActivo = s.id;
-            textoComentarioActivo = tx.value;
-        });
-
-        /* ---- Botón Enviar ---- */
-        document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
-            const texto = document.getElementById(`comentario-${s.id}`).value.trim();
-            if (texto === "") {
-                alert("El comentario está vacío");
-                return;
-            }
-            await actualizarComentario(s.id, texto);
-        });
-
-        /* ---- Botón Sin comentario ---- */
-        document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
-            await actualizarComentario(s.id, "Sin comentario");
-        });
-    });
-
-    /* ---- Restaurar texto si estás escribiendo ---- */
-    if (comentarioActivo !== null) {
-        const tx = document.getElementById(`comentario-${comentarioActivo}`);
-        if (tx) {
-            tx.value = textoComentarioActivo;
-            tx.focus();
-        } else {
-            comentarioActivo = null;
-            textoComentarioActivo = "";
-        }
-    }
+    alert("Guardado como 'Sin comentario'");
+    cargarSolicitudes(); // refrescar lista
 }
 
-/* -------------------------
-   AL CARGAR LA PÁGINA
----------------------------- */
-document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
-
-/* -------------------------
-   ACTUALIZACIÓN AUTOMÁTICA
-   CADA 3 SEGUNDOS
----------------------------- */
-setInterval(async () => {
-    await cargarPanelSolicitudes();
-}, 3000);
+/* ============================
+   INICIALIZAR
+============================= */
+cargarSolicitudes();
 </script>
+
+</body>
+</html>
+

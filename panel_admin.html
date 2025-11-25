@@ -85,25 +85,57 @@
     let isAdmin = false; // Variable global para el estado del rol
     let refreshInterval = null; // Variable para el intervalo de actualización
 
-    // =============================
-    //   FUNCIÓN DE VERIFICACIÓN DE ACCESO
-    // =============================
-    async function checkAdminAccess() {
-        const accessStatus = document.getElementById("accessStatus");
-        const panel = document.getElementById("panelSolicitudes");
-        
-        // 1. Obtener la sesión del usuario
-        const { data: { session }, error } = await supabase.auth.getSession();
+// =============================
+//   FUNCIÓN DE VERIFICACIÓN DE ACCESO
+// =============================
+async function checkAdminAccess() {
+    const accessStatus = document.getElementById("accessStatus");
+    const panel = document.getElementById("panelSolicitudes");
+    
+    // 1. Obtener la sesión del usuario
+    const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (error || !session) {
-            accessStatus.innerHTML = `
-                <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
-                    Acceso denegado: Necesitas iniciar sesión para ver este panel.
-                </div>
-            `;
-            isAdmin = false;
-            return;
+    if (error || !session) {
+        accessStatus.innerHTML = `
+            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
+                Acceso denegado: Necesitas <a href="LOGIN_URL_AQUI" class="underline font-bold hover:text-red-900">iniciar sesión</a> para ver este panel.
+            </div>
+        `;
+        isAdmin = false;
+        return;
+    }
+    
+    // 2. Leer el tipo_usuario de los metadatos usando encadenamiento opcional.
+    // Si session.user.user_metadata es null o undefined, userRole será 'Usuario'.
+    const userRole = session.user.user_metadata?.tipo_usuario ?? 'Usuario';
+    
+    if (userRole === 'Admin') {
+        isAdmin = true;
+        accessStatus.innerHTML = `
+            <div class="p-2 bg-green-100 border border-green-300 text-green-800 rounded-lg text-center font-semibold text-sm">
+                Acceso concedido. (Rol: Admin)
+            </div>
+        `;
+        panel.style.display = 'grid'; // Mostrar panel
+        cargarTodo();
+        // Iniciar auto-actualización solo si es Admin
+        if (!refreshInterval) {
+             refreshInterval = setInterval(cargarTodo, 5000);
         }
+    } else {
+        accessStatus.innerHTML = `
+            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
+                Acceso denegado: Tu rol actual es <span class="font-bold">(${userRole})</span>. Solo administradores pueden ver este panel.
+            </div>
+        `;
+        isAdmin = false;
+        panel.style.display = 'none'; // Ocultar panel
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+    }
+}
         
         // 2. Leer el tipo_usuario de los metadatos
         // IMPORTANTE: Asegúrate que 'tipo_usuario' es el campo correcto en user_metadata.

@@ -30,7 +30,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background-color: #edf2f7; }
         
-        /* Ocultar el panel de solicitudes por defecto */
+        /* Ocultar el panel de solicitudes por defecto (redundante, pero seguro) */
         #panelSolicitudes {
             display: none;
         }
@@ -74,7 +74,7 @@
 
 <script>
     // =============================
-    //   CONFIGURAR SUPABASE
+    //   CONFIGURAR SUPABASE
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     // Nota: Usar la clave ANON KEY está bien si la RLS está correctamente configurada
@@ -86,7 +86,7 @@
     let refreshInterval = null; // Variable para el intervalo de actualización
 
 // =============================
-//   FUNCIÓN DE VERIFICACIÓN DE ACCESO
+//   FUNCIÓN DE VERIFICACIÓN DE ACCESO (FINAL)
 // =============================
 async function checkAdminAccess() {
     const accessStatus = document.getElementById("accessStatus");
@@ -94,21 +94,41 @@ async function checkAdminAccess() {
     
     // 1. Obtener la sesión del usuario
     const { data: { session }, error } = await supabase.auth.getSession();
+    
+    let userRole = 'Invitado'; // Rol por defecto si no hay sesión
 
     if (error || !session) {
+        // No hay sesión activa.
         accessStatus.innerHTML = `
             <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
                 Acceso denegado: Necesitas <a href="LOGIN_URL_AQUI" class="underline font-bold hover:text-red-900">iniciar sesión</a> para ver este panel.
             </div>
         `;
         isAdmin = false;
+        panel.style.display = 'none';
         return;
     }
     
-    // 2. Leer el tipo_usuario de los metadatos usando encadenamiento opcional.
-    // Si session.user.user_metadata es null o undefined, userRole será 'Usuario'.
-    const userRole = session.user.user_metadata?.tipo_usuario ?? 'Usuario';
+    // 2. CONSULTAR EL ROL USANDO EL UUID DEL USUARIO LOGUEADO
+    const userId = session.user.id; // El UUID (ej: e4e47b90-...)
     
+    // Consultamos la tabla 'usuarios' usando el UUID para obtener el rol.
+    const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('tipo_usuario')
+        .eq('auth_uuid', userId) // <-- USANDO EL UUID
+        .single();
+
+    if (userError || !userData) {
+        // Esto ocurre si el usuario no tiene perfil en la tabla 'usuarios'
+        console.error("Error al obtener tipo_usuario: Perfil no encontrado en public.usuarios.", userError?.message);
+        userRole = 'No Encontrado'; // Un rol de fallo seguro
+    } else {
+        // Rol encontrado en la tabla pública 'usuarios'
+        userRole = userData.tipo_usuario;
+    }
+
+    // 3. VERIFICAR ROL Y CONCEDER ACCESO
     if (userRole === 'Admin') {
         isAdmin = true;
         accessStatus.innerHTML = `
@@ -118,17 +138,17 @@ async function checkAdminAccess() {
         `;
         panel.style.display = 'grid'; // Mostrar panel
         cargarTodo();
-        // Iniciar auto-actualización solo si es Admin
+        
         if (!refreshInterval) {
              refreshInterval = setInterval(cargarTodo, 5000);
         }
     } else {
+        isAdmin = false;
         accessStatus.innerHTML = `
             <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
                 Acceso denegado: Tu rol actual es <span class="font-bold">(${userRole})</span>. Solo administradores pueden ver este panel.
             </div>
         `;
-        isAdmin = false;
         panel.style.display = 'none'; // Ocultar panel
         if (refreshInterval) {
             clearInterval(refreshInterval);
@@ -136,10 +156,10 @@ async function checkAdminAccess() {
         }
     }
 }
-// La llave de cierre de checkAdminAccess DEBE IR AQUÍ.
+
 
     // =============================
-    //   CÓDIGO DE RENDERIZADO (Se mantiene igual)
+    //   CÓDIGO DE RENDERIZADO (Se mantiene igual)
     // =============================
     
     function displayEmptyMessage(container, isPending) {
@@ -308,7 +328,7 @@ async function checkAdminAccess() {
     }
 
     // =============================
-    //   FUNCIONES DE COMENTARIO
+    //   FUNCIONES DE COMENTARIO
     // =============================
     window.guardarComentario = async function(id) {
         if (!isAdmin) return alert("Error: No tienes permisos de administrador.");
@@ -341,7 +361,7 @@ async function checkAdminAccess() {
     }
 
     // =============================
-    //   INICIO DEL PROCESO
+    //   INICIO DEL PROCESO
     // =============================
     document.addEventListener("DOMContentLoaded", () => {
         checkAdminAccess();

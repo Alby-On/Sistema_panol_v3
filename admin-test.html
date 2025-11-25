@@ -33,7 +33,6 @@
 <script>
     // =============================
     //   CONFIGURAR SUPABASE
-    // ... (sin cambios)
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
@@ -47,13 +46,17 @@
 
         // =============================
         //   CREAR TARJETAS
-        // ... (sin cambios)
         // =============================
         function crearCardPendiente(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
+            
+            // Extraer el nombre del usuario de la unión
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : (s.usuario_solicitante || 'N/A');
+            
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
                 <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
+                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
                 <p><strong>Docente:</strong> ${s.docente}</p>
                 <p><strong>Asignatura:</strong> ${s.asignatura}</p>
 
@@ -65,9 +68,14 @@
 
         function crearCardEntregada(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
+            
+            // Extraer el nombre del usuario de la unión
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : (s.usuario_solicitante || 'N/A');
+            
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
                 <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
+                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
                 <p><strong>Docente:</strong> ${s.docente}</p>
                 <p><strong>Asignatura:</strong> ${s.asignatura}</p>
 
@@ -95,12 +103,15 @@
         //   CARGAR LISTAS
         // =============================
 
-        // --- Carga de Pendientes (sin cambio) ---
+        // --- Carga de Pendientes ---
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
+            
+            // CAMBIO CLAVE: Usamos .select("*, usuarios(nombre)") para hacer el JOIN
+            // Esto requiere que exista una relación FK de solicitudes.email_solicitante a usuarios.email
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*")
+                .select("*, usuarios(nombre)") // Realiza la unión y solo trae el campo 'nombre' de la tabla 'usuarios'
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
 
@@ -130,9 +141,10 @@
             });
 
             // 3. Obtener los nuevos datos de Supabase
+            // CAMBIO CLAVE: Usamos .select("*, usuarios(nombre)") para hacer el JOIN
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*")
+                .select("*, usuarios(nombre)") // Realiza la unión y solo trae el campo 'nombre' de la tabla 'usuarios'
                 .eq("estado", "Entregado")
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
@@ -167,7 +179,7 @@
                 if (restoredFocusElement) {
                     restoredFocusElement.focus();
                     
-                    // Opcional: Mover el cursor al final del texto para una mejor experiencia de escritura
+                    // Mover el cursor al final del texto para una mejor experiencia de escritura
                     const currentLength = restoredFocusElement.value.length;
                     restoredFocusElement.setSelectionRange(currentLength, currentLength);
                 }

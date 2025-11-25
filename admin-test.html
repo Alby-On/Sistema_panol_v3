@@ -113,144 +113,153 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ==========================================
-   CONFIGURACIÓN SUPABASE
-========================================== */
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+// =============================
+//   ACTUALIZAR AUTOMÁTICO
+// =============================
 
+// Ejecutar al cargar la página
+document.addEventListener("DOMContentLoaded", () => {
+    cargarSolicitudesPendientes();
+    cargarSolicitudesEntregadas();
+});
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Refrescar SOLO las listas cada 4 segundos
+setInterval(() => {
+    cargarSolicitudesPendientes();
+    cargarSolicitudesEntregadas();
+}, 4000);
 
-/* ==========================================
-   FUNCIÓN PRINCIPAL
-========================================== */
-async function cargarSolicitudes() {
-    const colPend = document.getElementById("colPendientes");
-    const colEnt = document.getElementById("colEntregadas");
+// =============================
+//   SOLICITUDES PENDIENTES
+// =============================
 
-    colPend.innerHTML = '<div class="titulo-col">Solicitudes Pendientes</div>';
-    colEnt.innerHTML = '<div class="titulo-col">Solicitudes Entregadas (sin comentario)</div>';
-
-    /* ==========================================
-       1. OBTENER SOLICITUDES
-    =========================================== */
-    const { data: solicitudes, error: err1 } = await sb
+async function cargarSolicitudesPendientes() {
+    const { data, error } = await supabase
         .from("solicitudes")
-        .select("*")
-        .order("id", { ascending: false })
-        .limit(40);
+        .select(`
+            id,
+            email,
+            docente,
+            asignatura,
+            fecha_solicitud,
+            estado,
+            materiales_solicitados ( material, cantidad )
+        `)
+        .eq("estado", "Pendiente")
+        .order("fecha_solicitud", { ascending: false });
 
-    if (err1) { console.error(err1); return; }
-
-    /* ==========================================
-       2. OBTENER MATERIALES
-    =========================================== */
-    const { data: materiales, error: err2 } = await sb
-        .from("materiales_solicitados")
-        .select("*");
-
-    if (err2) { console.error(err2); return; }
-
-    /* ==========================================
-       3. UNIR DATOS
-    =========================================== */
-    const solicitudesCompletas = solicitudes.map(s => {
-        const mats = materiales.filter(m => m.id_solicitud === s.id);
-        return { ...s, materiales: mats };
-    });
-
-    const pendientes = solicitudesCompletas.filter(s => s.estado === "Pendiente");
-    const entregadasSinComentario = solicitudesCompletas.filter(
-        s => s.estado === "Entregado" && (s.comentario_entrega === null || s.comentario_entrega === "")
-    );
-
-    /* ==========================================
-       4. RENDER PENDIENTES
-    =========================================== */
-    pendientes.forEach(s => {
-        const card = document.createElement("div");
-        card.className = "solicitud-card";
-
-        card.innerHTML = `
-            <h3>Solicitud #${s.id}</h3>
-            <p><strong>Docente:</strong> ${s.docente}</p>
-            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
-
-            <h4>Materiales solicitados:</h4>
-            <ul>
-                ${s.materiales.map(m => `<li>${m.material} — ${m.cantidad} u.</li>`).join("")}
-            </ul>
-        `;
-
-        colPend.appendChild(card);
-    });
-
-    /* ==========================================
-       5. RENDER ENTREGADAS SIN COMENTARIO
-    =========================================== */
-    entregadasSinComentario.forEach(s => {
-        const card = document.createElement("div");
-        card.className = "solicitud-card";
-
-        card.innerHTML = `
-            <h3>Solicitud #${s.id}</h3>
-            <p><strong>Docente:</strong> ${s.docente}</p>
-            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
-
-            <h4>Materiales entregados:</h4>
-            <ul>
-                ${s.materiales.map(m => `<li>${m.material} — ${m.cantidad} u.</li>`).join("")}
-            </ul>
-
-            <textarea id="comentario_${s.id}" class="text-box" placeholder="Escribe un comentario..."></textarea>
-
-            <div class="btn-box">
-                <button class="btn btn-enviar" onclick="enviarComentario(${s.id})">Enviar comentario</button>
-                <button class="btn btn-sin" onclick="enviarSinComentario(${s.id})">Sin comentario</button>
-            </div>
-        `;
-
-        colEnt.appendChild(card);
-    });
-}
-
-/* ==========================================
-   GUARDAR COMENTARIO
-========================================== */
-async function enviarComentario(id) {
-    const txt = document.getElementById(`comentario_${id}`).value.trim();
-
-    if (!txt) {
-        alert("Escribe un comentario");
+    if (error) {
+        console.error("Error pendientes:", error);
         return;
     }
 
-    await sb.from("solicitudes")
-        .update({ comentario_entrega: txt })
-        .eq("id", id);
+    const contenedor = document.getElementById("columnaPendientes");
+    contenedor.innerHTML = "";
 
-    alert("Comentario guardado");
-    cargarSolicitudes();
+    data.forEach(s => {
+        const div = document.createElement("div");
+        div.classList.add("card-solicitud");
+
+        div.innerHTML = `
+            <h3>ID #${s.id}</h3>
+            <p><strong>Docente:</strong> ${s.docente}</p>
+            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+            <p><strong>Email:</strong> ${s.email}</p>
+            <p><strong>Fecha:</strong> ${s.fecha_solicitud}</p>
+
+            <h4>Materiales:</h4>
+            <ul>
+                ${s.materiales_solicitados.map(m => `
+                    <li>${m.material} — <strong>${m.cantidad}</strong></li>
+                `).join("")}
+            </ul>
+        `;
+
+        contenedor.appendChild(div);
+    });
 }
 
-/* ==========================================
-   GUARDAR SIN COMENTARIO
-========================================== */
-async function enviarSinComentario(id) {
-    await sb.from("solicitudes")
+// =============================
+//   SOLICITUDES ENTREGADAS (Sin comentario)
+// =============================
+
+async function cargarSolicitudesEntregadas() {
+    const { data, error } = await supabase
+        .from("solicitudes")
+        .select(`
+            id,
+            email,
+            docente,
+            asignatura,
+            fecha_entrega,
+            estado,
+            comentario_entrega,
+            materiales_solicitados ( material, cantidad )
+        `)
+        .eq("estado", "Entregado")
+        .is("comentario_entrega", null)
+        .order("fecha_entrega", { ascending: false });
+
+    if (error) {
+        console.error("Error entregadas:", error);
+        return;
+    }
+
+    const contenedor = document.getElementById("columnaEntregadas");
+    contenedor.innerHTML = "";
+
+    data.forEach(s => {
+        const div = document.createElement("div");
+        div.classList.add("card-solicitud");
+
+        div.innerHTML = `
+            <h3>ID #${s.id}</h3>
+            <p><strong>Docente:</strong> ${s.docente}</p>
+            <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+            <p><strong>Email:</strong> ${s.email}</p>
+            <p><strong>Fecha entrega:</strong> ${s.fecha_entrega}</p>
+
+            <h4>Materiales:</h4>
+            <ul>
+                ${s.materiales_solicitados.map(m => `
+                    <li>${m.material} — <strong>${m.cantidad}</strong></li>
+                `).join("")}
+            </ul>
+
+            <textarea id="comentario_${s.id}" placeholder="Comentario entrega"></textarea>
+            <button onclick="guardarComentario(${s.id})">Guardar</button>
+            <button onclick="guardarSinComentario(${s.id})">Sin comentario</button>
+        `;
+
+        contenedor.appendChild(div);
+    });
+}
+
+// =============================
+//   FUNCIONES DE BOTONES
+// =============================
+
+async function guardarComentario(id) {
+    const comentario = document.getElementById(`comentario_${id}`).value;
+
+    await supabase
+        .from("solicitudes")
+        .update({ comentario_entrega: comentario })
+        .eq("id", id);
+
+    cargarSolicitudesEntregadas();
+}
+
+async function guardarSinComentario(id) {
+    await supabase
+        .from("solicitudes")
         .update({ comentario_entrega: "Sin comentario" })
         .eq("id", id);
 
-    alert("Guardado como 'Sin comentario'");
-    cargarSolicitudes();
+    cargarSolicitudesEntregadas();
 }
-
-/* ==========================================
-   INICIALIZAR
-========================================== */
-cargarSolicitudes();
 </script>
+
 
 
 </body>

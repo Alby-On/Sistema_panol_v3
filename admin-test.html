@@ -50,8 +50,8 @@
         function crearCardPendiente(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
             
-            // Extraer el nombre del usuario de la unión
-            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : (s.usuario_solicitante || 'N/A');
+            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
@@ -69,8 +69,8 @@
         function crearCardEntregada(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
             
-            // Extraer el nombre del usuario de la unión
-            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : (s.usuario_solicitante || 'N/A');
+            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
@@ -107,11 +107,10 @@
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
             
-            // CAMBIO CLAVE: Usamos .select("*, usuarios(nombre)") para hacer el JOIN
-            // Esto requiere que exista una relación FK de solicitudes.email_solicitante a usuarios.email
+            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*, usuarios(nombre)") // Realiza la unión y solo trae el campo 'nombre' de la tabla 'usuarios'
+                .select("*, usuarios(nombre)") 
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
 
@@ -141,10 +140,10 @@
             });
 
             // 3. Obtener los nuevos datos de Supabase
-            // CAMBIO CLAVE: Usamos .select("*, usuarios(nombre)") para hacer el JOIN
+            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*, usuarios(nombre)") // Realiza la unión y solo trae el campo 'nombre' de la tabla 'usuarios'
+                .select("*, usuarios(nombre)") 
                 .eq("estado", "Entregado")
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });

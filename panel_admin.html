@@ -86,7 +86,7 @@
     let refreshInterval = null; // Variable para el intervalo de actualización
 
 // =============================
-//   FUNCIÓN DE VERIFICACIÓN DE ACCESO
+//   FUNCIÓN DE VERIFICACIÓN DE ACCESO
 // =============================
 async function checkAdminAccess() {
     const accessStatus = document.getElementById("accessStatus");
@@ -136,6 +136,7 @@ async function checkAdminAccess() {
         }
     }
 }
+// La llave de cierre de checkAdminAccess DEBE IR AQUÍ.
 
     // =============================
     //   CÓDIGO DE RENDERIZADO (Se mantiene igual)
@@ -220,7 +221,7 @@ async function checkAdminAccess() {
         // La RLS de Supabase ahora debe manejar el acceso a TODOS los datos
         const { data: solicitudes } = await supabase
             .from("solicitudes")
-            .select("*, usuarios(nombre)") 
+            .select("*, usuarios(nombre)") 
             .eq("estado", "Pendiente")
             .order("id", { ascending: false });
         
@@ -257,7 +258,7 @@ async function checkAdminAccess() {
         // La RLS de Supabase ahora debe manejar el acceso a TODOS los datos
         const { data: solicitudes } = await supabase
             .from("solicitudes")
-            .select("*, usuarios(nombre)") 
+            .select("*, usuarios(nombre)") 
             .eq("estado", "Entregado")
             .is("comentario_entrega", null)
             .order("id", { ascending: false });

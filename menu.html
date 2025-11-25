@@ -150,6 +150,8 @@
     <button onclick="location.href='entregar.html'">📦 Entregar Materiales</button>
     <button onclick="location.href='historial.html'">📜 Historial de Entregas</button>
 
+    <button id="adminButton" style="display:none;" onclick="location.href='panel_admin.html'">🛠️ Panel Admin</button>
+    
     <button class="logout" onclick="logout()">Cerrar Sesión</button>
 </div>
 
@@ -178,6 +180,11 @@ function logout() {
 /* ---- Necesario para que el botón funcione ---- */
 window.logout = logout;
 
+// Mostrar botón Admin solo si el usuario es Admin
+if (user.tipo_usuario === "Admin") {
+    document.getElementById("adminButton").style.display = "block";
+}
+    
 </script>
 
 </body>

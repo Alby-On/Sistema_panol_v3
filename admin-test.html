@@ -6,17 +6,13 @@
   <title>Panel de Solicitudes</title>
 
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-gray-100 p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Panel de Solicitudes</h1>
-    <button id="btnActualizar"
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-      Actualizar
-    </button>
-  </div>
+  <h1 class="text-3xl font-bold text-center mb-6">Panel de Solicitudes</h1>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
 
@@ -35,15 +31,22 @@
   </div>
 
   <script>
+    // =============================
+    //   CONFIGURAR SUPABASE
+    // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGpwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // =============================
+    //   EJECUTAR CUANDO DOM ESTÉ LISTO
+    // =============================
     document.addEventListener("DOMContentLoaded", () => {
 
-      // ------------------------------
-      // CREAR TARJETAS
-      // ------------------------------
+      // =============================
+      //   CREAR TARJETAS
+      // =============================
       function crearCardPendiente(s, materiales) {
         const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
         return `
@@ -51,6 +54,7 @@
             <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
             <p><strong>Docente:</strong> ${s.docente}</p>
             <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+
             <p class="mt-2 font-semibold">Materiales:</p>
             <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
           </div>
@@ -64,6 +68,7 @@
             <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
             <p><strong>Docente:</strong> ${s.docente}</p>
             <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+
             <p class="mt-2 font-semibold">Materiales:</p>
             <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
 
@@ -84,9 +89,9 @@
         `;
       }
 
-      // ------------------------------
-      // CARGAR LISTADOS
-      // ------------------------------
+      // =============================
+      //   CARGAR LISTAS
+      // =============================
       async function cargarPendientes() {
         const cont = document.getElementById("listaPendientes");
         cont.innerHTML = "";
@@ -127,9 +132,9 @@
         await cargarEntregadas();
       }
 
-      // ------------------------------
-      // FUNCIONES DE COMENTARIO
-      // ------------------------------
+      // =============================
+      //  FUNCIONES DE COMENTARIO
+      // =============================
       window.guardarComentario = async function(id) {
         const txt = document.getElementById(`coment_${id}`).value.trim();
         if (!txt) return alert("Escribe un comentario primero.");
@@ -148,18 +153,15 @@
         cargarTodo();
       }
 
-      // ------------------------------
-      // BOTÓN ACTUALIZAR
-      // ------------------------------
-      document.getElementById("btnActualizar").addEventListener("click", cargarTodo);
-
-      // ------------------------------
-      // CARGA INICIAL
-      // ------------------------------
+      // =============================
+      //   AUTO-ACTUALIZACIÓN 5s
+      // =============================
       cargarTodo();
+      setInterval(cargarTodo, 5000);
 
-    });
+    }); // fin DOMContentLoaded
   </script>
 </body>
 </html>
+
 

@@ -113,17 +113,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ============================
+/* ==========================================
    CONFIGURACIÓN SUPABASE
-============================= */
+========================================== */
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ============================
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ==========================================
    FUNCIÓN PRINCIPAL
-============================= */
+========================================== */
 async function cargarSolicitudes() {
     const colPend = document.getElementById("colPendientes");
     const colEnt = document.getElementById("colEntregadas");
@@ -131,52 +132,42 @@ async function cargarSolicitudes() {
     colPend.innerHTML = '<div class="titulo-col">Solicitudes Pendientes</div>';
     colEnt.innerHTML = '<div class="titulo-col">Solicitudes Entregadas (sin comentario)</div>';
 
-    /* ============================
+    /* ==========================================
        1. OBTENER SOLICITUDES
-    ============================= */
-    const { data: solicitudes, error: err1 } = await supabase
+    =========================================== */
+    const { data: solicitudes, error: err1 } = await sb
         .from("solicitudes")
         .select("*")
         .order("id", { ascending: false })
-        .limit(40); // para evitar cargar miles
+        .limit(40);
 
-    if (err1) {
-        console.error(err1);
-        return;
-    }
+    if (err1) { console.error(err1); return; }
 
-    /* ============================
+    /* ==========================================
        2. OBTENER MATERIALES
-    ============================= */
-    const { data: materiales, error: err2 } = await supabase
+    =========================================== */
+    const { data: materiales, error: err2 } = await sb
         .from("materiales_solicitados")
         .select("*");
 
-    if (err2) {
-        console.error(err2);
-        return;
-    }
+    if (err2) { console.error(err2); return; }
 
-    /* =====================================================
-       3. UNIR SOLICITUDES + SUS MATERIALES ASOCIADOS
-    ====================================================== */
+    /* ==========================================
+       3. UNIR DATOS
+    =========================================== */
     const solicitudesCompletas = solicitudes.map(s => {
         const mats = materiales.filter(m => m.id_solicitud === s.id);
         return { ...s, materiales: mats };
     });
 
-    /* =====================================================
-       4. DIVIDIR LISTAS
-    ====================================================== */
     const pendientes = solicitudesCompletas.filter(s => s.estado === "Pendiente");
-
     const entregadasSinComentario = solicitudesCompletas.filter(
         s => s.estado === "Entregado" && (s.comentario_entrega === null || s.comentario_entrega === "")
     );
 
-    /* =====================================================
-       5. RENDER PENDIENTES
-    ====================================================== */
+    /* ==========================================
+       4. RENDER PENDIENTES
+    =========================================== */
     pendientes.forEach(s => {
         const card = document.createElement("div");
         card.className = "solicitud-card";
@@ -185,7 +176,6 @@ async function cargarSolicitudes() {
             <h3>Solicitud #${s.id}</h3>
             <p><strong>Docente:</strong> ${s.docente}</p>
             <p><strong>Asignatura:</strong> ${s.asignatura}</p>
-            <p><strong>Fecha solicitud:</strong> ${s.fecha_solicitud}</p>
 
             <h4>Materiales solicitados:</h4>
             <ul>
@@ -196,9 +186,9 @@ async function cargarSolicitudes() {
         colPend.appendChild(card);
     });
 
-    /* =====================================================
-       6. RENDER ENTREGADAS SIN COMENTARIO
-    ====================================================== */
+    /* ==========================================
+       5. RENDER ENTREGADAS SIN COMENTARIO
+    =========================================== */
     entregadasSinComentario.forEach(s => {
         const card = document.createElement("div");
         card.className = "solicitud-card";
@@ -207,7 +197,6 @@ async function cargarSolicitudes() {
             <h3>Solicitud #${s.id}</h3>
             <p><strong>Docente:</strong> ${s.docente}</p>
             <p><strong>Asignatura:</strong> ${s.asignatura}</p>
-            <p><strong>Fecha entrega:</strong> ${s.fecha_entrega}</p>
 
             <h4>Materiales entregados:</h4>
             <ul>
@@ -226,9 +215,9 @@ async function cargarSolicitudes() {
     });
 }
 
-/* ============================
+/* ==========================================
    GUARDAR COMENTARIO
-============================= */
+========================================== */
 async function enviarComentario(id) {
     const txt = document.getElementById(`comentario_${id}`).value.trim();
 
@@ -237,33 +226,32 @@ async function enviarComentario(id) {
         return;
     }
 
-    await supabase
-        .from("solicitudes")
+    await sb.from("solicitudes")
         .update({ comentario_entrega: txt })
         .eq("id", id);
 
     alert("Comentario guardado");
-    cargarSolicitudes(); // refrescar lista
+    cargarSolicitudes();
 }
 
-/* ============================
+/* ==========================================
    GUARDAR SIN COMENTARIO
-============================= */
+========================================== */
 async function enviarSinComentario(id) {
-    await supabase
-        .from("solicitudes")
+    await sb.from("solicitudes")
         .update({ comentario_entrega: "Sin comentario" })
         .eq("id", id);
 
     alert("Guardado como 'Sin comentario'");
-    cargarSolicitudes(); // refrescar lista
+    cargarSolicitudes();
 }
 
-/* ============================
+/* ==========================================
    INICIALIZAR
-============================= */
+========================================== */
 cargarSolicitudes();
 </script>
+
 
 </body>
 </html>

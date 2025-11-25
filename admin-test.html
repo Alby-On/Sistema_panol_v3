@@ -40,10 +40,6 @@
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Variable global para mantener la lista actual de IDs en cada contenedor
-    let currentPendingIds = [];
-    let currentEntregadaIds = [];
-
     // =============================
     //   EJECUTAR CUANDO DOM ESTÉ LISTO
     // =============================
@@ -55,7 +51,6 @@
         // =============================
         function crearCardPendiente(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
-            // Nota: Se ha añadido el ID `solicitud_${s.id}` a las tarjetas para poder identificarlas
             return `
               <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
                 <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
@@ -100,78 +95,41 @@
         //   CARGAR LISTAS
         // =============================
 
-        // --- Función auxiliar para insertar/remover elementos sin reemplazar el contenedor ---
-        function actualizarContenedor(contenedorId, nuevasSolicitudes, creadorCardFn, currentIdsArray) {
-            const cont = document.getElementById(contenedorId);
-            const nuevosIds = nuevasSolicitudes.map(s => s.id);
-
-            // 1. Eliminar tarjetas que ya no están en la lista (fueron completadas o movidas)
-            cont.querySelectorAll(":scope > div").forEach(card => {
-                const id = parseInt(card.id.replace("solicitud_", ""));
-                if (!nuevosIds.includes(id)) {
-                    card.remove();
-                }
-            });
-
-            // 2. Insertar o mover tarjetas nuevas/existentes
-            const fragment = document.createDocumentFragment();
-            nuevasSolicitudes.forEach(s => {
-                let card = document.getElementById(`solicitud_${s.id}`);
-                
-                // Si la tarjeta NO existe, la creamos
-                if (!card) {
-                    const temp = document.createElement('div');
-                    // Usamos insertAdjacentHTML para que el HTML se convierta en nodos DOM
-                    temp.innerHTML = creadorCardFn(s, s.materiales);
-                    card = temp.firstChild; 
-                }
-                
-                // Agregamos la tarjeta (nueva o existente) al fragmento, 
-                // manteniendo el orden de las nuevas solicitudes.
-                fragment.appendChild(card);
-            });
-
-            // 3. Reemplazar el contenido completo del contenedor con el fragmento
-            // Esto asegura que el orden es correcto, pero reusa los nodos existentes
-            // que estaban siendo editados (sin borrar el contenido de los textarea).
-            cont.innerHTML = '';
-            cont.appendChild(fragment);
-
-            // 4. Actualizar la lista de IDs actuales (para seguimiento)
-            if (contenedorId === 'listaPendientes') {
-                currentPendingIds = nuevosIds;
-            } else if (contenedorId === 'listaEntregadas') {
-                currentEntregadaIds = nuevosIds;
-            }
-        }
-
-        // --- Carga de Pendientes ---
+        // --- Carga de Pendientes (sin cambio) ---
         async function cargarPendientes() {
+            const cont = document.getElementById("listaPendientes");
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*")
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
 
-            // Obtener materiales para todas las solicitudes
+            let html = '';
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
-                s.materiales = materiales;
+                html += crearCardPendiente(s, materiales);
             }
-            
-            // Usar la función de actualización inteligente
-            actualizarContenedor("listaPendientes", solicitudes, crearCardPendiente, currentPendingIds);
+            cont.innerHTML = html;
         }
 
-        // --- Carga de Entregadas (con lógica para preservar foco) ---
+        // --- Carga de Entregadas (con lógica para preservar foco y comentarios) ---
         async function cargarEntregadas() {
-            // 1. Identificar el elemento que tiene el foco (antes de cualquier cambio)
+            const cont = document.getElementById("listaEntregadas");
+            const comentariosGuardados = {};
+            
+            // 1. Identificar el elemento que tiene el foco (si existe)
             let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
 
-            // 2. Obtener los nuevos datos de Supabase
+            // 2. Guardar el contenido de los comentarios (textarea) existentes
+            document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
+                const id = textarea.id.replace("coment_", "");
+                comentariosGuardados[id] = textarea.value;
+            });
+
+            // 3. Obtener los nuevos datos de Supabase
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*")
@@ -179,20 +137,31 @@
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
 
-            // Obtener materiales para todas las solicitudes
+            // 4. Generar el nuevo HTML
+            let nuevoHtml = "";
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
-                s.materiales = materiales;
+                nuevoHtml += crearCardEntregada(s, materiales);
             }
 
-            // 3. Usar la función de actualización inteligente
-            // Esta función reusa los elementos <div> existentes, preservando el textarea.value
-            actualizarContenedor("listaEntregadas", solicitudes, crearCardEntregada, currentEntregadaIds);
+            // 5. Reemplazar el HTML del contenedor
+            cont.innerHTML = nuevoHtml;
 
-            // 4. Restaurar el foco en el elemento que estaba siendo editado
+            // 6. Restaurar el contenido de los comentarios guardados
+            solicitudes.forEach(s => {
+                const id = s.id.toString();
+                if (comentariosGuardados[id]) {
+                    const textarea = document.getElementById(`coment_${id}`);
+                    if (textarea) {
+                        textarea.value = comentariosGuardados[id];
+                    }
+                }
+            });
+
+            // 7. Restaurar el foco en el elemento que estaba siendo editado
             if (focusedElementId) {
                 const restoredFocusElement = document.getElementById(focusedElementId);
                 if (restoredFocusElement) {
@@ -206,8 +175,8 @@
         }
 
         async function cargarTodo() {
-            // Se utiliza Promise.all para que ambas cargas se hagan en paralelo
-            await Promise.all([cargarPendientes(), cargarEntregadas()]);
+            await cargarPendientes();
+            await cargarEntregadas();
         }
 
         // =============================

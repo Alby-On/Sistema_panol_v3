@@ -186,4 +186,11 @@ async function cargarPanelSolicitudes() {
    EJECUTAR AL CARGAR PÁGINA
 ---------------------------- */
 document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
+     /* -------------------------
+   ACTUALIZACIÓN AUTOMÁTICA CADA 10 SEGUNDOS
+---------------------------- */
+setInterval(() => {
+    cargarPanelSolicitudes();
+}, 5000); // 05.000 ms = 5 segundos
+     
 </script>

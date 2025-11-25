@@ -17,25 +17,16 @@
     </h1>
   </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
     
-        <div class="lg:col-span-1 bg-white p-6 shadow-xl rounded-2xl h-fit border-t-4 border-blue-500">
-      <h2 class="text-xl font-bold mb-4 text-blue-700">📊 Resumen Operacional</h2>
-      <div id="dashboardMetrics" class="bg-blue-50 p-4 rounded-lg text-center">
-        <p class="text-gray-600">
-          Espacio dedicado para KPIs o gráficos.
-        </p>
-      </div>
-    </div>
-
-        <div class="lg:col-span-1 bg-white shadow-xl rounded-2xl border-t-4 border-yellow-500 overflow-hidden">
+        <div class="bg-white shadow-xl rounded-2xl border-t-4 border-yellow-500 overflow-hidden">
       <div class="bg-yellow-50 p-4 border-b border-yellow-200">
         <h2 class="text-2xl font-bold text-yellow-700">⏳ Solicitudes Pendientes</h2>
-      </div>
+              </div>
       <div id="listaPendientes" class="p-4 space-y-5 max-h-[80vh] overflow-y-auto"></div>
     </div>
 
-        <div class="lg:col-span-1 bg-white shadow-xl rounded-2xl border-t-4 border-green-600 overflow-hidden">
+        <div class="bg-white shadow-xl rounded-2xl border-t-4 border-green-600 overflow-hidden">
       <div class="bg-green-50 p-4 border-b border-green-200">
         <h2 class="text-2xl font-bold text-green-700">✅ Entregadas (Sin Comentario)</h2>
       </div>
@@ -46,7 +37,7 @@
 
 <script>
     // =============================
-    //   CONFIGURAR SUPABASE (SIN CAMBIOS EN LÓGICA)
+    //   CONFIGURAR SUPABASE (LÓGICA INTACTA)
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
@@ -54,7 +45,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =============================
-    //   EJECUTAR CUANDO DOM ESTÉ LISTO
+    //   EJECUTAR CUANDO DOM ESTÉ LISTO (LÓGICA INTACTA)
     // =============================
     document.addEventListener("DOMContentLoaded", () => {
 
@@ -67,6 +58,7 @@
                 `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
             ).join("");
             
+            // Lógica de la unión (INTACTA)
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
@@ -100,6 +92,7 @@
                 `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
             ).join("");
             
+            // Lógica de la unión (INTACTA)
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
@@ -143,10 +136,11 @@
         }
 
         // =============================
-        //   CARGAR LISTAS (SIN CAMBIOS EN LÓGICA)
+        //   CARGAR LISTAS (LÓGICA INTACTA)
         // =============================
+        // *** Las funciones cargarPendientes y cargarEntregadas mantienen su lógica interna, ***
+        // *** pero ahora llaman a las funciones crearCard... visualmente mejoradas. ***
 
-        // --- Carga de Pendientes ---
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
             
@@ -167,21 +161,16 @@
             cont.innerHTML = html;
         }
 
-        // --- Carga de Entregadas (sin cambios en lógica) ---
         async function cargarEntregadas() {
             const cont = document.getElementById("listaEntregadas");
             const comentariosGuardados = {};
             
-            // 1. Identificar el elemento que tiene el foco (sin cambios)
             let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
-
-            // 2. Guardar el contenido de los comentarios (sin cambios)
             document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
                 const id = textarea.id.replace("coment_", "");
                 comentariosGuardados[id] = textarea.value;
             });
 
-            // 3. Obtener los nuevos datos de Supabase (sin cambios en lógica)
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*, usuarios(nombre)") 
@@ -189,7 +178,6 @@
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
 
-            // 4. Generar el nuevo HTML (usa la nueva función con estilo)
             let nuevoHtml = "";
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
@@ -199,7 +187,6 @@
                 nuevoHtml += crearCardEntregada(s, materiales);
             }
 
-            // 5, 6, 7: Reemplazar HTML, Restaurar Contenido y Foco (sin cambios)
             cont.innerHTML = nuevoHtml;
             
             solicitudes.forEach(s => {
@@ -228,7 +215,7 @@
         }
 
         // =============================
-        //  FUNCIONES DE COMENTARIO (SIN CAMBIOS EN LÓGICA)
+        //  FUNCIONES DE COMENTARIO (LÓGICA INTACTA)
         // =============================
         window.guardarComentario = async function(id) {
             const txt = document.getElementById(`coment_${id}`).value.trim();
@@ -249,7 +236,7 @@
         }
 
         // =============================
-        //   AUTO-ACTUALIZACIÓN 5s (SIN CAMBIOS EN LÓGICA)
+        //   AUTO-ACTUALIZACIÓN 5s (LÓGICA INTACTA)
         // =============================
         cargarTodo();
         setInterval(cargarTodo, 5000);

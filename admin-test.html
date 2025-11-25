@@ -1,225 +1,260 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel de Solicitudes</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Solicitudes</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body class="bg-gray-100 p-6">
-  <h1 class="text-3xl font-bold text-center mb-6">Panel de Solicitudes</h1>
+<body class="bg-gray-50 p-4 md:p-8 font-sans">
+  <header class="max-w-7xl mx-auto mb-8">
+    <h1 class="text-4xl font-extrabold text-gray-800 text-center border-b-2 border-gray-200 pb-3">
+      📋 Panel de Gestión de Materiales
+    </h1>
+  </header>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+    
+        <div class="lg:col-span-1 bg-white p-6 shadow-xl rounded-2xl h-fit border-t-4 border-blue-500">
+      <h2 class="text-xl font-bold mb-4 text-blue-700">📊 Resumen Operacional</h2>
+      <div id="dashboardMetrics" class="bg-blue-50 p-4 rounded-lg text-center">
+        <p class="text-gray-600">
+          Espacio dedicado para KPIs o gráficos.
+        </p>
+      </div>
+    </div>
 
-    <!-- Pendientes -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-yellow-500">
-      <h2 class="text-2xl font-bold mb-4 text-yellow-600">Solicitudes Pendientes</h2>
-      <div id="listaPendientes" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
-    </div>
+        <div class="lg:col-span-1 bg-white shadow-xl rounded-2xl border-t-4 border-yellow-500 overflow-hidden">
+      <div class="bg-yellow-50 p-4 border-b border-yellow-200">
+        <h2 class="text-2xl font-bold text-yellow-700">⏳ Solicitudes Pendientes</h2>
+      </div>
+      <div id="listaPendientes" class="p-4 space-y-5 max-h-[80vh] overflow-y-auto"></div>
+    </div>
 
-    <!-- Entregadas sin comentario -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-green-600">
-      <h2 class="text-2xl font-bold mb-4 text-green-700">Solicitudes Entregadas (Sin Comentario)</h2>
-      <div id="listaEntregadas" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
-    </div>
+        <div class="lg:col-span-1 bg-white shadow-xl rounded-2xl border-t-4 border-green-600 overflow-hidden">
+      <div class="bg-green-50 p-4 border-b border-green-200">
+        <h2 class="text-2xl font-bold text-green-700">✅ Entregadas (Sin Comentario)</h2>
+      </div>
+      <div id="listaEntregadas" class="p-4 space-y-5 max-h-[80vh] overflow-y-auto"></div>
+    </div>
 
-  </div>
+  </div>
 
 <script>
-    // =============================
-    //   CONFIGURAR SUPABASE
-    // =============================
-    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+    // =============================
+    //   CONFIGURAR SUPABASE (SIN CAMBIOS EN LÓGICA)
+    // =============================
+    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // =============================
-    //   EJECUTAR CUANDO DOM ESTÉ LISTO
-    // =============================
-    document.addEventListener("DOMContentLoaded", () => {
+    // =============================
+    //   EJECUTAR CUANDO DOM ESTÉ LISTO
+    // =============================
+    document.addEventListener("DOMContentLoaded", () => {
 
-        // =============================
-        //   CREAR TARJETAS
-        // =============================
-        function crearCardPendiente(s, materiales) {
-            const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
-            
-            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
-            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
-            
-            return `
-              <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
-                <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
-                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
-                <p><strong>Docente:</strong> ${s.docente}</p>
-                <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+        // =================================
+        //   CREAR TARJETAS (MEJORAS VISUALES)
+        // =================================
+        function crearCardPendiente(s, materiales) {
+            // Estilo mejorado para la lista de materiales
+            const materialesHTML = materiales.map(m => 
+                `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
+            ).join("");
+            
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
+            
+            return `
+              <div id="solicitud_${s.id}" class="bg-white border border-gray-200 rounded-lg p-5 shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.01]">
+                
+                                <div class="flex justify-between items-center mb-4 border-b pb-3 border-yellow-200">
+                  <span class="text-sm font-mono text-yellow-700 bg-yellow-100 px-3 py-1 rounded-full font-bold">
+                    SOLICITUD #${s.id}
+                  </span>
+                </div>
 
-                <p class="mt-2 font-semibold">Materiales:</p>
-                <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
-              </div>
-            `;
-        }
+                                <div class="space-y-2 text-sm text-gray-700">
+                  <p><span class="font-bold text-gray-900">👥 Solicitante:</span> ${nombreSolicitante}</p>
+                  <p><span class="font-bold text-gray-900">👨‍🏫 Docente:</span> ${s.docente}</p>
+                  <p><span class="font-bold text-gray-900">📚 Asignatura:</span> ${s.asignatura}</p>
+                </div>
 
-        function crearCardEntregada(s, materiales) {
-            const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
-            
-            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
-            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
-            
-            return `
-              <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
-                <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
-                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
-                <p><strong>Docente:</strong> ${s.docente}</p>
-                <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+                  <p class="font-bold text-gray-800 mb-2">📦 Materiales Requeridos:</p>
+                  <ul class="ml-4 space-y-1 list-disc text-sm text-gray-600">
+                    ${materialesHTML}
+                  </ul>
+                </div>
+              </div>
+            `;
+        }
 
-                <p class="mt-2 font-semibold">Materiales:</p>
-                <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
+        function crearCardEntregada(s, materiales) {
+            // Estilo mejorado para la lista de materiales
+            const materialesHTML = materiales.map(m => 
+                `<li class="text-gray-700">${m.material} <span class="font-semibold text-gray-800">(${m.cantidad} ud)</span></li>`
+            ).join("");
+            
+            const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
+            
+            return `
+              <div id="solicitud_${s.id}" class="bg-white border border-gray-200 rounded-lg p-5 shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.01]">
+                
+                                <div class="flex justify-between items-center mb-4 border-b pb-3 border-green-200">
+                  <span class="text-sm font-mono text-green-700 bg-green-100 px-3 py-1 rounded-full font-bold">
+                    SOLICITUD #${s.id}
+                  </span>
+                </div>
 
-                <div class="mt-3">
-                  <textarea id="coment_${s.id}" class="w-full p-2 border rounded-lg text-sm" placeholder="Escribe un comentario..."></textarea>
-                  <div class="flex gap-2 mt-2">
-                    <button onclick="guardarComentario(${s.id})"
-                      class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-                      Enviar comentario
-                    </button>
-                    <button onclick="guardarSinComentario(${s.id})"
-                      class="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">
-                      Sin comentario
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `;
-        }
+                                <div class="space-y-2 text-sm text-gray-700 mb-4">
+                  <p><span class="font-bold text-gray-900">👥 Solicitante:</span> ${nombreSolicitante}</p>
+                  <p><span class="font-bold text-gray-900">👨‍🏫 Docente:</span> ${s.docente}</p>
+                  <p><span class="font-bold text-gray-900">📚 Asignatura:</span> ${s.asignatura}</p>
+                </div>
+                
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+                  <p class="font-bold text-gray-800 mb-2">✅ Materiales Entregados:</p>
+                  <ul class="ml-4 space-y-1 list-disc text-sm text-gray-600">
+                    ${materialesHTML}
+                  </ul>
+                </div>
 
-        // =============================
-        //   CARGAR LISTAS
-        // =============================
+                                <div class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                  <p class="text-sm font-bold text-gray-700 mb-2">📝 Registrar Comentario de Entrega:</p>
+                  <textarea id="coment_${s.id}" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500 resize-none" placeholder="Escribe un comentario o nota final..."></textarea>
+                  <div class="flex justify-end gap-3 mt-3">
+                    <button onclick="guardarSinComentario(${s.id})"
+                      class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-semibold hover:bg-gray-600 transition duration-150">
+                      Sin comentario
+                    </button>
+                    <button onclick="guardarComentario(${s.id})"
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition duration-150">
+                      Enviar comentario
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+        }
 
-        // --- Carga de Pendientes ---
-        async function cargarPendientes() {
-            const cont = document.getElementById("listaPendientes");
-            
-            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
-            const { data: solicitudes } = await supabase
-                .from("solicitudes")
-                .select("*, usuarios(nombre)") 
-                .eq("estado", "Pendiente")
-                .order("id", { ascending: false });
+        // =============================
+        //   CARGAR LISTAS (SIN CAMBIOS EN LÓGICA)
+        // =============================
 
-            let html = '';
-            for (const s of solicitudes) {
-                const { data: materiales } = await supabase
-                    .from("materiales_solicitados")
-                    .select("*")
-                    .eq("id_solicitud", s.id);
-                html += crearCardPendiente(s, materiales);
-            }
-            cont.innerHTML = html;
-        }
+        // --- Carga de Pendientes ---
+        async function cargarPendientes() {
+            const cont = document.getElementById("listaPendientes");
+            
+            const { data: solicitudes } = await supabase
+                .from("solicitudes")
+                .select("*, usuarios(nombre)") 
+                .eq("estado", "Pendiente")
+                .order("id", { ascending: false });
 
-        // --- Carga de Entregadas (con lógica para preservar foco y comentarios) ---
-        async function cargarEntregadas() {
-            const cont = document.getElementById("listaEntregadas");
-            const comentariosGuardados = {};
-            
-            // 1. Identificar el elemento que tiene el foco (si existe)
-            let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
+            let html = '';
+            for (const s of solicitudes) {
+                const { data: materiales } = await supabase
+                    .from("materiales_solicitados")
+                    .select("*")
+                    .eq("id_solicitud", s.id);
+                html += crearCardPendiente(s, materiales);
+            }
+            cont.innerHTML = html;
+        }
 
-            // 2. Guardar el contenido de los comentarios (textarea) existentes
-            document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
-                const id = textarea.id.replace("coment_", "");
-                comentariosGuardados[id] = textarea.value;
-            });
+        // --- Carga de Entregadas (sin cambios en lógica) ---
+        async function cargarEntregadas() {
+            const cont = document.getElementById("listaEntregadas");
+            const comentariosGuardados = {};
+            
+            // 1. Identificar el elemento que tiene el foco (sin cambios)
+            let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
 
-            // 3. Obtener los nuevos datos de Supabase
-            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
-            const { data: solicitudes } = await supabase
-                .from("solicitudes")
-                .select("*, usuarios(nombre)") 
-                .eq("estado", "Entregado")
-                .is("comentario_entrega", null)
-                .order("id", { ascending: false });
+            // 2. Guardar el contenido de los comentarios (sin cambios)
+            document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
+                const id = textarea.id.replace("coment_", "");
+                comentariosGuardados[id] = textarea.value;
+            });
 
-            // 4. Generar el nuevo HTML
-            let nuevoHtml = "";
-            for (const s of solicitudes) {
-                const { data: materiales } = await supabase
-                    .from("materiales_solicitados")
-                    .select("*")
-                    .eq("id_solicitud", s.id);
-                nuevoHtml += crearCardEntregada(s, materiales);
-            }
+            // 3. Obtener los nuevos datos de Supabase (sin cambios en lógica)
+            const { data: solicitudes } = await supabase
+                .from("solicitudes")
+                .select("*, usuarios(nombre)") 
+                .eq("estado", "Entregado")
+                .is("comentario_entrega", null)
+                .order("id", { ascending: false });
 
-            // 5. Reemplazar el HTML del contenedor
-            cont.innerHTML = nuevoHtml;
+            // 4. Generar el nuevo HTML (usa la nueva función con estilo)
+            let nuevoHtml = "";
+            for (const s of solicitudes) {
+                const { data: materiales } = await supabase
+                    .from("materiales_solicitados")
+                    .select("*")
+                    .eq("id_solicitud", s.id);
+                nuevoHtml += crearCardEntregada(s, materiales);
+            }
 
-            // 6. Restaurar el contenido de los comentarios guardados
-            solicitudes.forEach(s => {
-                const id = s.id.toString();
-                if (comentariosGuardados[id]) {
-                    const textarea = document.getElementById(`coment_${id}`);
-                    if (textarea) {
-                        textarea.value = comentariosGuardados[id];
-                    }
-                }
-            });
+            // 5, 6, 7: Reemplazar HTML, Restaurar Contenido y Foco (sin cambios)
+            cont.innerHTML = nuevoHtml;
+            
+            solicitudes.forEach(s => {
+                const id = s.id.toString();
+                if (comentariosGuardados[id]) {
+                    const textarea = document.getElementById(`coment_${id}`);
+                    if (textarea) {
+                        textarea.value = comentariosGuardados[id];
+                    }
+                }
+            });
 
-            // 7. Restaurar el foco en el elemento que estaba siendo editado
-            if (focusedElementId) {
-                const restoredFocusElement = document.getElementById(focusedElementId);
-                if (restoredFocusElement) {
-                    restoredFocusElement.focus();
-                    
-                    // Mover el cursor al final del texto para una mejor experiencia de escritura
-                    const currentLength = restoredFocusElement.value.length;
-                    restoredFocusElement.setSelectionRange(currentLength, currentLength);
-                }
-            }
-        }
+            if (focusedElementId) {
+                const restoredFocusElement = document.getElementById(focusedElementId);
+                if (restoredFocusElement) {
+                    restoredFocusElement.focus();
+                    const currentLength = restoredFocusElement.value.length;
+                    restoredFocusElement.setSelectionRange(currentLength, currentLength);
+                }
+            }
+        }
 
-        async function cargarTodo() {
-            await cargarPendientes();
-            await cargarEntregadas();
-        }
+        async function cargarTodo() {
+            await cargarPendientes();
+            await cargarEntregadas();
+        }
 
-        // =============================
-        //  FUNCIONES DE COMENTARIO
-        // ... (sin cambios)
-        // =============================
-        window.guardarComentario = async function(id) {
-            const txt = document.getElementById(`coment_${id}`).value.trim();
-            if (!txt) return alert("Escribe un comentario primero.");
-            await supabase
-                .from("solicitudes")
-                .update({ comentario_entrega: txt })
-                .eq("id", id);
-            cargarTodo();
-        }
+        // =============================
+        //  FUNCIONES DE COMENTARIO (SIN CAMBIOS EN LÓGICA)
+        // =============================
+        window.guardarComentario = async function(id) {
+            const txt = document.getElementById(`coment_${id}`).value.trim();
+            if (!txt) return alert("Escribe un comentario primero.");
+            await supabase
+                .from("solicitudes")
+                .update({ comentario_entrega: txt })
+                .eq("id", id);
+            cargarTodo();
+        }
 
-        window.guardarSinComentario = async function(id) {
-            await supabase
-                .from("solicitudes")
-                .update({ comentario_entrega: "Sin comentario" })
-                .eq("id", id);
-            cargarTodo();
-        }
+        window.guardarSinComentario = async function(id) {
+            await supabase
+                .from("solicitudes")
+                .update({ comentario_entrega: "Sin comentario" })
+                .eq("id", id);
+            cargarTodo();
+        }
 
-        // =============================
-        //   AUTO-ACTUALIZACIÓN 5s
-        // =============================
-        cargarTodo();
-        setInterval(cargarTodo, 5000);
+        // =============================
+        //   AUTO-ACTUALIZACIÓN 5s (SIN CAMBIOS EN LÓGICA)
+        // =============================
+        cargarTodo();
+        setInterval(cargarTodo, 5000);
 
-    }); // fin DOMContentLoaded
+    }); // fin DOMContentLoaded
 </script>
 </body>
 </html>
-

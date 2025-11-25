@@ -1,38 +1,78 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel de Solicitudes</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Solicitudes</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Definir paleta de colores personalizada */
+        .color-primary { color: #004d99; }
+        .bg-primary { background-color: #004d99; }
+        .hover\:bg-primary-dark:hover { background-color: #003a73; }
+        .border-primary { border-color: #004d99; }
+        
+        /* Ajuste de colores para Pendientes (Amarillo/Naranja) y Entregadas (Verde) */
+        .border-t-pending { border-color: #ffc107; /* Amarillo Institucional */ }
+        .text-pending { color: #ff8c00; /* Naranja Institucional */ }
+        .border-t-done { border-color: #28a745; /* Verde Institucional */ }
+        .text-done { color: #28a745; }
+        .bg-done-button { background-color: #218838; }
+        .hover\:bg-done-button:hover { background-color: #1e7e34; }
+
+        /* Estilo General y Fuente */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Estilo de la barra de desplazamiento para los contenedores (solo Chrome/Safari/Edge) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #a0aec0; /* Gris medio */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: #edf2f7; /* Gris claro */
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-gray-100 p-6">
-  <h1 class="text-3xl font-bold text-center mb-6">Panel de Solicitudes</h1>
+    <h1 class="text-4xl font-extrabold text-center mb-8 color-primary">
+        Gestión de Solicitudes de Material
+    </h1>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
 
-    <!-- Pendientes -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-yellow-500">
-      <h2 class="text-2xl font-bold mb-4 text-yellow-600">Solicitudes Pendientes</h2>
-      <div id="listaPendientes" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
+        <div class="bg-white shadow-xl rounded-xl p-6 border-t-8 border-t-pending">
+            <h2 class="text-3xl font-bold mb-5 text-pending">
+                <span class="mr-2">⏳</span> Solicitudes Pendientes
+            </h2>
+            <div id="listaPendientes" class="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-3">
+                <div class="p-4 text-center text-gray-500">Cargando solicitudes...</div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-xl p-6 border-t-8 border-t-done">
+            <h2 class="text-3xl font-bold mb-5 text-done">
+                <span class="mr-2">📝</span> Entregadas (Pendiente Comentario)
+            </h2>
+            <div id="listaEntregadas" class="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-3">
+                <div class="p-4 text-center text-gray-500">Cargando entregas...</div>
+            </div>
+        </div>
+
     </div>
-
-    <!-- Entregadas sin comentario -->
-    <div class="bg-white shadow-md rounded-xl p-4 border-t-4 border-green-600">
-      <h2 class="text-2xl font-bold mb-4 text-green-700">Solicitudes Entregadas (Sin Comentario)</h2>
-      <div id="listaEntregadas" class="space-y-4 max-h-[85vh] overflow-y-auto pr-2"></div>
-    </div>
-
-  </div>
 
 <script>
     // =============================
-    //   CONFIGURAR SUPABASE
+    //   CONFIGURAR SUPABASE (LÓGICA INTACTA)
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
@@ -40,86 +80,114 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =============================
-    //   EJECUTAR CUANDO DOM ESTÉ LISTO
+    //   EJECUTAR CUANDO DOM ESTÉ LISTO
     // =============================
     document.addEventListener("DOMContentLoaded", () => {
 
         // =============================
-        //   CREAR TARJETAS
+        //   CREAR TARJETAS (Mejora visual: Uso de clases Tailwind)
         // =============================
         function crearCardPendiente(s, materiales) {
-            const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
-            
-            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
+            const materialesHTML = materiales.map(m => `<li class="ml-4 list-disc"><span class="font-medium">${m.material}</span> — <span class="text-gray-700">${m.cantidad} ud</span></li>`).join("");
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
-              <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
-                <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
-                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
-                <p><strong>Docente:</strong> ${s.docente}</p>
-                <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+                <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-sm font-semibold text-gray-600">ID: <span class="font-mono text-xs">${s.id}</span></p>
+                        <span class="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-pending rounded-full">Pendiente</span>
+                    </div>
+                    
+                    <p class="text-base font-semibold color-primary">Solicitante: <span class="font-normal text-gray-800">${nombreSolicitante}</span></p>
+                    <p class="text-sm">Docente: <span class="font-medium text-gray-700">${s.docente}</span></p>
+                    <p class="text-sm mb-3">Asignatura: <span class="font-medium text-gray-700">${s.asignatura}</span></p>
 
-                <p class="mt-2 font-semibold">Materiales:</p>
-                <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
-              </div>
-            `;
+                    <p class="mt-2 font-bold text-gray-700">Materiales solicitados:</p>
+                    <ul class="text-sm list-none space-y-1">${materialesHTML}</ul>
+                </div>
+            `;
         }
 
         function crearCardEntregada(s, materiales) {
-            const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
-            
-            // Si la relación FK está correcta, el nombre del usuario viene en s.usuarios.nombre
+            const materialesHTML = materiales.map(m => `<li class="ml-4 list-disc"><span class="font-medium">${m.material}</span> — <span class="text-gray-700">${m.cantidad} ud</span></li>`).join("");
             const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
             
             return `
-              <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border rounded-lg shadow-sm">
-                <p class="text-sm text-gray-600"><strong>ID:</strong> ${s.id}</p>
-                <p><strong>Solicitante:</strong> ${nombreSolicitante}</p>
-                <p><strong>Docente:</strong> ${s.docente}</p>
-                <p><strong>Asignatura:</strong> ${s.asignatura}</p>
+                <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition duration-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-sm font-semibold text-gray-600">ID: <span class="font-mono text-xs">${s.id}</span></p>
+                        <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-done rounded-full">Entregado</span>
+                    </div>
 
-                <p class="mt-2 font-semibold">Materiales:</p>
-                <ul class="ml-4 list-disc text-sm">${materialesHTML}</ul>
+                    <p class="text-base font-semibold color-primary">Solicitante: <span class="font-normal text-gray-800">${nombreSolicitante}</span></p>
+                    <p class="text-sm">Docente: <span class="font-medium text-gray-700">${s.docente}</span></p>
+                    <p class="text-sm mb-3">Asignatura: <span class="font-medium text-gray-700">${s.asignatura}</span></p>
+                    
+                    <p class="mt-2 font-bold text-gray-700">Materiales entregados:</p>
+                    <ul class="text-sm list-none space-y-1">${materialesHTML}</ul>
 
-                <div class="mt-3">
-                  <textarea id="coment_${s.id}" class="w-full p-2 border rounded-lg text-sm" placeholder="Escribe un comentario..."></textarea>
-                  <div class="flex gap-2 mt-2">
-                    <button onclick="guardarComentario(${s.id})"
-                      class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-                      Enviar comentario
-                    </button>
-                    <button onclick="guardarSinComentario(${s.id})"
-                      class="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">
-                      Sin comentario
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `;
+                    <div class="mt-4 pt-3 border-t border-gray-200">
+                        <textarea id="coment_${s.id}" class="w-full p-3 border border-gray-300 rounded-lg text-sm resize-y focus:ring-2 focus:ring-primary focus:border-primary" 
+                                placeholder="Escribe un comentario sobre la devolución/estado..."></textarea>
+                        
+                        <div class="flex gap-3 mt-3">
+                            <button onclick="guardarComentario(${s.id})"
+                                class="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition duration-150">
+                                <span class="mr-1">💬</span> Enviar comentario
+                            </button>
+                            <button onclick="guardarSinComentario(${s.id})"
+                                class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-semibold hover:bg-gray-600 transition duration-150">
+                                <span class="mr-1">✔</span> Sin comentario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Función para mostrar mensajes de lista vacía
+        function displayEmptyMessage(container, isPending) {
+            const color = isPending ? 'text-pending' : 'text-done';
+            const icon = isPending ? '🎉' : '👍';
+            const message = isPending ? 'No hay solicitudes pendientes actualmente.' : 'No hay entregas pendientes de comentario.';
+            
+            container.innerHTML = `
+                <div class="p-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <p class="text-xl ${color} font-semibold mb-1">${icon}</p>
+                    <p class="text-gray-600">${message}</p>
+                </div>
+            `;
         }
 
         // =============================
-        //   CARGAR LISTAS
+        //   CARGAR LISTAS (LÓGICA MEJORADA PARA CONCATENACIÓN)
         // =============================
 
         // --- Carga de Pendientes ---
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
             
-            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
+            // LÓGICA DE CONSULTA INTACTA
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*, usuarios(nombre)") 
+                .select("*, usuarios(nombre)") 
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
+            
+            if (!solicitudes || solicitudes.length === 0) {
+                displayEmptyMessage(cont, true);
+                return;
+            }
 
             let html = '';
             for (const s of solicitudes) {
+                // LÓGICA DE OBTENER MATERIALES INTACTA
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
+                
+                // Generar y CONCATENAR el HTML
                 html += crearCardPendiente(s, materiales);
             }
             cont.innerHTML = html;
@@ -130,38 +198,45 @@
             const cont = document.getElementById("listaEntregadas");
             const comentariosGuardados = {};
             
-            // 1. Identificar el elemento que tiene el foco (si existe)
+            // 1. Identificar el elemento que tiene el foco (si existe) (LÓGICA INTACTA)
             let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
 
-            // 2. Guardar el contenido de los comentarios (textarea) existentes
+            // 2. Guardar el contenido de los comentarios (textarea) existentes (LÓGICA INTACTA)
             document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
                 const id = textarea.id.replace("coment_", "");
                 comentariosGuardados[id] = textarea.value;
             });
 
-            // 3. Obtener los nuevos datos de Supabase
-            // Usamos .select con JOIN: trae todos los campos de solicitudes y el nombre de usuarios
+            // 3. Obtener los nuevos datos de Supabase (LÓGICA INTACTA)
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
-                .select("*, usuarios(nombre)") 
+                .select("*, usuarios(nombre)") 
                 .eq("estado", "Entregado")
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
 
-            // 4. Generar el nuevo HTML
+            if (!solicitudes || solicitudes.length === 0) {
+                displayEmptyMessage(cont, false);
+                return;
+            }
+
+            // 4. Generar el nuevo HTML (LÓGICA DE CONCATENACIÓN MEJORADA)
             let nuevoHtml = "";
             for (const s of solicitudes) {
+                // LÓGICA DE OBTENER MATERIALES INTACTA
                 const { data: materiales } = await supabase
                     .from("materiales_solicitados")
                     .select("*")
                     .eq("id_solicitud", s.id);
+                
+                // Generar y CONCATENAR el HTML
                 nuevoHtml += crearCardEntregada(s, materiales);
             }
 
-            // 5. Reemplazar el HTML del contenedor
+            // 5. Reemplazar el HTML del contenedor (LÓGICA INTACTA)
             cont.innerHTML = nuevoHtml;
 
-            // 6. Restaurar el contenido de los comentarios guardados
+            // 6. Restaurar el contenido de los comentarios guardados (LÓGICA INTACTA)
             solicitudes.forEach(s => {
                 const id = s.id.toString();
                 if (comentariosGuardados[id]) {
@@ -172,13 +247,11 @@
                 }
             });
 
-            // 7. Restaurar el foco en el elemento que estaba siendo editado
+            // 7. Restaurar el foco en el elemento que estaba siendo editado (LÓGICA INTACTA)
             if (focusedElementId) {
                 const restoredFocusElement = document.getElementById(focusedElementId);
                 if (restoredFocusElement) {
                     restoredFocusElement.focus();
-                    
-                    // Mover el cursor al final del texto para una mejor experiencia de escritura
                     const currentLength = restoredFocusElement.value.length;
                     restoredFocusElement.setSelectionRange(currentLength, currentLength);
                 }
@@ -186,13 +259,12 @@
         }
 
         async function cargarTodo() {
-            await cargarPendientes();
-            await cargarEntregadas();
+            // Se ejecuta la carga en paralelo para mayor velocidad
+            await Promise.all([cargarPendientes(), cargarEntregadas()]);
         }
 
         // =============================
-        //  FUNCIONES DE COMENTARIO
-        // ... (sin cambios)
+        //   FUNCIONES DE COMENTARIO (LÓGICA INTACTA)
         // =============================
         window.guardarComentario = async function(id) {
             const txt = document.getElementById(`coment_${id}`).value.trim();
@@ -213,7 +285,7 @@
         }
 
         // =============================
-        //   AUTO-ACTUALIZACIÓN 5s
+        //   AUTO-ACTUALIZACIÓN 5s (LÓGICA INTACTA)
         // =============================
         cargarTodo();
         setInterval(cargarTodo, 5000);

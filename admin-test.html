@@ -3,6 +3,12 @@
 =========================== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- VARIABLES PARA PROTEGER TEXTO EN ESCRITURA -->
+<script>
+let comentarioActivo = null;
+let textoComentarioActivo = "";
+</script>
+
 <!-- ==========================
      CREAR CLIENTE SUPABASE
 =========================== -->
@@ -54,16 +60,12 @@ async function getSolicitudesPendientes() {
         .eq("estado", "Pendiente")
         .order("fecha_solicitud", { ascending: true });
 
-    if (error) {
-        console.error("Error solicitudes pendientes:", error);
-        return [];
-    }
+    if (error) return [];
     return data;
 }
 
 /* -------------------------
-   CARGAR SOLICITUDES ENTREGADAS
-   condición: Entregado + comentario_entrega NULL o ""
+   CARGAR SOLICITUDES ENTREGADAS (comentario NULL o "")
 ---------------------------- */
 async function getSolicitudesEntregadas() {
     const { data, error } = await supabase
@@ -82,10 +84,7 @@ async function getSolicitudesEntregadas() {
         .or('comentario_entrega.is.null,comentario_entrega.eq.""')
         .order("fecha_entrega", { ascending: false });
 
-    if (error) {
-        console.error("Error solicitudes entregadas:", error);
-        return [];
-    }
+    if (error) return [];
     return data;
 }
 
@@ -93,17 +92,18 @@ async function getSolicitudesEntregadas() {
    ACTUALIZAR COMENTARIO EN BASE
 ---------------------------- */
 async function actualizarComentario(id, comentario) {
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from("solicitudes")
         .update({ comentario_entrega: comentario })
         .eq("id", id);
 
     if (error) {
-        console.error("Error actualizando comentario:", error);
         alert("Error al guardar comentario");
     } else {
         alert("Comentario guardado correctamente");
-        cargarPanelSolicitudes(); // refresca la lista para ocultar la solicitud
+        comentarioActivo = null;
+        textoComentarioActivo = "";
+        cargarPanelSolicitudes();
     }
 }
 
@@ -146,7 +146,7 @@ async function cargarPanelSolicitudes() {
         `;
     });
 
-    /* ---- MOSTRAR ENTREGADAS CON TEXTAREA Y BOTONES ---- */
+    /* ---- MOSTRAR ENTREGADAS ---- */
     entregadas.forEach(s => {
         colEnt.innerHTML += `
             <div style="border:1px solid #ccc; padding:10px; margin-bottom:12px; border-radius:8px;">
@@ -156,7 +156,8 @@ async function cargarPanelSolicitudes() {
                 <b>Fecha solicitud:</b> ${s.fecha_solicitud}<br>
                 <b>Fecha entrega:</b> ${s.fecha_entrega}<br><br>
 
-                <textarea id="comentario-${s.id}" placeholder="Escribe un comentario..." style="width:100%; padding:5px; margin-bottom:5px;"></textarea>
+                <textarea id="comentario-${s.id}" placeholder="Escribe un comentario..." 
+                    style="width:100%; padding:5px; margin-bottom:5px;"></textarea>
                 
                 <div style="display:flex; gap:5px;">
                     <button id="btnEnviarComentario-${s.id}" style="padding:5px 10px;">Enviar comentario</button>
@@ -165,7 +166,14 @@ async function cargarPanelSolicitudes() {
             </div>
         `;
 
-        // Listener para "Enviar comentario"
+        /* ---- Guardar texto mientras escribes ---- */
+        const tx = document.getElementById(`comentario-${s.id}`);
+        tx.addEventListener("input", () => {
+            comentarioActivo = s.id;
+            textoComentarioActivo = tx.value;
+        });
+
+        /* ---- Botón Enviar ---- */
         document.getElementById(`btnEnviarComentario-${s.id}`).addEventListener("click", async () => {
             const texto = document.getElementById(`comentario-${s.id}`).value.trim();
             if (texto === "") {
@@ -175,22 +183,35 @@ async function cargarPanelSolicitudes() {
             await actualizarComentario(s.id, texto);
         });
 
-        // Listener para "Sin comentarios"
+        /* ---- Botón Sin comentario ---- */
         document.getElementById(`btnSinComentario-${s.id}`).addEventListener("click", async () => {
             await actualizarComentario(s.id, "Sin comentario");
         });
     });
+
+    /* ---- Restaurar texto si estás escribiendo ---- */
+    if (comentarioActivo !== null) {
+        const tx = document.getElementById(`comentario-${comentarioActivo}`);
+        if (tx) {
+            tx.value = textoComentarioActivo;
+            tx.focus();
+        } else {
+            comentarioActivo = null;
+            textoComentarioActivo = "";
+        }
+    }
 }
 
 /* -------------------------
-   EJECUTAR AL CARGAR PÁGINA
+   AL CARGAR LA PÁGINA
 ---------------------------- */
 document.addEventListener("DOMContentLoaded", cargarPanelSolicitudes);
-     /* -------------------------
-   ACTUALIZACIÓN AUTOMÁTICA CADA 10 SEGUNDOS
+
+/* -------------------------
+   ACTUALIZACIÓN AUTOMÁTICA
+   CADA 3 SEGUNDOS
 ---------------------------- */
-setInterval(() => {
-    cargarPanelSolicitudes();
-}, 5000); // 05.000 ms = 5 segundos
-     
+setInterval(async () => {
+    await cargarPanelSolicitudes();
+}, 3000);
 </script>

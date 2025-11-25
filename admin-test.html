@@ -33,6 +33,7 @@
  <script>
     // =============================
     //   CONFIGURAR SUPABASE
+    // ... (sin cambios)
     // =============================
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
@@ -46,6 +47,7 @@
 
         // =============================
         //   CREAR TARJETAS
+        // ... (sin cambios)
         // =============================
         function crearCardPendiente(s, materiales) {
             const materialesHTML = materiales.map(m => `<li>${m.material} — ${m.cantidad} ud</li>`).join("");
@@ -93,7 +95,7 @@
         //   CARGAR LISTAS
         // =============================
 
-        // --- Carga de Pendientes (sin cambio, solo reemplazo) ---
+        // --- Carga de Pendientes (sin cambio) ---
         async function cargarPendientes() {
             const cont = document.getElementById("listaPendientes");
             const { data: solicitudes } = await supabase
@@ -102,7 +104,6 @@
                 .eq("estado", "Pendiente")
                 .order("id", { ascending: false });
 
-            // Generar el HTML para las pendientes
             let html = '';
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
@@ -111,21 +112,24 @@
                     .eq("id_solicitud", s.id);
                 html += crearCardPendiente(s, materiales);
             }
-            cont.innerHTML = html; // Reemplazar todo el contenido de una vez
+            cont.innerHTML = html;
         }
 
-        // --- Carga de Entregadas (con lógica para preservar comentarios) ---
+        // --- Carga de Entregadas (con lógica para preservar foco y comentarios) ---
         async function cargarEntregadas() {
             const cont = document.getElementById("listaEntregadas");
-
-            // 1. Guardar el contenido de los comentarios (textarea) existentes
             const comentariosGuardados = {};
+            
+            // 1. Identificar el elemento que tiene el foco (si existe)
+            let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
+
+            // 2. Guardar el contenido de los comentarios (textarea) existentes
             document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
                 const id = textarea.id.replace("coment_", "");
                 comentariosGuardados[id] = textarea.value;
             });
 
-            // 2. Obtener los nuevos datos de Supabase
+            // 3. Obtener los nuevos datos de Supabase
             const { data: solicitudes } = await supabase
                 .from("solicitudes")
                 .select("*")
@@ -133,7 +137,7 @@
                 .is("comentario_entrega", null)
                 .order("id", { ascending: false });
 
-            // 3. Generar el nuevo HTML
+            // 4. Generar el nuevo HTML
             let nuevoHtml = "";
             for (const s of solicitudes) {
                 const { data: materiales } = await supabase
@@ -143,10 +147,10 @@
                 nuevoHtml += crearCardEntregada(s, materiales);
             }
 
-            // 4. Reemplazar el HTML del contenedor
+            // 5. Reemplazar el HTML del contenedor
             cont.innerHTML = nuevoHtml;
 
-            // 5. Restaurar el contenido de los comentarios guardados
+            // 6. Restaurar el contenido de los comentarios guardados
             solicitudes.forEach(s => {
                 const id = s.id.toString();
                 if (comentariosGuardados[id]) {
@@ -156,17 +160,28 @@
                     }
                 }
             });
+
+            // 7. Restaurar el foco en el elemento que estaba siendo editado
+            if (focusedElementId) {
+                const restoredFocusElement = document.getElementById(focusedElementId);
+                if (restoredFocusElement) {
+                    restoredFocusElement.focus();
+                    
+                    // Opcional: Mover el cursor al final del texto para una mejor experiencia de escritura
+                    const currentLength = restoredFocusElement.value.length;
+                    restoredFocusElement.setSelectionRange(currentLength, currentLength);
+                }
+            }
         }
 
         async function cargarTodo() {
-            // El orden es importante si se necesita sincronización estricta, pero para
-            // este caso, simplemente asegura que ambas se carguen.
             await cargarPendientes();
             await cargarEntregadas();
         }
 
         // =============================
         //  FUNCIONES DE COMENTARIO
+        // ... (sin cambios)
         // =============================
         window.guardarComentario = async function(id) {
             const txt = document.getElementById(`coment_${id}`).value.trim();
@@ -175,7 +190,6 @@
                 .from("solicitudes")
                 .update({ comentario_entrega: txt })
                 .eq("id", id);
-            // Llama a cargarTodo para que la solicitud desaparezca del panel 'Entregadas'
             cargarTodo();
         }
 
@@ -184,7 +198,6 @@
                 .from("solicitudes")
                 .update({ comentario_entrega: "Sin comentario" })
                 .eq("id", id);
-            // Llama a cargarTodo para que la solicitud desaparezca del panel 'Entregadas'
             cargarTodo();
         }
 
@@ -192,7 +205,6 @@
         //   AUTO-ACTUALIZACIÓN 5s
         // =============================
         cargarTodo();
-        // Usa setInterval para la actualización periódica
         setInterval(cargarTodo, 5000);
 
     }); // fin DOMContentLoaded

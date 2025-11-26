@@ -178,9 +178,11 @@
             padding: 12px;
         }
     }
-    /* Contenedor para input con autocompletado */
-.input-wrapper {
-    position: relative;
+    /* Ajuste del autocompletado para que quede pegado al input */
+.input-wrapper ul {
+    top: 100%; /* justo debajo del input */
+    left: 0;
+    margin-top: 0; /* eliminar margen extra */
 }
 </style>
 </head>
@@ -379,7 +381,8 @@ function enableAutocomplete(input, listaOpciones) {
     lista.style.zIndex = 10;
     lista.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     lista.style.borderRadius = "4px";
-    lista.style.marginTop = "2px";
+    lista.style.top = input.offsetHeight + "px";
+    lista.style.marginTop = "0";
     
     input.parentNode.style.position = "relative";
     input.parentNode.appendChild(lista);

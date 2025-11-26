@@ -7,273 +7,428 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* Variables de Color */
-:root {
-    --color-primary: #004d99;
-    --color-secondary: #28a745;
-    --color-info: #17a2b8;
-    --color-danger: #dc3545;
-    --color-muted: #6c757d;
-    --color-background: #eef1f5;
-    --color-card: #ffffff;
-    --color-text: #333333;
-    --color-border: #cccccc;
-}
+    /* Variables de Color (Mismas que en las vistas anteriores) */
+    :root {
+        --color-primary: #004d99; /* Azul marino/institucional */
+        --color-secondary: #28a745; /* Verde para enviar/éxito */
+        --color-info: #17a2b8; /* Turquesa para añadir */
+        --color-danger: #dc3545; /* Rojo para eliminar */
+        --color-muted: #6c757d; /* Gris para volver */
+        --color-background: #eef1f5; /* Fondo claro y suave */
+        --color-card: #ffffff; /* Fondo de las cajas */
+        --color-text: #333333; /* Texto oscuro */
+        --color-border: #cccccc;
+    }
 
-/* Generales */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--color-background);
-    margin: 0;
-    padding: 0;
-    color: var(--color-text);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-}
+    /* Estilos Generales */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
+        margin: 0;
+        padding: 0;
+        color: var(--color-text);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+    }
 
-/* Caja Principal */
-.box {
-    background: var(--color-card);
-    padding: 25px;
-    width: 100%;
-    max-width: 780px;
-    margin: 20px 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-}
+    /* Caja Principal (Card) */
+    .box {
+        background: var(--color-card);
+        padding: 25px;
+        width: 100%;
+        max-width: 780px; /* Ancho un poco mayor para la tabla */
+        margin: 20px 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
 
-h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    color: var(--color-primary);
-    font-size: 1.8em;
-    border-bottom: 2px solid var(--color-primary);
-    padding-bottom: 10px;
-}
+    /* Encabezados */
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: var(--color-primary);
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+    h3 { 
+        text-align: center; 
+        margin-top: 30px;
+        margin-bottom: 15px;
+        color: var(--color-primary);
+        font-size: 1.3em;
+    }
 
-label {
-    font-weight: 600;
-    display: block;
-    margin-top: 15px;
-}
+    /* Labels e Inputs de Formulario */
+    label { 
+        font-weight: 600; 
+        display: block; 
+        margin-top: 15px; 
+        color: var(--color-text);
+    }
+    input, select {
+        width: 100%;
+        padding: 12px; /* Aumentado para mejor tacto en móvil */
+        font-size: 1em;
+        margin-top: 8px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+    input:focus, select:focus {
+        border-color: var(--color-primary);
+        outline: none;
+        box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
+    }
 
-input, select {
-    width: 100%;
-    padding: 12px;
-    font-size: 1em;
-    margin-top: 8px;
-    margin-bottom: 20px;
-    border-radius: 6px;
-    border: 1px solid var(--color-border);
-}
+    /* Tabla de Materiales */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra sutil a la tabla */
+    }
+    th, td { 
+        border: 1px solid #e0e0e0; /* Borde más claro */
+        padding: 12px; 
+        text-align: left; /* Alineación a la izquierda para el material */
+    }
+    th { 
+        background: var(--color-primary); 
+        color: var(--color-card); 
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 0.9em;
+    }
+    #tabla tbody tr:nth-child(even) {
+        background-color: #f8f8f8; /* Cebra para mejor lectura */
+    }
+    td input { 
+        padding: 8px; 
+        font-size: 1em; 
+        border: 1px solid #d0d0d0;
+        margin: 0;
+    }
+    #tabla td:nth-child(2) { /* Columna de Cantidad */
+        width: 25%;
+        text-align: center;
+    }
 
-input:focus, select:focus {
-    border-color: var(--color-primary);
-    outline: none;
-}
+    /* Botones de Acción */
+    .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 12px;
+        transition: background-color 0.3s, opacity 0.3s;
+    }
 
-/* Tabla */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+    .btnAdd { 
+        background: var(--color-info); 
+        color: white; 
+    }
+    .btnAdd:hover { background: #138496; }
 
-th {
-    background: var(--color-primary);
-    color: white;
-    padding: 12px;
-}
+    .btnRemove { 
+        background: var(--color-danger); 
+        color: white; 
+    }
+    .btnRemove:hover { background: #c82333; }
 
-td {
-    padding: 12px;
-    border: 1px solid #eee;
-}
+    .btnEnviar { 
+        background: var(--color-secondary); 
+        color: white; 
+        margin-top: 25px; /* Separación de los botones de la tabla */
+    }
+    .btnEnviar:hover { background: #1e7e34; }
 
-/* Botones */
-.btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-    width: 100%;
-    padding: 14px;
-    border-radius: 6px;
-    font-size: 1.1em;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-}
+    .btnVolver { 
+        background: var(--color-muted); 
+        color: white; 
+    }
+    .btnVolver:hover { background: #5a6268; }
 
-.btnAdd { background: var(--color-info); color: white; }
-.btnRemove { background: var(--color-danger); color: white; }
-.btnEnviar { background: var(--color-secondary); color: white; }
-.btnVolver { background: var(--color-muted); color: white; }
-
+    /* Estilos para Móviles */
+    @media (max-width: 600px) {
+        .box {
+            margin: 10px;
+            padding: 15px;
+        }
+        h2 {
+            font-size: 1.6em;
+        }
+        th, td {
+            padding: 8px;
+            font-size: 0.9em;
+        }
+        td input {
+            padding: 6px;
+        }
+        .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
+            font-size: 1em;
+            padding: 12px;
+        }
+    }
 </style>
 </head>
-
 <body>
+
 <div class="box">
+    <h2>Solicitud de Materiales 📋</h2>
 
-<h2>Solicitud de Materiales 📋</h2>
+    <label for="docente">👨‍🏫 Docente a cargo:</label>
+    <select id="docente">
+        <option value="">Seleccione un docente</option>
+        <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
+        <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
+        <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
+        <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
+        <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
+        <option>ELÍAS ANDRÉS POBLETE AVILA</option>
+        <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
+        <option>GIOVANNI ANDRÉS JARA TORRES</option>
+        <option>JORGE ANDRÉS PÉREZ MILLAR</option>
+        <option>JOSEFA CATALINA LISBOA RIVERA</option>
+        <option>JULIO CESAR ALARCON MONTEROS</option>
+        <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
+        <option>MARCO ANTONIO ARRIAGADA CASAS</option>
+        <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
+        <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
+        <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
+        <option>ROBERTO SEBASTIAN CID LIZAMA</option>
+        <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
+        <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
+        <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
+        <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
+        <option>OTROS DOCENTES</option>
+    </select>
 
-<label for="docente">👨‍🏫 Docente a cargo:</label>
-<select id="docente">
-    <option value="">Seleccione un docente</option>
-    <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
-    <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
-    <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
-    <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
-    <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
-    <option>ELÍAS ANDRÉS POBLETE AVILA</option>
-    <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
-    <option>GIOVANNI ANDRÉS JARA TORRES</option>
-    <option>JORGE ANDRÉS PÉREZ MILLAR</option>
-    <option>JOSEFA CATALINA LISBOA RIVERA</option>
-    <option>JULIO CESAR ALARCON MONTEROS</option>
-    <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
-    <option>MARCO ANTONIO ARRIAGADA CASAS</option>
-    <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
-    <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
-    <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
-    <option>ROBERTO SEBASTIAN CID LIZAMA</option>
-    <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
-    <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
-    <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
-    <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
-    <option>OTROS DOCENTES</option>
-</select>
+    <label for="asignatura">📚 Asignatura:</label>
+    <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
 
-<label for="asignatura">📚 Asignatura:</label>
-<input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
+    <h3>Materiales Solicitados</h3>
 
-<h3>Materiales Solicitados</h3>
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Material / Equipo</th>
+                <th style="width: 25%;">Cantidad</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr>
+                <td><input type="text" placeholder="Ej: Multímetro UT33C"></td>
+                <td><input type="number" min="1" value="1"></td>
+            </tr>
+        </tbody>
+    </table>
 
-<table id="tabla">
-<thead>
-<tr>
-    <th>Material / Equipo</th>
-    <th style="width:25%;">Cantidad</th>
-</tr>
-</thead>
-<tbody id="tbody">
-<tr>
-    <td><input type="text" placeholder="Ej: Multímetro UT33C"></td>
-    <td><input type="number" min="1" value="1"></td>
-</tr>
-</tbody>
-</table>
-
-<button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
-<button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
-<button class="btnEnviar" onclick="enviar()">📤 Enviar Solicitud</button>
-<button class="btnVolver" onclick="location.href='menu.html'">↩️ Volver al Menú</button>
-
+    <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
+    <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
+    
+    <button class="btnEnviar" onclick="enviar()">📤 Enviar Solicitud</button>
+    <button class="btnVolver" onclick="location.href='menu.html'">↩️ Volver al Menú</button>
 </div>
 
 <script>
-/* Supabase */
+/* 🔗 Conexión a Supabase */
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user) window.location.href = "index.html";
 
-/* LISTAS */
-const asignaturasLista = [
-"Algoritmos y Programación Avanzada",
-"Análisis de Circuitos Eléctricos",
-"Análisis de Fallas en Sistemas Mecatrónicos",
-"Aplicaciones de Electromagnetismo",
-"Arquitectura de Comunicaciones Industriales",
-"Automatización Industrial",
-"Control con Inteligencia Artificial",
-"Control de Fluidos Industriales",
-"Control de Sistemas Electroneumáticos",
-"Conversión Electromecánica de la Energía",
-"Diseño de Sistemas Automáticos",
-"Electrónica Programable e Instrumentación",
-"Energías Renovables",
-"Instalaciones Eléctricas II",
-"Redes Eléctricas II",
-"Robótica Industrial",
-"Sistemas de Control",
-"Taller de Operación y Mantenimiento de Sistemas Automatizados"
+/* 🌟 LISTA DE MATERIALES */
+const materialesLista = [
+"Alargador","Alcohol isopropílico","Alicate Cortante","Alicate - Punta","Alicate - Universal",
+"Amarras plásticas","Analizador de calidad energía eléctrica MI2392","Analizador de calidad energía eléctrica MI2492",
+"Ampolleta E27","Amperimetro de tenaza","Antiparras","Arduino UNO","Arduino UNO - Sensores Varios",
+"Bateria de 9v","Broca Metal","Broca madera","Brochas","Caja Chuqui","Caja de derivación","Caja EMT","Caja de herramientas",
+"Calibrador de Corriente - Lazos Novus DC80L","Calibrador de corriente - Victor 05","Calibrador de procesos Fluke 725",
+"Calibrador de presión Fluke 717 500g","Calibrador de presión manual SIKA P40.2","Calibrador de RTD Novus DC80R",
+"Calibrador de termocupla Novus DC80T","Camara termografica Fluke Tis45","Cables Jumper","Cable 1,5mm","Cable 2,5mm",
+"Cable de impresora","Cable de poder","Cable de RED industrial Verde","Cable HDMI","Cimpreadora Cables de red",
+"Circuitos Integrados - Varios","Casco de seguridad eléctrico","Cautín","Certificado de instalaciones Fluke 1664FC",
+"Certificador de redes LAN Fluke DTX1800","Certificador de redes LAN Metrel","Cinta Aislante","Cinta auto fundente de goma",
+"Condensador Cerámico - Varios","Condensador Electrolítico - Varios","Cosenofimetro - Pinza de potencia Hioki 3286-20",
+"Crisol estaño","Desatornillador de Cruz","Desatornillador de Paleta","Diodos - Varios","ESP32","Enchufe Simple",
+"Enchufe Triple","Esmeril Angular","Etiquetador Brother","Equipo soldadura puesta a tierra","Filamento 3D","Ferrules",
+"Ferrulera","Fuente de poder Riel din","Frecuencímetro","Fusionadora Fibra Óptica","Gas Butano","Geólogo Institucional",
+"Guantes","Goniómetro","Horno Pozo Seco","Interruptor 9/12","Interruptor 9/15","Interruptor 9/24","Interruptor 9/32",
+"Interruptor automático","Interruptor automático trifásico","Interruptor Diferencial","Interruptor Saime","Juego Llaves Allen",
+"Juego Llaves Torx","Juego de dados","Jumper","Kit cableado estructural","Led - Varios","Lima - Varios","Limpia contacto",
+"Llave Francesa","Llave Inglesa","Llaves Punta corona","Luxómetro Amprobe LM-120","Marco de sierra","Maqueta de domótica - Schneider",
+"Maqueta de domótica - Varios","Martillo","Mazo de goma","Medidor de Aislación Megabras MI1050e","Medidor de Aislación AEMC",
+"Medidor de factor de potencia PCE-PCM","Medidor Eléctrico","Medidor de Aislación Hioki IR4056-20","Módulos LAB VOLT",
+"Motor 12v DC","Motor 24v DC","Multimetro Analógico","Multimetro digital","Nock Out Hidráulico","Nivel","Osciloscopio Digital",
+"Osciloscopio Digital de mano","Parada de Emergencia","Pasta de soldar","Pesa","Pelacables","PG - Siemens","Pila AA","Pila AAA",
+"Pistola de calor","Probador de fase","Protoboard","Punta taladro PH2","Remachadora POP","Relé - Varios","Resistencias - Varios",
+"Robot móvil York","Rollo cable de RED cat6","Serrucho","Set EPP","Sensores - Varios","Sonda Osciloscopio","Soplete",
+"Tacómetro Amprobe Tach-20","Tarjeta de adquisición de datos MyDAQ","Taladro Inalámbrico","Termocupla - Varios",
+"Transductor de presión Danfos MBS1700","Transistores - Varios","Terminales - Varios","Transformador de 12v",
+"Transformador de 9v","Estaño","Fusibles - tipo Hilo","Fusibles - Varios","Teslameter Tunkia TD8620","Telurómetro Megbras MTD - 20KWr",
+"Telurómetro Megger DET4TCR2","Wattmetro Fluke 345"
 ];
 
-const materialesLista = [...]; // (tu lista completa, no la toqué)
-
-/* AUTOCOMPLETADO GENERICO */
-function enableAutocomplete(input, listaDatos) {
+/* 🌟 AUTOCOMPLETADO PARA INPUTS DE MATERIAL */
+function enableAutocomplete(input) {
     const lista = document.createElement("ul");
     lista.style.position = "absolute";
     lista.style.border = "1px solid #ccc";
     lista.style.background = "white";
+    lista.style.listStyle = "none";
     lista.style.padding = "0";
     lista.style.margin = "0";
     lista.style.maxHeight = "150px";
     lista.style.overflowY = "auto";
     lista.style.width = input.offsetWidth + "px";
-    lista.style.listStyle = "none";
-    lista.style.zIndex = 20;
-
+    lista.style.zIndex = 10;
     input.parentNode.style.position = "relative";
     input.parentNode.appendChild(lista);
 
     input.addEventListener("input", () => {
         const val = input.value.toLowerCase();
-        lista.innerHTML = "";
-
+        lista.innerHTML = '';
         if (!val) return;
-
-        listaDatos
-            .filter(x => x.toLowerCase().includes(val))
-            .forEach(x => {
+        materialesLista.filter(m => m.toLowerCase().includes(val))
+            .forEach(m => {
                 const li = document.createElement("li");
-                li.textContent = x;
-                li.style.padding = "6px";
+                li.textContent = m;
+                li.style.padding = "5px";
                 li.style.cursor = "pointer";
-                li.onmousedown = () => {
-                    input.value = x;
-                    lista.innerHTML = "";
+                li.onmousedown = () => { // para que funcione antes de perder focus
+                    input.value = m;
+                    lista.innerHTML = '';
                 };
                 lista.appendChild(li);
             });
     });
 
     input.addEventListener("blur", () => {
-        setTimeout(() => lista.innerHTML = "", 120);
+        setTimeout(() => { lista.innerHTML = ''; }, 100);
     });
 }
 
-/* Activar autocompletar */
-enableAutocomplete(document.getElementById("asignatura"), asignaturasLista);
-document.querySelectorAll("#tbody input[type=text]").forEach(input => {
-    enableAutocomplete(input, materialesLista);
-});
-
-/* Agregar fila */
+/* ➕ Añadir fila */
 function addRow() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
         <td><input type="text" placeholder="Ej: Cables de prueba"></td>
-        <td><input type="number" min="1" value="1"></td>
-    `;
+        <td><input type="number" min="1" value="1"></td>`;
     document.getElementById("tbody").appendChild(tr);
 
-    enableAutocomplete(tr.querySelector("input[type=text]"), materialesLista);
+    const inputNuevo = tr.querySelector("input[type=text]");
+    enableAutocomplete(inputNuevo);
 }
 
-/* Eliminar fila */
+/* ➖ Eliminar fila */
 function removeRow() {
     const tbody = document.getElementById("tbody");
     if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    else alert("Debe haber al menos un material.");
 }
 
-/* Enviar */
+/* 📤 Enviar Solicitud */
 async function enviar() {
-    alert("Aquí sigue tu código de enviar, no lo modifiqué 👍");
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
+
+    const docente = document.getElementById("docente").value;
+    const asignatura = document.getElementById("asignatura").value.trim();
+    const filas = document.querySelectorAll("#tbody tr");
+    const materiales = [];
+
+    if (!docente) return finishError("Seleccione un docente.");
+    if (!asignatura) return finishError("Ingrese la asignatura.");
+
+    filas.forEach(f => {
+        const nombre = f.children[0].querySelector("input").value.trim();
+        const cantidad = parseInt(f.children[1].querySelector("input").value.trim(), 10);
+        if (nombre && cantidad) materiales.push({ material: nombre, cantidad });
+    });
+
+    if (materiales.length === 0) return finishError("Debe ingresar al menos un material.");
+
+    try {
+        /* 1️⃣ Insertar solicitud */
+        const { data: solicitud, error } = await supabaseClient
+            .from("solicitudes")
+            .insert([{
+                email: user.email,
+                docente,
+                asignatura,
+                fecha_solicitud: new Date().toISOString(),
+                estado: "Pendiente"
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        /* 2️⃣ Insertar materiales */
+        for (const m of materiales) {
+            const { error } = await supabaseClient
+                .from("materiales_solicitados")
+                .insert([{ id_solicitud: solicitud.id, material: m.material, cantidad: m.cantidad }]);
+            if (error) throw error;
+        }
+
+        alert("✅ Solicitud enviada con éxito.");
+        window.location.href = "menu.html";
+
+    } catch (err) {
+        console.error(err);
+        finishError("Error al enviar: " + err.message);
+    }
 }
+
+function finishError(msg) {
+    alert("❌ " + msg);
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = false;
+    btn.innerText = "Enviar Solicitud";
+}
+
+/* -------------------------------------------------------------------
+   CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
+------------------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const docente = params.get("docente");
+    const asignatura = params.get("asignatura");
+    const materiales = JSON.parse(params.get("materiales") || "[]");
+    const cantidades = JSON.parse(params.get("cantidades") || "[]");
+
+    if (docente) document.getElementById("docente").value = docente;
+    if (asignatura) document.getElementById("asignatura").value = asignatura;
+
+    const tbody = document.getElementById("tbody");
+    if (materiales.length > 0) {
+        tbody.innerHTML = "";
+        for (let i = 0; i < materiales.length; i++) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><input type="text" value="${materiales[i]}" /></td>
+                <td><input type="number" min="1" value="${cantidades[i] || 1}" /></td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    // Activar autocompletado en todos los inputs de material
+    document.querySelectorAll("#tbody input[type=text]").forEach(input => enableAutocomplete(input));
+});
 </script>
 
 </body>

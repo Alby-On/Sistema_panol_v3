@@ -294,14 +294,14 @@
         // Función auxiliar para formatear fechas
         const formatDate = (dateString) => {
             if (!dateString) return 'N/A';
-            // Formato más estándar: DD/MM/AAAA (sin el nombre del mes que puede fallar en entornos)
             const date = new Date(dateString);
             return date.toLocaleDateString('es-ES'); 
         };
 
         // Función para crear el HTML de una tarjeta (Card)
         const createRequestCard = (solicitud, materiales, usuario) => {
-            const isDelivered = solicitud.estado === 'entregada';
+            // AQUI SE USA EL ESTADO 'Entregado' Y 'Pendiente' DE TU BD
+            const isDelivered = solicitud.estado === 'Entregado';
             const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
             
             // Renderizar Materiales
@@ -330,7 +330,7 @@
                     <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
             `;
 
-            // Añadir detalles y botones solo si está entregada
+            // Añadir detalles y botones solo si está Entregado
             if (isDelivered) {
                 html += `
                     <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
@@ -347,7 +347,7 @@
 
         // Función principal para cargar los datos
         async function loadDashboardData() {
-            // Consulta a Supabase con JOINs para obtener usuarios y materiales
+            // Consulta a Supabase con JOINs
             const { data: solicitudesData, error } = await supabase
                 .from('solicitudes')
                 .select(`
@@ -365,13 +365,13 @@
                 return;
             }
 
-            // Filtrar y limitar las listas a 10 elementos cada una
+            // Filtrar y limitar las listas a 10 elementos cada una usando los estados correctos: 'Pendiente' y 'Entregado'
             const pendingRequests = solicitudesData
-                .filter(s => s.estado === 'pendiente')
+                .filter(s => s.estado === 'Pendiente')
                 .slice(0, 10);
                 
             const deliveredRequests = solicitudesData
-                .filter(s => s.estado === 'entregada')
+                .filter(s => s.estado === 'Entregado')
                 .slice(0, 10);
 
             // Renderizar Tarjetas Pendientes
@@ -400,7 +400,7 @@
 
         window.markAsReviewed = (solicitudId) => {
             if(confirm(`¿Confirmar revisión de la Solicitud S-${solicitudId} sin comentarios?`)) {
-                // AQUÍ iría la llamada a Supabase para actualizar un campo como "revisado"
+                // Lógica de UPDATE en Supabase iría aquí
                 alert(`S-${solicitudId} marcada como revisada. (Se necesita implementar UPDATE en BD)`);
             }
         };

@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración INACAP</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         /* Tipografía y Base */
         body {
@@ -241,6 +239,8 @@
         }
         
     </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -283,8 +283,9 @@
     <script>
         // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwZzNv6YdJbBsRY";
 
+        // La librería Supabase ya está definida aquí porque la cargamos en el head
         const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Contenedores DOM
@@ -300,7 +301,7 @@
 
         // Función para crear el HTML de una tarjeta (Card)
         const createRequestCard = (solicitud, materiales, usuario) => {
-            // AQUI SE USA EL ESTADO 'Entregado' Y 'Pendiente' DE TU BD
+            // USANDO LOS ESTADOS CORRECTOS: 'Entregado' Y 'Pendiente'
             const isDelivered = solicitud.estado === 'Entregado';
             const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
             

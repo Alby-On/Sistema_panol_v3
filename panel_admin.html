@@ -1,372 +1,414 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Panel de Solicitudes - Admin</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-
-    <style>
-        /* Definir paleta de colores personalizada */
-        .color-primary { color: #004d99; }
-        .bg-primary { background-color: #004d99; }
-        .hover\:bg-primary-dark:hover { background-color: #003a73; }
-        .border-primary { border-color: #004d99; }
-        
-        /* Ajuste de colores para Pendientes (Amarillo/Naranja) y Entregadas (Verde) */
-        .border-t-pending { border-color: #ffc107; }
-        .text-pending { color: #ff8c00; }
-        .border-t-done { border-color: #28a745; }
-        .text-done { color: #28a745; }
-
-        /* Estilo General y Fuente */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        /* Estilo de la barra de desplazamiento para los contenedores */
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background-color: #edf2f7; }
-        
-        /* Ocultar el panel de solicitudes por defecto (redundante, pero seguro) */
-        #panelSolicitudes {
-            display: none;
-        }
-    </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración INACAP</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Tipografía y Base */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        /* Banner Superior (INACAP) */
+        header {
+            background-color: #173753; /* Azul Oscuro Corporativo */
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex; /* Habilita Flexbox para alinear elementos */
+            justify-content: space-between; /* Mueve elementos a los extremos */
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 1.8em;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .header-info {
+            text-align: right;
+        }
+
+        .header-info h2 {
+            font-size: 1.4em;
+            margin: 0;
+            font-weight: 600;
+            color: white;
+        }
+
+        .header-info p {
+            font-size: 0.9em;
+            margin: 5px 0 0;
+            color: #b0c4de;
+        }
+
+        /* Contenedor Principal (Donde va el botón y el dashboard) */
+        .main-content {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Botón Volver al Menú */
+        .back-button-container {
+            margin-bottom: 20px;
+        }
+
+        .btn-menu {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none; /* Quita el subrayado del link */
+            font-weight: 600;
+            transition: background-color 0.2s;
+            display: inline-flex; /* Permite ícono y texto */
+            align-items: center;
+        }
+
+        .btn-menu:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-menu span {
+            margin-right: 8px;
+        }
+
+        /* Estructura de Columnas */
+        .dashboard-container {
+            display: flex;
+            gap: 25px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        .column h2 {
+            font-size: 1.5em;
+            color: #173753;
+            margin-bottom: 20px;
+            padding-left: 5px;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 5px;
+        }
+
+        /* Estilos de Tarjetas */
+        .request-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #f0f2f5;
+        }
+        
+        .request-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Diferenciación visual de tarjetas */
+        .pending-requests .request-card {
+            border-left: 5px solid #ff9800; /* Naranja para Pendientes */
+        }
+        .delivered-requests .request-card {
+            border-left: 5px solid #4caf50; /* Verde para Entregadas */
+        }
+
+        /* Contenido y Etiquetas */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .card-header strong {
+            font-size: 1.2em;
+            color: #007bff;
+        }
+
+        .card-detail {
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+
+        .card-detail label {
+            font-weight: 600;
+            color: #555;
+            display: inline-block;
+            width: 85px;
+            vertical-align: top;
+        }
+        
+        /* BLOQUE PARA MATERIALES (Flexbox) - Alineado perfectamente */
+        .material-block {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px dotted #f0f0f0;
+        }
+
+        .material-block label {
+            flex-shrink: 0;
+            width: 85px; 
+        }
+
+        .material-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .material-list li {
+            margin-bottom: 2px;
+            font-size: 0.9em;
+        }
+        
+        .material-list li:before { 
+            content: "•";
+            color: #888;
+            display: inline-block;
+            width: 1em;
+            margin-right: 0.2em;
+        }
+
+        .card-status-pending {
+            color: #ff9800; 
+            font-weight: 700;
+        }
+
+        .card-status-delivered {
+            color: #4caf50; 
+            font-weight: 700;
+        }
+        
+        /* Estilos de Acciones (Botones) */
+        .actions {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .actions button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .actions button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-comment {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn-comment:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-no-comment {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+
+        .btn-no-comment:hover {
+            background-color: #ced4da;
+        }
+        
+    </style>
 </head>
+<body>
 
-<body class="bg-gray-100 p-6">
-    <h1 class="text-4xl font-extrabold text-center mb-8 color-primary">
-        Gestión de Solicitudes de Material
-    </h1>
-    
-    <div id="accessStatus" class="max-w-7xl mx-auto mb-6">
-        <div class="p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-center font-semibold">
-            Verificando acceso de administrador...
+    <header>
+        <div class="header-title">
+            <h1>Panel de Administrador</h1>
+        </div>
+        <div class="header-info">
+            <h2>INACAP</h2>
+            <p>Área Energía, Electrónica, Automatización y Robótica</p>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="back-button-container">
+            <a href="menu.html" class="btn-menu">
+                <span>&#x2190;</span> Volver al Menú
+            </a>
+        </div>
+
+        <div class="dashboard-container">
+            
+            <div class="column pending-requests">
+                <h2>⏳ Solicitudes Pendientes</h2>
+                <div id="pending-container">
+                    <p>Cargando solicitudes...</p>
+                </div>
+            </div>
+
+            <div class="column delivered-requests">
+                <h2>✅ Solicitudes Entregadas</h2>
+                <div id="delivered-container">
+                    <p>Cargando solicitudes...</p>
+                </div>
+            </div>
+            
         </div>
     </div>
 
-    <div id="panelSolicitudes" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
+    <script>
+        // CONFIGURACIÓN DE SUPABASE
+        const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-        <div class="bg-white shadow-xl rounded-xl p-6 border-t-8 border-t-pending">
-            <h2 class="text-3xl font-bold mb-5 text-pending">
-                <span class="mr-2">⏳</span> Solicitudes Pendientes
-            </h2>
-            <div id="listaPendientes" class="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-3">
-                <div class="p-4 text-center text-gray-500">Cargando solicitudes...</div>
-            </div>
-        </div>
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        <div class="bg-white shadow-xl rounded-xl p-6 border-t-8 border-t-done">
-            <h2 class="text-3xl font-bold mb-5 text-done">
-                <span class="mr-2">📝</span> Entregadas (Pendiente Comentario)
-            </h2>
-            <div id="listaEntregadas" class="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-3">
-                <div class="p-4 text-center text-gray-500">Cargando entregas...</div>
-            </div>
-        </div>
+        // Contenedores DOM
+        const pendingContainer = document.getElementById('pending-container');
+        const deliveredContainer = document.getElementById('delivered-container');
 
-    </div>
+        // Función auxiliar para formatear fechas
+        const formatDate = (dateString) => {
+            if (!dateString) return 'N/A';
+            // Formato más estándar: DD/MM/AAAA (sin el nombre del mes que puede fallar en entornos)
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES'); 
+        };
 
-<script>
-    // =============================
-    //   CONFIGURAR SUPABASE
-    // =============================
-    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-    // Nota: Usar la clave ANON KEY está bien si la RLS está correctamente configurada
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+        // Función para crear el HTML de una tarjeta (Card)
+        const createRequestCard = (solicitud, materiales, usuario) => {
+            const isDelivered = solicitud.estado === 'entregada';
+            const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
+            
+            // Renderizar Materiales
+            const materialListItems = materiales.map(m => `
+                <li>${m.material} (Cantidad: ${m.cantidad})</li>
+            `).join('');
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    let isAdmin = false; // Variable global para el estado del rol
-    let refreshInterval = null; // Variable para el intervalo de actualización
-
-// =============================
-//   FUNCIÓN DE VERIFICACIÓN DE ACCESO (FINAL)
-// =============================
-async function checkAdminAccess() {
-    const accessStatus = document.getElementById("accessStatus");
-    const panel = document.getElementById("panelSolicitudes");
-    
-    // 1. Obtener la sesión del usuario
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    let userRole = 'Invitado'; // Rol por defecto si no hay sesión
-
-    if (error || !session) {
-        // No hay sesión activa.
-        accessStatus.innerHTML = `
-            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
-                Acceso denegado: Necesitas <a href="LOGIN_URL_AQUI" class="underline font-bold hover:text-red-900">iniciar sesión</a> para ver este panel.
-            </div>
-        `;
-        isAdmin = false;
-        panel.style.display = 'none';
-        return;
-    }
-    
-    // 2. CONSULTAR EL ROL USANDO EL UUID DEL USUARIO LOGUEADO
-    const userId = session.user.id; // El UUID (ej: e4e47b90-...)
-    
-    // Consultamos la tabla 'usuarios' usando el UUID para obtener el rol.
-    const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('tipo_usuario')
-        .eq('auth_uuid', userId) // <-- USANDO EL UUID
-        .single();
-
-    if (userError || !userData) {
-        // Esto ocurre si el usuario no tiene perfil en la tabla 'usuarios'
-        console.error("Error al obtener tipo_usuario: Perfil no encontrado en public.usuarios.", userError?.message);
-        userRole = 'No Encontrado'; // Un rol de fallo seguro
-    } else {
-        // Rol encontrado en la tabla pública 'usuarios'
-        userRole = userData.tipo_usuario;
-    }
-
-    // 3. VERIFICAR ROL Y CONCEDER ACCESO
-    if (userRole === 'Admin') {
-        isAdmin = true;
-        accessStatus.innerHTML = `
-            <div class="p-2 bg-green-100 border border-green-300 text-green-800 rounded-lg text-center font-semibold text-sm">
-                Acceso concedido. (Rol: Admin)
-            </div>
-        `;
-        panel.style.display = 'grid'; // Mostrar panel
-        cargarTodo();
-        
-        if (!refreshInterval) {
-             refreshInterval = setInterval(cargarTodo, 5000);
-        }
-    } else {
-        isAdmin = false;
-        accessStatus.innerHTML = `
-            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg text-center font-semibold">
-                Acceso denegado: Tu rol actual es <span class="font-bold">(${userRole})</span>. Solo administradores pueden ver este panel.
-            </div>
-        `;
-        panel.style.display = 'none'; // Ocultar panel
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
-            refreshInterval = null;
-        }
-    }
-}
-
-
-    // =============================
-    //   CÓDIGO DE RENDERIZADO (Se mantiene igual)
-    // =============================
-    
-    function displayEmptyMessage(container, isPending) {
-        const color = isPending ? 'text-pending' : 'text-done';
-        const icon = isPending ? '🎉' : '👍';
-        const message = isPending ? 'No hay solicitudes pendientes actualmente.' : 'No hay entregas pendientes de comentario.';
-        
-        container.innerHTML = `
-            <div class="p-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <p class="text-xl ${color} font-semibold mb-1">${icon}</p>
-                <p class="text-gray-600">${message}</p>
-            </div>
-        `;
-    }
-
-    function crearCardPendiente(s, materiales) {
-        const materialesHTML = materiales.map(m => `<li class="ml-4 list-disc"><span class="font-medium">${m.material}</span> — <span class="text-gray-700">${m.cantidad} ud</span></li>`).join("");
-        const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
-        
-        return `
-            <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition duration-200">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-600">ID: <span class="font-mono text-xs">${s.id}</span></p>
-                    <span class="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-pending rounded-full">Pendiente</span>
-                </div>
-                
-                <p class="text-base font-semibold color-primary">Solicitante: <span class="font-normal text-gray-800">${nombreSolicitante}</span></p>
-                <p class="text-sm">Docente: <span class="font-medium text-gray-700">${s.docente}</span></p>
-                <p class="text-sm mb-3">Asignatura: <span class="font-medium text-gray-700">${s.asignatura}</span></p>
-
-                <p class="mt-2 font-bold text-gray-700">Materiales solicitados:</p>
-                <ul class="text-sm list-none space-y-1">${materialesHTML}</ul>
-            </div>
-        `;
-    }
-
-    function crearCardEntregada(s, materiales) {
-        const materialesHTML = materiales.map(m => `<li class="ml-4 list-disc"><span class="font-medium">${m.material}</span> — <span class="text-gray-700">${m.cantidad} ud</span></li>`).join("");
-        const nombreSolicitante = s.usuarios ? s.usuarios.nombre : 'N/A';
-        
-        return `
-            <div id="solicitud_${s.id}" class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-lg transition duration-200">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-600">ID: <span class="font-mono text-xs">${s.id}</span></p>
-                    <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-done rounded-full">Entregado</span>
-                </div>
-
-                <p class="text-base font-semibold color-primary">Solicitante: <span class="font-normal text-gray-800">${nombreSolicitante}</span></p>
-                <p class="text-sm">Docente: <span class="font-medium text-gray-700">${s.docente}</span></p>
-                <p class="text-sm mb-3">Asignatura: <span class="font-medium text-gray-700">${s.asignatura}</span></p>
-                
-                <p class="mt-2 font-bold text-gray-700">Materiales entregados:</p>
-                <ul class="text-sm list-none space-y-1">${materialesHTML}</ul>
-
-                <div class="mt-4 pt-3 border-t border-gray-200">
-                    <textarea id="coment_${s.id}" class="w-full p-3 border border-gray-300 rounded-lg text-sm resize-y focus:ring-2 focus:ring-primary focus:border-primary" 
-                            placeholder="Escribe un comentario sobre la devolución/estado..."></textarea>
-                    
-                    <div class="flex gap-3 mt-3">
-                        <button onclick="guardarComentario(${s.id})"
-                            class="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition duration-150">
-                            <span class="mr-1">💬</span> Enviar comentario
-                        </button>
-                        <button onclick="guardarSinComentario(${s.id})"
-                            class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-semibold hover:bg-gray-600 transition duration-150">
-                            <span class="mr-1">✔</span> Sin comentario
-                        </button>
+            // HTML de la Tarjeta
+            let html = `
+                <div class="request-card">
+                    <div class="card-header">
+                        <strong>ID: S-${solicitud.id}</strong>
+                        <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
                     </div>
-                </div>
-            </div>
-        `;
-    }
+                    <div class="card-detail"><label>Usuario:</label> ${usuario ? usuario.nombre : 'Desconocido'}</div>
+                    <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
+                    <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
+                    
+                    <div class="card-detail material-block">
+                        <label>Materiales:</label>
+                        <ul class="material-list">
+                            ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
+                        </ul>
+                    </div>
+                    
+                    <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
+            `;
 
-    // --- Carga de Pendientes ---
-    async function cargarPendientes() {
-        if (!isAdmin) return; // Solo cargar si es Admin
-        const cont = document.getElementById("listaPendientes");
-        
-        // La RLS de Supabase ahora debe manejar el acceso a TODOS los datos
-        const { data: solicitudes } = await supabase
-            .from("solicitudes")
-            .select("*, usuarios(nombre)") 
-            .eq("estado", "Pendiente")
-            .order("id", { ascending: false });
-        
-        if (!solicitudes || solicitudes.length === 0) {
-            displayEmptyMessage(cont, true);
-            return;
-        }
-
-        let html = '';
-        for (const s of solicitudes) {
-            const { data: materiales } = await supabase
-                .from("materiales_solicitados")
-                .select("*")
-                .eq("id_solicitud", s.id);
-            
-            html += crearCardPendiente(s, materiales);
-        }
-        cont.innerHTML = html;
-    }
-
-    // --- Carga de Entregadas (con lógica para preservar foco y comentarios) ---
-    async function cargarEntregadas() {
-        if (!isAdmin) return; // Solo cargar si es Admin
-        const cont = document.getElementById("listaEntregadas");
-        const comentariosGuardados = {};
-        
-        let focusedElementId = document.activeElement && document.activeElement.tagName === 'TEXTAREA' ? document.activeElement.id : null;
-
-        document.querySelectorAll("#listaEntregadas textarea").forEach(textarea => {
-            const id = textarea.id.replace("coment_", "");
-            comentariosGuardados[id] = textarea.value;
-        });
-
-        // La RLS de Supabase ahora debe manejar el acceso a TODOS los datos
-        const { data: solicitudes } = await supabase
-            .from("solicitudes")
-            .select("*, usuarios(nombre)") 
-            .eq("estado", "Entregado")
-            .is("comentario_entrega", null)
-            .order("id", { ascending: false });
-
-        if (!solicitudes || solicitudes.length === 0) {
-            displayEmptyMessage(cont, false);
-            return;
-        }
-
-        let nuevoHtml = "";
-        for (const s of solicitudes) {
-            const { data: materiales } = await supabase
-                .from("materiales_solicitados")
-                .select("*")
-                .eq("id_solicitud", s.id);
-            
-            nuevoHtml += crearCardEntregada(s, materiales);
-        }
-
-        cont.innerHTML = nuevoHtml;
-
-        solicitudes.forEach(s => {
-            const id = s.id.toString();
-            if (comentariosGuardados[id]) {
-                const textarea = document.getElementById(`coment_${id}`);
-                if (textarea) {
-                    textarea.value = comentariosGuardados[id];
-                }
+            // Añadir detalles y botones solo si está entregada
+            if (isDelivered) {
+                html += `
+                    <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
+                    <div class="actions">
+                        <button class="btn-comment" onclick="abrirFormulario('${solicitud.id}')">Agregar Comentario</button>
+                        <button class="btn-no-comment" onclick="markAsReviewed('${solicitud.id}')">Sin Comentario</button>
+                    </div>
+                `;
             }
-        });
+            
+            html += `</div>`;
+            return html;
+        };
 
-        if (focusedElementId) {
-            const restoredFocusElement = document.getElementById(focusedElementId);
-            if (restoredFocusElement) {
-                restoredFocusElement.focus();
-                const currentLength = restoredFocusElement.value.length;
-                restoredFocusElement.setSelectionRange(currentLength, currentLength);
+        // Función principal para cargar los datos
+        async function loadDashboardData() {
+            // Consulta a Supabase con JOINs para obtener usuarios y materiales
+            const { data: solicitudesData, error } = await supabase
+                .from('solicitudes')
+                .select(`
+                    *,
+                    usuario:usuarios!solicitudes_email_fkey (nombre, email),
+                    materiales_solicitados (material, cantidad)
+                `)
+                .order('fecha_solicitud', { ascending: false })
+                .limit(20);
+
+            if (error) {
+                console.error('Error al cargar solicitudes:', error);
+                pendingContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
+                deliveredContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
+                return;
+            }
+
+            // Filtrar y limitar las listas a 10 elementos cada una
+            const pendingRequests = solicitudesData
+                .filter(s => s.estado === 'pendiente')
+                .slice(0, 10);
+                
+            const deliveredRequests = solicitudesData
+                .filter(s => s.estado === 'entregada')
+                .slice(0, 10);
+
+            // Renderizar Tarjetas Pendientes
+            if (pendingRequests.length === 0) {
+                 pendingContainer.innerHTML = '<p>No hay solicitudes pendientes.</p>';
+            } else {
+                pendingContainer.innerHTML = pendingRequests.map(s => 
+                    createRequestCard(s, s.materiales_solicitados, s.usuario)
+                ).join('');
+            }
+
+            // Renderizar Tarjetas Entregadas
+            if (deliveredRequests.length === 0) {
+                 deliveredContainer.innerHTML = '<p>No hay solicitudes entregadas.</p>';
+            } else {
+                deliveredContainer.innerHTML = deliveredRequests.map(s => 
+                    createRequestCard(s, s.materiales_solicitados, s.usuario)
+                ).join('');
             }
         }
-    }
 
-    async function cargarTodo() {
-        // Solo ejecuta las funciones de carga si el usuario es Admin
-        if (isAdmin) {
-            await Promise.all([cargarPendientes(), cargarEntregadas()]);
-        }
-    }
+        // Funciones de acción de botones (solo alertas como placeholder)
+        window.abrirFormulario = (solicitudId) => {
+            alert(`Acción: Implementar formulario para agregar comentario a S-${solicitudId}`);
+        };
 
-    // =============================
-    //   FUNCIONES DE COMENTARIO
-    // =============================
-    window.guardarComentario = async function(id) {
-        if (!isAdmin) return alert("Error: No tienes permisos de administrador.");
-        const txt = document.getElementById(`coment_${id}`).value.trim();
-        if (!txt) return alert("Escribe un comentario primero.");
-        const { error } = await supabase
-            .from("solicitudes")
-            .update({ comentario_entrega: txt })
-            .eq("id", id);
-        if (error) {
-            console.error("Error al guardar comentario:", error);
-            alert("Error al guardar el comentario. Verifica tu conexión o permisos.");
-        } else {
-            cargarTodo();
-        }
-    }
+        window.markAsReviewed = (solicitudId) => {
+            if(confirm(`¿Confirmar revisión de la Solicitud S-${solicitudId} sin comentarios?`)) {
+                // AQUÍ iría la llamada a Supabase para actualizar un campo como "revisado"
+                alert(`S-${solicitudId} marcada como revisada. (Se necesita implementar UPDATE en BD)`);
+            }
+        };
 
-    window.guardarSinComentario = async function(id) {
-        if (!isAdmin) return alert("Error: No tienes permisos de administrador.");
-        const { error } = await supabase
-            .from("solicitudes")
-            .update({ comentario_entrega: "Sin comentario" })
-            .eq("id", id);
-        if (error) {
-            console.error("Error al guardar comentario:", error);
-            alert("Error al guardar el estado. Verifica tu conexión o permisos.");
-        } else {
-            cargarTodo();
-        }
-    }
 
-    // =============================
-    //   INICIO DEL PROCESO
-    // =============================
-    document.addEventListener("DOMContentLoaded", () => {
-        checkAdminAccess();
-        // El setInterval se inicia dentro de checkAdminAccess() si el rol es 'Admin'
-    });
-</script>
+        // Cargar los datos al iniciar la página
+        loadDashboardData();
+    </script>
+
 </body>
 </html>

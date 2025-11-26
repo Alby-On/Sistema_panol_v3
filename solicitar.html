@@ -178,6 +178,10 @@
             padding: 12px;
         }
     }
+    /* Contenedor para input con autocompletado */
+.input-wrapper {
+    position: relative;
+}
 </style>
 </head>
 <body>
@@ -212,9 +216,11 @@
         <option>OTROS DOCENTES</option>
     </select>
 
-    <label for="asignatura">📚 Asignatura:</label>
+<label for="asignatura">📚 Asignatura:</label>
+<div class="input-wrapper">
     <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
-
+</div>
+    
     <h3>Materiales Solicitados</h3>
 
     <table id="tabla">
@@ -280,8 +286,86 @@ const materialesLista = [
 "Telurómetro Megger DET4TCR2","Wattmetro Fluke 345"
 ];
 
-/* 🌟 AUTOCOMPLETADO PARA INPUTS DE MATERIAL */
-function enableAutocomplete(input) {
+/* 🌟 LISTA DE ASIGNATURAS */
+const asignaturasLista = [
+"Algoritmos y Programación Avanzada",
+"Análisis de Circuitos Eléctricos",
+"Análisis de Fallas en Sistemas Mecatrónicos",
+"Aplicaciones de Electromagnetismo",
+"Arquitectura de Comunicaciones Industriales",
+"Automatización Industrial",
+"Control con Inteligencia Artificial",
+"Control de Fluidos Industriales",
+"Control de Sistemas Electroneumáticos",
+"Conversión Electromecánica de la Energía",
+"Diseño Asistido por Computador",
+"Diseño de Proyectos Eléctricos en Baja Tensión",
+"Diseño de Proyectos Eléctricos en Media y Alta Tensión",
+"Electricidad Aplicada a la Automatización",
+"Electrónica Analógica y Digital",
+"Electrónica de Potencia y Accionamientos",
+"Electrónica de Potencia y Microredes",
+"Electrónica Programable e Instrumentación",
+"Energías Renovables No Convencionales",
+"Energías Renovables y Electromovilidad",
+"Evaluación de Proyectos de Ingeniería Eléctrica",
+"Fundamentos del Mantenimiento para la Automatización",
+"Gestión del Mantenimiento",
+"Integración de Redes Industriales",
+"Instalaciones Eléctricas en Baja Tensión",
+"Instalaciones Eléctricas Inteligentes",
+"Instrumentación Industrial",
+"Instrumentación Inteligente",
+"Inteligencia Artificial Aplicada al Mantenimiento",
+"Introducción a la Automatización y Robótica",
+"Máquinas Eléctricas y Accionamientos",
+"Mantenimiento de Circuitos Eléctricos y Electrónicos de Potencia",
+"Mantenimiento de Redes de Comunicación e Instrumentación de Campo",
+"Mantenimiento de Sistemas Hidráulicos y Neumáticos",
+"Mantenimiento de Sistemas Industriales Automatizados",
+"Mantenimiento de Sistemas Robóticos",
+"Mantenimiento Eléctrico-Instrumentista",
+"Manufactura Avanzada",
+"Mercado, Normativa y Calidad de Suministro",
+"Plataforma SCADA",
+"Programación Avanzada de Controladores",
+"Programación de Controladores",
+"Programación de PLC",
+"Programación Orientada a Industrias Digitales",
+"Proyecto de Título para la Automatización I",
+"Proyecto Eléctrico Integrado",
+"Proyectos de Ingeniería en Sistemas de Energía Eléctrica",
+"Proyectos Eléctricos Integrados",
+"Protecciones Eléctricas Avanzadas",
+"Protecciones Eléctricas y Puestas a Tierra",
+"Redes Eléctricas I",
+"Redes Eléctricas II",
+"Redes Eléctricas Inteligentes",
+"Redes Eléctricas y Subestaciones",
+"Redes y Subestaciones Eléctricas I",
+"Redes y Subestaciones Eléctricas II",
+"Robótica Aplicada a Procesos Industriales",
+"Robótica Avanzada",
+"Robótica Industrial",
+"Seguridad Industrial y Riesgos Eléctricos",
+"Seguridad y Riesgos Industriales",
+"Simulación y Control de Procesos Industriales",
+"Simulación y Diseño 3D",
+"Sistemas de Almacenamiento de Energía",
+"Sistemas de Control",
+"Sistemas de Control Avanzado y Distribuido",
+"Sistemas Eléctricos de Potencia",
+"Sistemas Eléctricos de Potencia I",
+"Sistemas Eléctricos de Potencia II",
+"Taller de Instalación y Mantenimiento de Sistemas Automatizados",
+"Taller de Operación y Mantenimiento de Sistemas Automatizados",
+"Telecomunicaciones y Conectividad",
+"Técnicas de Ultrasonido para Mantenimiento"
+];
+
+
+/* 🌟 FUNCIÓN GENÉRICA DE AUTOCOMPLETADO */
+function enableAutocomplete(input, listaOpciones) {
     const lista = document.createElement("ul");
     lista.style.position = "absolute";
     lista.style.border = "1px solid #ccc";
@@ -293,6 +377,10 @@ function enableAutocomplete(input) {
     lista.style.overflowY = "auto";
     lista.style.width = input.offsetWidth + "px";
     lista.style.zIndex = 10;
+    lista.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+    lista.style.borderRadius = "4px";
+    lista.style.marginTop = "2px";
+    
     input.parentNode.style.position = "relative";
     input.parentNode.appendChild(lista);
 
@@ -300,24 +388,37 @@ function enableAutocomplete(input) {
         const val = input.value.toLowerCase();
         lista.innerHTML = '';
         if (!val) return;
-        materialesLista.filter(m => m.toLowerCase().includes(val))
-            .forEach(m => {
-                const li = document.createElement("li");
-                li.textContent = m;
-                li.style.padding = "5px";
-                li.style.cursor = "pointer";
-                li.onmousedown = () => { // para que funcione antes de perder focus
-                    input.value = m;
-                    lista.innerHTML = '';
-                };
-                lista.appendChild(li);
+        
+        const coincidencias = listaOpciones.filter(item => item.toLowerCase().includes(val));
+        
+        coincidencias.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            li.style.padding = "8px 12px";
+            li.style.cursor = "pointer";
+            li.style.borderBottom = "1px solid #f0f0f0";
+            
+            li.addEventListener("mouseenter", () => {
+                li.style.backgroundColor = "#f0f0f0";
             });
+            
+            li.addEventListener("mouseleave", () => {
+                li.style.backgroundColor = "white";
+            });
+            
+            li.onmousedown = () => {
+                input.value = item;
+                lista.innerHTML = '';
+            };
+            lista.appendChild(li);
+        });
     });
 
     input.addEventListener("blur", () => {
-        setTimeout(() => { lista.innerHTML = ''; }, 100);
+        setTimeout(() => { lista.innerHTML = ''; }, 150);
     });
 }
+
 
 /* ➕ Añadir fila */
 function addRow() {
@@ -328,8 +429,9 @@ function addRow() {
     document.getElementById("tbody").appendChild(tr);
 
     const inputNuevo = tr.querySelector("input[type=text]");
-    enableAutocomplete(inputNuevo);
+    enableAutocomplete(inputNuevo, materialesLista);  // ← Cambio aquí: agregar segundo parámetro
 }
+
 
 /* ➖ Eliminar fila */
 function removeRow() {
@@ -404,6 +506,16 @@ function finishError(msg) {
    CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
 ------------------------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
+    // Activar autocompletado para el campo de asignatura
+    const inputAsignatura = document.getElementById("asignatura");
+    enableAutocomplete(inputAsignatura, asignaturasLista);  // ← NUEVO
+
+    // Activar autocompletado en todos los inputs de material existentes
+    document.querySelectorAll("#tbody input[type=text]").forEach(input => {
+        enableAutocomplete(input, materialesLista);  // ← Cambio: agregar segundo parámetro
+    });
+
+    // Cargar datos si viene desde "Repetir Solicitud"
     const params = new URLSearchParams(window.location.search);
     const docente = params.get("docente");
     const asignatura = params.get("asignatura");
@@ -423,8 +535,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td><input type="number" min="1" value="${cantidades[i] || 1}" /></td>
             `;
             tbody.appendChild(tr);
+            
+            // Activar autocompletado para cada input de material cargado
+            const inputMaterial = tr.querySelector("input[type=text]");
+            enableAutocomplete(inputMaterial, materialesLista);  // ← Cambio: agregar segundo parámetro
         }
     }
+});
 
     // Activar autocompletado en todos los inputs de material
     document.querySelectorAll("#tbody input[type=text]").forEach(input => enableAutocomplete(input));

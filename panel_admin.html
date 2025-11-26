@@ -280,136 +280,120 @@
         </div>
     </div>
 
-    <script>
-        // CONFIGURACIÓN DE SUPABASE
-        const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwZzNv6YdJbBsRY";
+<script>
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwZzNv6YdJbBsRY";
 
-        // Aquí el objeto Supabase ya está definido
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Crear cliente de Supabase sin chocar con el objeto global
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Contenedores DOM
-        const pendingContainer = document.getElementById('pending-container');
-        const deliveredContainer = document.getElementById('delivered-container');
+    // Contenedores DOM
+    const pendingContainer = document.getElementById('pending-container');
+    const deliveredContainer = document.getElementById('delivered-container');
 
-        // Función auxiliar para formatear fechas
-        const formatDate = (dateString) => {
-            if (!dateString) return 'N/A';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES'); 
-        };
+    // Función auxiliar para formatear fechas
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES'); 
+    };
 
-        // Función para crear el HTML de una tarjeta (Card)
-        const createRequestCard = (solicitud, materiales, usuario) => {
-            // USANDO LOS ESTADOS CORRECTOS: 'Entregado' Y 'Pendiente'
-            const isDelivered = solicitud.estado === 'Entregado';
-            const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
-            
-            // Renderizar Materiales
-            const materialListItems = materiales.map(m => `
-                <li>${m.material} (Cantidad: ${m.cantidad})</li>
-            `).join('');
+    // Función para crear el HTML de una tarjeta (Card)
+    const createRequestCard = (solicitud, materiales, usuario) => {
+        const isDelivered = solicitud.estado === 'Entregado';
+        const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
+        
+        const materialListItems = materiales.map(m => `
+            <li>${m.material} (Cantidad: ${m.cantidad})</li>
+        `).join('');
 
-            // HTML de la Tarjeta
-            let html = `
-                <div class="request-card">
-                    <div class="card-header">
-                        <strong>ID: S-${solicitud.id}</strong>
-                        <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
-                    </div>
-                    <div class="card-detail"><label>Usuario:</label> ${usuario ? usuario.nombre : 'Desconocido'}</div>
-                    <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
-                    <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
-                    
-                    <div class="card-detail material-block">
-                        <label>Materiales:</label>
-                        <ul class="material-list">
-                            ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
-                        </ul>
-                    </div>
-                    
-                    <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
-            `;
-
-            // Añadir detalles y botones solo si está Entregado
-            if (isDelivered) {
-                html += `
-                    <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
-                    <div class="actions">
-                        <button class="btn-comment" onclick="abrirFormulario('${solicitud.id}')">Agregar Comentario</button>
-                        <button class="btn-no-comment" onclick="markAsReviewed('${solicitud.id}')">Sin Comentario</button>
-                    </div>
-                `;
-            }
-            
-            html += `</div>`;
-            return html;
-        };
-
-        // Función principal para cargar los datos
-        async function loadDashboardData() {
-            // Consulta a Supabase con JOINs
-            const { data: solicitudesData, error } = await supabase
-                .from('solicitudes')
-                .select(`
-                    *,
-                    usuario:usuarios!solicitudes_email_fkey (nombre, email),
-                    materiales_solicitados (material, cantidad)
-                `)
-                .order('fecha_solicitud', { ascending: false })
-                .limit(20);
-
-            if (error) {
-                console.error('Error al cargar solicitudes:', error);
-                pendingContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
-                deliveredContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
-                return;
-            }
-
-            // Filtrar y limitar las listas a 10 elementos cada una usando los estados correctos: 'Pendiente' y 'Entregado'
-            const pendingRequests = solicitudesData
-                .filter(s => s.estado === 'Pendiente')
-                .slice(0, 10);
+        let html = `
+            <div class="request-card">
+                <div class="card-header">
+                    <strong>ID: S-${solicitud.id}</strong>
+                    <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
+                </div>
+                <div class="card-detail"><label>Usuario:</label> ${usuario ? usuario.nombre : 'Desconocido'}</div>
+                <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
+                <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
                 
-            const deliveredRequests = solicitudesData
-                .filter(s => s.estado === 'Entregado')
-                .slice(0, 10);
+                <div class="card-detail material-block">
+                    <label>Materiales:</label>
+                    <ul class="material-list">
+                        ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
+                    </ul>
+                </div>
+                
+                <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
+        `;
 
-            // Renderizar Tarjetas Pendientes
-            if (pendingRequests.length === 0) {
-                 pendingContainer.innerHTML = '<p>No hay solicitudes pendientes.</p>';
-            } else {
-                pendingContainer.innerHTML = pendingRequests.map(s => 
-                    createRequestCard(s, s.materiales_solicitados, s.usuario)
-                ).join('');
-            }
+        if (isDelivered) {
+            html += `
+                <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
+                <div class="actions">
+                    <button class="btn-comment" onclick="abrirFormulario('${solicitud.id}')">Agregar Comentario</button>
+                    <button class="btn-no-comment" onclick="markAsReviewed('${solicitud.id}')">Sin Comentario</button>
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        return html;
+    };
 
-            // Renderizar Tarjetas Entregadas
-            if (deliveredRequests.length === 0) {
-                 deliveredContainer.innerHTML = '<p>No hay solicitudes entregadas.</p>';
-            } else {
-                deliveredContainer.innerHTML = deliveredRequests.map(s => 
-                    createRequestCard(s, s.materiales_solicitados, s.usuario)
-                ).join('');
-            }
+    // Función principal para cargar los datos
+    async function loadDashboardData() {
+        const { data: solicitudesData, error } = await supabaseClient
+            .from('solicitudes')
+            .select(`
+                *,
+                usuario:usuarios!solicitudes_email_fkey (nombre, email),
+                materiales_solicitados (material, cantidad)
+            `)
+            .order('fecha_solicitud', { ascending: false })
+            .limit(20);
+
+        if (error) {
+            console.error('Error al cargar solicitudes:', error);
+            pendingContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
+            deliveredContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
+            return;
         }
 
-        // Funciones de acción de botones (solo alertas como placeholder)
-        window.abrirFormulario = (solicitudId) => {
-            alert(`Acción: Implementar formulario para agregar comentario a S-${solicitudId}`);
-        };
+        const pendingRequests = solicitudesData
+            .filter(s => s.estado === 'Pendiente')
+            .slice(0, 10);
+            
+        const deliveredRequests = solicitudesData
+            .filter(s => s.estado === 'Entregado')
+            .slice(0, 10);
 
-        window.markAsReviewed = (solicitudId) => {
-            if(confirm(`¿Confirmar revisión de la Solicitud S-${solicitudId} sin comentarios?`)) {
-                // Lógica de UPDATE en Supabase iría aquí
-                alert(`S-${solicitudId} marcada como revisada. (Se necesita implementar UPDATE en BD)`);
-            }
-        };
+        // Renderizar tarjetas
+        pendingContainer.innerHTML = pendingRequests.length === 0 
+            ? '<p>No hay solicitudes pendientes.</p>'
+            : pendingRequests.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
 
+        deliveredContainer.innerHTML = deliveredRequests.length === 0
+            ? '<p>No hay solicitudes entregadas.</p>'
+            : deliveredRequests.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
+    }
 
-        // Cargar los datos al iniciar la página
-        loadDashboardData();
-    </script>
+    // Funciones de acción de botones
+    window.abrirFormulario = (solicitudId) => {
+        alert(`Acción: Implementar formulario para agregar comentario a S-${solicitudId}`);
+    };
+
+    window.markAsReviewed = (solicitudId) => {
+        if(confirm(`¿Confirmar revisión de la Solicitud S-${solicitudId} sin comentarios?`)) {
+            alert(`S-${solicitudId} marcada como revisada. (Se necesita implementar UPDATE en BD)`);
+        }
+    };
+
+    // Cargar los datos al iniciar la página
+    loadDashboardData();
+</script>
+
 
 </body>
 </html>

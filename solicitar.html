@@ -7,245 +7,282 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-    /* Variables de Color (Mismas que en las vistas anteriores) */
-    :root {
-        --color-primary: #004d99; /* Azul marino/institucional */
-        --color-secondary: #28a745; /* Verde para enviar/éxito */
-        --color-info: #17a2b8; /* Turquesa para añadir */
-        --color-danger: #dc3545; /* Rojo para eliminar */
-        --color-muted: #6c757d; /* Gris para volver */
-        --color-background: #eef1f5; /* Fondo claro y suave */
-        --color-card: #ffffff; /* Fondo de las cajas */
-        --color-text: #333333; /* Texto oscuro */
-        --color-border: #cccccc;
+    /* Variables de Color (Mismas que en las vistas anteriores) */
+    :root {
+        --color-primary: #004d99; /* Azul marino/institucional */
+        --color-secondary: #28a745; /* Verde para enviar/éxito */
+        --color-info: #17a2b8; /* Turquesa para añadir */
+        --color-danger: #dc3545; /* Rojo para eliminar */
+        --color-muted: #6c757d; /* Gris para volver */
+        --color-background: #eef1f5; /* Fondo claro y suave */
+        --color-card: #ffffff; /* Fondo de las cajas */
+        --color-text: #333333; /* Texto oscuro */
+        --color-border: #cccccc;
+    }
+
+    /* Estilos Generales */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
+        margin: 0;
+        padding: 0;
+        color: var(--color-text);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+    }
+
+    /* Caja Principal (Card) */
+    .box {
+        background: var(--color-card);
+        padding: 25px;
+        width: 100%;
+        max-width: 780px; /* Ancho un poco mayor para la tabla */
+        margin: 20px 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+
+    /* Encabezados */
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: var(--color-primary);
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+    h3 { 
+        text-align: center; 
+        margin-top: 30px;
+        margin-bottom: 15px;
+        color: var(--color-primary);
+        font-size: 1.3em;
+    }
+
+    /* Labels e Inputs de Formulario */
+    label { 
+        font-weight: 600; 
+        display: block; 
+        margin-top: 15px; 
+        color: var(--color-text);
+    }
+    /* Estilos del input principal */
+    input, select {
+        width: 100%;
+        padding: 12px; /* Aumentado para mejor tacto en móvil */
+        font-size: 1em;
+        margin-top: 8px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+    input:focus, select:focus {
+        border-color: var(--color-primary);
+        outline: none;
+        box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
+    }
+
+    /* Tabla de Materiales */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra sutil a la tabla */
+    }
+    th, td { 
+        border: 1px solid #e0e0e0; /* Borde más claro */
+        padding: 12px; 
+        text-align: left; /* Alineación a la izquierda para el material */
+    }
+    th { 
+        background: var(--color-primary); 
+        color: var(--color-card); 
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 0.9em;
+    }
+    #tabla tbody tr:nth-child(even) {
+        background-color: #f8f8f8; /* Cebra para mejor lectura */
+    }
+    /* Ajuste de inputs dentro de la tabla */
+    td input { 
+        padding: 8px; 
+        font-size: 1em; 
+        border: 1px solid #d0d0d0;
+        /* Eliminar márgenes que causaban desalineación */
+        margin: 0; 
+        margin-bottom: 0;
+    }
+    #tabla td:nth-child(2) { /* Columna de Cantidad */
+        width: 25%;
+        text-align: center;
+    }
+    /* Ajuste para que el input dentro del wrapper ocupe todo el ancho sin el margin-bottom */
+    .autocomplete-wrapper input {
+        margin-bottom: 0 !important; /* Eliminar el margen inferior del input que afecta la lista */
     }
 
-    /* Estilos Generales */
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--color-background);
-        margin: 0;
-        padding: 0;
-        color: var(--color-text);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-    }
 
-    /* Caja Principal (Card) */
-    .box {
-        background: var(--color-card);
-        padding: 25px;
-        width: 100%;
-        max-width: 780px; /* Ancho un poco mayor para la tabla */
-        margin: 20px 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        box-sizing: border-box;
-    }
+    /* Botones de Acción */
+    .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 12px;
+        transition: background-color 0.3s, opacity 0.3s;
+    }
 
-    /* Encabezados */
-    h2 {
-        text-align: center;
-        margin-bottom: 25px;
-        color: var(--color-primary);
-        font-size: 1.8em;
-        border-bottom: 2px solid var(--color-primary);
-        padding-bottom: 10px;
-    }
-    h3 { 
-        text-align: center; 
-        margin-top: 30px;
-        margin-bottom: 15px;
-        color: var(--color-primary);
-        font-size: 1.3em;
-    }
+    .btnAdd { 
+        background: var(--color-info); 
+        color: white; 
+    }
+    .btnAdd:hover { background: #138496; }
 
-    /* Labels e Inputs de Formulario */
-    label { 
-        font-weight: 600; 
-        display: block; 
-        margin-top: 15px; 
-        color: var(--color-text);
-    }
-    input, select {
-        width: 100%;
-        padding: 12px; /* Aumentado para mejor tacto en móvil */
-        font-size: 1em;
-        margin-top: 8px;
-        margin-bottom: 20px;
-        border-radius: 6px;
-        border: 1px solid var(--color-border);
-        box-sizing: border-box;
-        transition: border-color 0.3s;
-    }
-    input:focus, select:focus {
-        border-color: var(--color-primary);
-        outline: none;
-        box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
-    }
+    .btnRemove { 
+        background: var(--color-danger); 
+        color: white; 
+    }
+    .btnRemove:hover { background: #c82333; }
 
-    /* Tabla de Materiales */
-    table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-top: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra sutil a la tabla */
-    }
-    th, td { 
-        border: 1px solid #e0e0e0; /* Borde más claro */
-        padding: 12px; 
-        text-align: left; /* Alineación a la izquierda para el material */
-    }
-    th { 
-        background: var(--color-primary); 
-        color: var(--color-card); 
-        text-align: center;
-        text-transform: uppercase;
-        font-size: 0.9em;
-    }
-    #tabla tbody tr:nth-child(even) {
-        background-color: #f8f8f8; /* Cebra para mejor lectura */
-    }
-    td input { 
-        padding: 8px; 
-        font-size: 1em; 
-        border: 1px solid #d0d0d0;
-        margin: 0;
-    }
-    #tabla td:nth-child(2) { /* Columna de Cantidad */
-        width: 25%;
-        text-align: center;
-    }
+    .btnEnviar { 
+        background: var(--color-secondary); 
+        color: white; 
+        margin-top: 25px; /* Separación de los botones de la tabla */
+    }
+    .btnEnviar:hover { background: #1e7e34; }
 
-    /* Botones de Acción */
-    .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 6px;
-        font-size: 1.1em;
-        font-weight: bold;
-        cursor: pointer;
-        margin-top: 12px;
-        transition: background-color 0.3s, opacity 0.3s;
-    }
+    .btnVolver { 
+        background: var(--color-muted); 
+        color: white; 
+    }
+    .btnVolver:hover { background: #5a6268; }
 
-    .btnAdd { 
-        background: var(--color-info); 
-        color: white; 
+    /* Estilos para Móviles */
+    @media (max-width: 600px) {
+        .box {
+            margin: 10px;
+            padding: 15px;
+        }
+        h2 {
+            font-size: 1.6em;
+        }
+        th, td {
+            padding: 8px;
+            font-size: 0.9em;
+        }
+        td input {
+            padding: 6px;
+        }
+        .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
+            font-size: 1em;
+            padding: 12px;
+        }
+    }
+    /* Ajustes del autocompletado */
+    .autocomplete-wrapper { 
+        position: relative;
     }
-    .btnAdd:hover { background: #138496; }
-
-    .btnRemove { 
-        background: var(--color-danger); 
-        color: white; 
-    }
-    .btnRemove:hover { background: #c82333; }
-
-    .btnEnviar { 
-        background: var(--color-secondary); 
-        color: white; 
-        margin-top: 25px; /* Separación de los botones de la tabla */
-    }
-    .btnEnviar:hover { background: #1e7e34; }
-
-    .btnVolver { 
-        background: var(--color-muted); 
-        color: white; 
-    }
-    .btnVolver:hover { background: #5a6268; }
-
-    /* Estilos para Móviles */
-    @media (max-width: 600px) {
-        .box {
-            margin: 10px;
-            padding: 15px;
-        }
-        h2 {
-            font-size: 1.6em;
-        }
-        th, td {
-            padding: 8px;
-            font-size: 0.9em;
-        }
-        td input {
-            padding: 6px;
-        }
-        .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-            font-size: 1em;
-            padding: 12px;
-        }
-    }
-    /* Ajuste del autocompletado para que quede pegado al input */
-.input-wrapper ul {
-    top: 100%; /* justo debajo del input */
-    left: 0;
-    margin-top: 0; /* eliminar margen extra */
-}
-.input-wrapper input:focus {
-    box-shadow: none;
-}
+    .autocomplete-list {
+        position: absolute;
+        border: 1px solid var(--color-border); 
+        background: var(--color-card); 
+        list-style: none;
+        padding: 0;
+        margin: 0; /* Asegurar que no haya margen */
+        max-height: 150px;
+        overflow-y: auto;
+        width: 100%; 
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0 0 6px 6px; 
+        border-top: none; /* Eliminar el borde superior para pegarlo al input */
+        /* Asegurar que el borde inferior del input sea visible */
+    }
+    .autocomplete-list li {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0; /* Borde de separación */
+    }
+    .autocomplete-list li:last-child {
+        border-bottom: none; /* ELIMINA LA LÍNEA SOMBREADA/DE SEPARACIÓN AL FINAL */
+    }
+    .autocomplete-list li:hover {
+        background-color: #f0f0f0;
+    }
 </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>Solicitud de Materiales 📋</h2>
+    <h2>Solicitud de Materiales 📋</h2>
 
-    <label for="docente">👨‍🏫 Docente a cargo:</label>
-    <select id="docente">
-        <option value="">Seleccione un docente</option>
-        <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
-        <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
-        <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
-        <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
-        <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
-        <option>ELÍAS ANDRÉS POBLETE AVILA</option>
-        <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
-        <option>GIOVANNI ANDRÉS JARA TORRES</option>
-        <option>JORGE ANDRÉS PÉREZ MILLAR</option>
-        <option>JOSEFA CATALINA LISBOA RIVERA</option>
-        <option>JULIO CESAR ALARCON MONTEROS</option>
-        <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
-        <option>MARCO ANTONIO ARRIAGADA CASAS</option>
-        <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
-        <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
-        <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
-        <option>ROBERTO SEBASTIAN CID LIZAMA</option>
-        <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
-        <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
-        <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
-        <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
-        <option>OTROS DOCENTES</option>
-    </select>
+    <label for="docente">👨‍🏫 Docente a cargo:</label>
+    <select id="docente">
+        <option value="">Seleccione un docente</option>
+        <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
+        <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
+        <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
+        <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
+        <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
+        <option>ELÍAS ANDRÉS POBLETE AVILA</option>
+        <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
+        <option>GIOVANNI ANDRÉS JARA TORRES</option>
+        <option>JORGE ANDRÉS PÉREZ MILLAR</option>
+        <option>JOSEFA CATALINA LISBOA RIVERA</option>
+        <option>JULIO CESAR ALARCON MONTEROS</option>
+        <option>MANUEL ALEJANDRO HENRIQUEZ OLIVA</option>
+        <option>MARCO ANTONIO ARRIAGADA CASAS</option>
+        <option>PEDRO PATRICIO PEDRERO PÉREZ</option>
+        <option>RICHARD ANTONIO VALDERRAMA SAN MARTIN</option>
+        <option>RICHARD NICOLÁS SANTOS MARTÍNEZ</option>
+        <option>ROBERTO SEBASTIAN CID LIZAMA</option>
+        <option>RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA</option>
+        <option>RODRIGO ALEJANDRO GARRIDO GARRIDO</option>
+        <option>ROLANDO EDUARDO ORTEGA FUENTES</option>
+        <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
+        <option>OTROS DOCENTES</option>
+    </select>
 
 <label for="asignatura">📚 Asignatura:</label>
-<input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
-    
-    <h3>Materiales Solicitados</h3>
+<div class="autocomplete-wrapper">
+    <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
+</div>
+    
+    <h3>Materiales Solicitados</h3>
 
-    <table id="tabla">
-        <thead>
-            <tr>
-                <th>Material / Equipo</th>
-                <th style="width: 25%;">Cantidad</th>
-            </tr>
-        </thead>
-        <tbody id="tbody">
-            <tr>
-                <td><input type="text" placeholder="Ej: Multímetro UT33C"></td>
-                <td><input type="number" min="1" value="1"></td>
-            </tr>
-        </tbody>
-    </table>
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Material / Equipo</th>
+                <th style="width: 25%;">Cantidad</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr>
+                <td>
+                    <div class="autocomplete-wrapper">
+                        <input type="text" placeholder="Ej: Multímetro UT33C">
+                    </div>
+                </td>
+                <td><input type="number" min="1" value="1"></td>
+            </tr>
+        </tbody>
+    </table>
 
-    <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
-    <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
-    
-    <button class="btnEnviar" onclick="enviar()">📤 Enviar Solicitud</button>
-    <button class="btnVolver" onclick="location.href='menu.html'">↩️ Volver al Menú</button>
+    <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
+    <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
+    
+    <button class="btnEnviar" onclick="enviar()">📤 Enviar Solicitud</button>
+    <button class="btnVolver" onclick="location.href='menu.html'">↩️ Volver al Menú</button>
 </div>
 
 <script>
@@ -367,184 +404,192 @@ const asignaturasLista = [
 ];
 
 
-/* 🌟 FUNCIÓN GENÉRICA DE AUTOCOMPLETADO */
+/* 🌟 FUNCIÓN GENÉRICA DE AUTOCOMPLETADO (Actualizada) */
 function enableAutocomplete(input, listaOpciones) {
-    const lista = document.createElement("ul");
-    lista.style.position = "absolute";
-    lista.style.border = "1px solid #ccc";
-    lista.style.background = "white";
-    lista.style.listStyle = "none";
-    lista.style.padding = "0";
-    lista.style.margin = "0";
-    lista.style.maxHeight = "150px";
-    lista.style.overflowY = "auto";
-    lista.style.width = input.offsetWidth + "px";
-    lista.style.zIndex = 10;
-    lista.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-    lista.style.borderRadius = "4px";
-    lista.style.top = input.offsetHeight + "px";
-    lista.style.marginTop = "0";
-    
-    input.parentNode.style.position = "relative";
-    input.parentNode.appendChild(lista);
+    // 1. Busca el contenedor 'autocomplete-wrapper' (ahora se añade en el HTML)
+    const wrapper = input.closest('.autocomplete-wrapper');
+    if (!wrapper) {
+        console.error('El input debe estar dentro de un div con clase .autocomplete-wrapper');
+        return;
+    }
 
-    input.addEventListener("input", () => {
-        const val = input.value.toLowerCase();
-        lista.innerHTML = '';
-        if (!val) return;
-        
-        const coincidencias = listaOpciones.filter(item => item.toLowerCase().includes(val));
-        
-        coincidencias.forEach(item => {
-            const li = document.createElement("li");
-            li.textContent = item;
-            li.style.padding = "8px 12px";
-            li.style.cursor = "pointer";
-            li.style.borderBottom = "1px solid #f0f0f0";
-            
-            li.addEventListener("mouseenter", () => {
-                li.style.backgroundColor = "#f0f0f0";
-            });
-            
-            li.addEventListener("mouseleave", () => {
-                li.style.backgroundColor = "white";
-            });
-            
-            li.onmousedown = () => {
-                input.value = item;
-                lista.innerHTML = '';
-            };
-            lista.appendChild(li);
-        });
-    });
+    // 2. Crear la lista si no existe
+    let lista = wrapper.querySelector(".autocomplete-list");
+    if (!lista) {
+        lista = document.createElement("ul");
+        lista.className = "autocomplete-list";
+        lista.style.display = 'none'; // Oculta inicialmente
+        wrapper.appendChild(lista);
+    }
 
-    input.addEventListener("blur", () => {
-        setTimeout(() => { lista.innerHTML = ''; }, 150);
-    });
+    input.addEventListener("input", () => {
+        const val = input.value.toLowerCase();
+        lista.innerHTML = '';
+        if (!val) {
+            lista.style.display = 'none'; 
+            return;
+        }
+        
+        const coincidencias = listaOpciones.filter(item => item.toLowerCase().includes(val));
+        
+        coincidencias.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            
+            // Usamos onmousedown para evitar que el blur del input cierre la lista
+            li.onmousedown = (e) => {
+                e.preventDefault(); 
+                input.value = item;
+                lista.style.display = 'none'; // Cierra la lista
+                input.focus(); // Mantener el foco o devolverlo al input
+            };
+            lista.appendChild(li);
+        });
+
+        lista.style.display = coincidencias.length > 0 ? 'block' : 'none'; // Muestra/oculta
+    });
+
+    input.addEventListener("blur", () => {
+        // Retraso para dar tiempo al onmousedown
+        setTimeout(() => { lista.style.display = 'none'; }, 150);
+    });
 }
 
 
-/* ➕ Añadir fila */
+/* ➕ Añadir fila (Actualizada) */
 function addRow() {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-        <td><input type="text" placeholder="Ej: Cables de prueba"></td>
-        <td><input type="number" min="1" value="1"></td>`;
-    document.getElementById("tbody").appendChild(tr);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td>
+            <div class="autocomplete-wrapper">
+                <input type="text" placeholder="Ej: Cables de prueba">
+            </div>
+        </td>
+        <td><input type="number" min="1" value="1"></td>`;
+    document.getElementById("tbody").appendChild(tr);
 
-    const inputNuevo = tr.querySelector("input[type=text]");
-    enableAutocomplete(inputNuevo, materialesLista);  // ← Cambio aquí: agregar segundo parámetro
+    const inputNuevo = tr.querySelector("input[type=text]");
+    enableAutocomplete(inputNuevo, materialesLista);
 }
 
 
 /* ➖ Eliminar fila */
 function removeRow() {
-    const tbody = document.getElementById("tbody");
-    if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
-    else alert("Debe haber al menos un material.");
+    const tbody = document.getElementById("tbody");
+    if (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    else alert("Debe haber al menos un material.");
 }
 
 /* 📤 Enviar Solicitud */
 async function enviar() {
-    const btn = document.querySelector(".btnEnviar");
-    btn.disabled = true;
-    btn.innerText = "Enviando...";
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
 
-    const docente = document.getElementById("docente").value;
-    const asignatura = document.getElementById("asignatura").value.trim();
-    const filas = document.querySelectorAll("#tbody tr");
-    const materiales = [];
+    const docente = document.getElementById("docente").value;
+    const asignatura = document.getElementById("asignatura").value.trim();
+    const filas = document.querySelectorAll("#tbody tr");
+    const materiales = [];
 
-    if (!docente) return finishError("Seleccione un docente.");
-    if (!asignatura) return finishError("Ingrese la asignatura.");
+    if (!docente) return finishError("Seleccione un docente.");
+    if (!asignatura) return finishError("Ingrese la asignatura.");
 
-    filas.forEach(f => {
-        const nombre = f.children[0].querySelector("input").value.trim();
-        const cantidad = parseInt(f.children[1].querySelector("input").value.trim(), 10);
-        if (nombre && cantidad) materiales.push({ material: nombre, cantidad });
-    });
+    filas.forEach(f => {
+        // Asegurarse de seleccionar el input dentro del wrapper si existe
+        const inputMaterial = f.children[0].querySelector("input");
+        const inputCantidad = f.children[1].querySelector("input");
+        
+        const nombre = inputMaterial ? inputMaterial.value.trim() : "";
+        const cantidad = inputCantidad ? parseInt(inputCantidad.value.trim(), 10) : 0;
+        
+        if (nombre && cantidad && cantidad > 0) materiales.push({ material: nombre, cantidad });
+    });
 
-    if (materiales.length === 0) return finishError("Debe ingresar al menos un material.");
+    if (materiales.length === 0) return finishError("Debe ingresar al menos un material válido.");
 
-    try {
-        /* 1️⃣ Insertar solicitud */
-        const { data: solicitud, error } = await supabaseClient
-            .from("solicitudes")
-            .insert([{
-                email: user.email,
-                docente,
-                asignatura,
-                fecha_solicitud: new Date().toISOString(),
-                estado: "Pendiente"
-            }])
-            .select()
-            .single();
+    try {
+        /* 1️⃣ Insertar solicitud */
+        const { data: solicitud, error } = await supabaseClient
+            .from("solicitudes")
+            .insert([{
+                email: user.email,
+                docente,
+                asignatura,
+                fecha_solicitud: new Date().toISOString(),
+                estado: "Pendiente"
+            }])
+            .select()
+            .single();
 
-        if (error) throw error;
+        if (error) throw error;
 
-        /* 2️⃣ Insertar materiales */
-        for (const m of materiales) {
-            const { error } = await supabaseClient
-                .from("materiales_solicitados")
-                .insert([{ id_solicitud: solicitud.id, material: m.material, cantidad: m.cantidad }]);
-            if (error) throw error;
-        }
+        /* 2️⃣ Insertar materiales */
+        for (const m of materiales) {
+            const { error } = await supabaseClient
+                .from("materiales_solicitados")
+                .insert([{ id_solicitud: solicitud.id, material: m.material, cantidad: m.cantidad }]);
+            if (error) throw error;
+        }
 
-        alert("✅ Solicitud enviada con éxito.");
-        window.location.href = "menu.html";
+        alert("✅ Solicitud enviada con éxito.");
+        window.location.href = "menu.html";
 
-    } catch (err) {
-        console.error(err);
-        finishError("Error al enviar: " + err.message);
-    }
+    } catch (err) {
+        console.error(err);
+        finishError("Error al enviar: " + err.message);
+    }
 }
 
 function finishError(msg) {
-    alert("❌ " + msg);
-    const btn = document.querySelector(".btnEnviar");
-    btn.disabled = false;
-    btn.innerText = "Enviar Solicitud";
+    alert("❌ " + msg);
+    const btn = document.querySelector(".btnEnviar");
+    btn.disabled = false;
+    btn.innerText = "Enviar Solicitud";
 }
 
 /* -------------------------------------------------------------------
-   CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
+   CARGAR DATOS CUANDO VIENE DESDE "REPETIR SOLICITUD"
 ------------------------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
-    // Activar autocompletado para el campo de asignatura
-    const inputAsignatura = document.getElementById("asignatura");
-    enableAutocomplete(inputAsignatura, asignaturasLista);  // ← NUEVO
+    // Activar autocompletado para el campo de asignatura
+    const inputAsignatura = document.getElementById("asignatura");
+    enableAutocomplete(inputAsignatura, asignaturasLista);
 
-    // Activar autocompletado en todos los inputs de material existentes
-    document.querySelectorAll("#tbody input[type=text]").forEach(input => {
-        enableAutocomplete(input, materialesLista);  // ← Cambio: agregar segundo parámetro
-    });
+    // Activar autocompletado en todos los inputs de material existentes
+    document.querySelectorAll("#tbody input[type=text]").forEach(input => {
+        enableAutocomplete(input, materialesLista);
+    });
 
-    // Cargar datos si viene desde "Repetir Solicitud"
-    const params = new URLSearchParams(window.location.search);
-    const docente = params.get("docente");
-    const asignatura = params.get("asignatura");
-    const materiales = JSON.parse(params.get("materiales") || "[]");
-    const cantidades = JSON.parse(params.get("cantidades") || "[]");
+    // Cargar datos si viene desde "Repetir Solicitud"
+    const params = new URLSearchParams(window.location.search);
+    const docente = params.get("docente");
+    const asignatura = params.get("asignatura");
+    const materiales = JSON.parse(params.get("materiales") || "[]");
+    const cantidades = JSON.parse(params.get("cantidades") || "[]");
 
-    if (docente) document.getElementById("docente").value = docente;
-    if (asignatura) document.getElementById("asignatura").value = asignatura;
+    if (docente) document.getElementById("docente").value = docente;
+    if (asignatura) document.getElementById("asignatura").value = asignatura;
 
-    const tbody = document.getElementById("tbody");
-    if (materiales.length > 0) {
-        tbody.innerHTML = "";
-        for (let i = 0; i < materiales.length; i++) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><input type="text" value="${materiales[i]}" /></td>
-                <td><input type="number" min="1" value="${cantidades[i] || 1}" /></td>
-            `;
-            tbody.appendChild(tr);
-            
-            // Activar autocompletado para cada input de material cargado
-            const inputMaterial = tr.querySelector("input[type=text]");
-            enableAutocomplete(inputMaterial, materialesLista);  // ← Cambio: agregar segundo parámetro
-        }
-    }
+    const tbody = document.getElementById("tbody");
+    if (materiales.length > 0) {
+        tbody.innerHTML = "";
+        for (let i = 0; i < materiales.length; i++) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>
+                    <div class="autocomplete-wrapper">
+                      <input type="text" value="${materiales[i]}" />
+                    </div>
+                </td>
+                <td><input type="number" min="1" value="${cantidades[i] || 1}" /></td>
+            `;
+            tbody.appendChild(tr);
+            
+            // Activar autocompletado para cada input de material cargado
+            const inputMaterial = tr.querySelector("input[type=text]");
+            enableAutocomplete(inputMaterial, materialesLista);
+        }
+    }
 });
 </script>
 

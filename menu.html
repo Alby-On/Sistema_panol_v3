@@ -181,7 +181,7 @@ function logout() {
 window.logout = logout;
 
 // Mostrar botón Admin solo si el usuario es Admin
-if (user.tipo_usuario === "Admin") {
+if (user.rol === "admin") {
     document.getElementById("adminButton").style.display = "block";
 }
     

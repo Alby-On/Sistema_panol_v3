@@ -178,6 +178,22 @@
             padding: 12px;
         }
     }
+/* 🔑 SOLUCIÓN PARA EL AUTOCOMPLETADO DE ASIGNATURA */
+label {
+    /* Es crucial que el padre del input tenga position: relative */
+    position: relative;
+}
+
+/* Opcional: Estilo adicional para la lista de autocompletado */
+.autocomplete-list {
+    position: absolute;
+    top: 100%; /* Coloca la lista justo debajo del input */
+    left: 0;
+    z-index: 100; /* Asegura que esté por encima de otros elementos */
+    width: 100%; /* Opcional: Para que ocupe todo el ancho del input */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra para destacarla */
+    border-top: none !important; /* Quitar el borde superior para que se una al input */
+}
 </style>
 </head>
 <body>
@@ -360,6 +376,7 @@ const asignaturasLista = [
 /* 🌟 AUTOCOMPLETADO PARA INPUTS (MATERIALES O ASIGNATURAS) */
 function enableAutocomplete(input, listaPersonalizada) {
     const lista = document.createElement("ul");
+    lista.classList.add("autocomplete-list");
     lista.style.position = "absolute";
     lista.style.border = "1px solid #ccc";
     lista.style.background = "white";
@@ -370,7 +387,6 @@ function enableAutocomplete(input, listaPersonalizada) {
     lista.style.overflowY = "auto";
     lista.style.width = input.offsetWidth + "px";
     lista.style.zIndex = 10;
-    input.parentNode.style.position = "relative";
     input.parentNode.appendChild(lista);
 
     const listaFinal = listaPersonalizada || materialesLista;

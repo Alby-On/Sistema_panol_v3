@@ -522,9 +522,10 @@ const deliveredRequestsToReview = solicitudesData
             ? '<p>No hay solicitudes pendientes.</p>'
             : pendingRequests.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
 
-        deliveredContainer.innerHTML = deliveredRequests.length === 0
-            ? '<p>No hay solicitudes entregadas.</p>'
-            : deliveredRequests.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
+   // CÓDIGO NUEVO PARA RENDERIZAR
+deliveredContainer.innerHTML = deliveredRequestsToReview.length === 0
+    ? '<p>No hay solicitudes entregadas pendientes de revisión de comentario.</p>'
+    : deliveredRequestsToReview.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
     }
 
     // Cargar los datos al iniciar la página

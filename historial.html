@@ -17,7 +17,6 @@
         --color-card: #ffffff; /* Fondo de las cajas */
         --color-text: #333333; /* Texto oscuro */
         --color-border: #cccccc;
-        --color-danger: #dc3545; /* Añadida: Rojo para cerrar/peligro */
     }
 
     /* ---- ESTILO GENERAL ---- */
@@ -32,7 +31,6 @@
         align-items: flex-start;
         min-height: 100vh;
     }
-
     .container {
         max-width: 1100px;
         width: 100%;
@@ -43,7 +41,6 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         box-sizing: border-box;
     }
-
     h2 {
         text-align: center;
         color: var(--color-primary);
@@ -66,12 +63,10 @@
         margin-bottom: 20px;
         transition: background-color 0.3s;
     }
-
     .btn-volver:hover {
         background: #003a73;
     }
-
-    /* ---- FILTROS (FLEXBOX) ---- */
+    /* ---- FILTROS ---- */
     .filter-box {
         display: flex;
         gap: 15px;
@@ -79,7 +74,6 @@
         flex-wrap: wrap;
         align-items: stretch;
     }
-
     .filter-box input, .filter-box button {
         padding: 12px;
         font-size: 1em;
@@ -87,13 +81,11 @@
         border: 1px solid var(--color-border);
         box-sizing: border-box;
     }
-    
     .filter-box input {
         flex-grow: 1; /* Permite que los campos de fecha crezcan */
         max-width: none;
         min-width: 120px;
     }
-
     .filter-box button {
         flex-shrink: 0; /* Evita que el botón se comprima */
         background: var(--color-secondary);
@@ -103,16 +95,13 @@
         font-weight: bold;
         transition: background-color 0.3s;
     }
-    
     .filter-box button:hover {
         background: #1e7e34;
     }
-
     /* ---- TABLA RESPONSIVA ---- */
     .tabla-wrapper {
         overflow-x: auto;
     }
-
     table {
         width: 100%;
         border-collapse: collapse;
@@ -120,7 +109,6 @@
         font-size: 0.95em;
         min-width: 850px; /* Ancho mínimo para legibilidad */
     }
-
     table th {
         background: var(--color-primary); /* Encabezado de tabla con color principal */
         color: white;
@@ -129,7 +117,6 @@
         font-weight: 600;
         text-transform: uppercase;
     }
-
     table td {
         border: 1px solid #e0e0e0;
         padding: 12px 10px;
@@ -218,7 +205,7 @@
         cursor: pointer;
         font-size: 24px;
         font-weight: normal;
-        color: var(--color-danger); /* Usa la variable de color */
+        color: var(--color-danger); /* Rojo para cerrar */
         line-height: 1;
     }
     
@@ -234,10 +221,10 @@
     @media (max-width: 768px) {
         .filter-box {
             gap: 10px;
+            /* Fuerza a los inputs y el botón a ocupar todo el ancho en dos filas */
         }
-        /* Distribución de 2 columnas para fechas y 1 columna para botón */
         .filter-box input {
-            flex-basis: calc(50% - 5px); /* 50% menos la mitad del gap */
+            flex-basis: calc(50% - 5px); 
         }
         .filter-box button {
             flex-basis: 100%;
@@ -249,18 +236,73 @@
         }
         .container {
             padding: 20px;
+
         }
         .btn-volver {
             width: 100%;
+
             text-align: center;
         }
-        /* Todo a una sola columna en el filtro */
         .filter-box input {
-            flex-basis: 100%;
+             flex-basis: 100%;
         }
     }
 </style>
+</head>
+<body>
 
+<div class="container">
+
+    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
+
+    <h2>Historial de Solicitudes Entregadas 📜</h2>
+
+    <div class="filter-box">
+        <input type="date" id="desde" placeholder="Desde">
+        <input type="date" id="hasta" placeholder="Hasta">
+        <button id="btn-buscar">Buscar por Fechas</button>
+    </div>
+
+    <div class="tabla-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">ID</th>
+                    <th style="width: 25%;">Docente</th>
+                    <th style="width: 25%;">Asignatura</th>
+                    <th style="width: 15%;">Fecha Solicitud</th>
+                    <th style="width: 15%;">Fecha Entrega</th>
+                    <th style="width: 15%;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-historial">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="sin-datos" class="mensaje-vacio" style="display:none;">
+        ⚠️ No tienes solicitudes entregadas registradas en tu historial.
+    </div>
+
+</div>
+
+<div class="modal" id="modal-materiales">
+    <div class="modal-content">
+        <span class="close-btn" onclick="cerrarModal()">×</span>
+        <div class="modal-header">Materiales Solicitados</div>
+        <div class="tabla-wrapper">
+             <table>
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th style="width: 30%;">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-body-materiales"></tbody>
+            </table>
+        </div>
+    </div>
+    
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>

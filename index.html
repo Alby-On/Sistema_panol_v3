@@ -196,12 +196,16 @@
     <input type="email" placeholder="📧 Correo" id="loginEmail">
     <input type="password" placeholder="🔒 Contraseña" id="loginPass">
     <button class="btn-primary" onclick="login()">Ingresar</button>
-    <p style="text-align:center; margin-top:10px;">
-    <a href="recuperar.html">¿Olvidaste tu contraseña?</a>
-    </p>
+    
     <p id="loginMsg"></p>
-    <p style="text-align:center;"><a onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</a></p>
-    <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
+    
+    <a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
+    
+    <p class="register-link">
+        <a onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</a>
+    </p>
+    
+    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
 </div>
 
 <div class="box hidden" id="registerBox">
@@ -231,7 +235,7 @@
     <p style="text-align:center;"><a onclick="showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
     <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
 </div>
-
+    
 <script>
 // ----------------------------------------
 // CONFIGURAR SUPABASE

@@ -512,9 +512,10 @@
             .filter(s => s.estado === 'Pendiente')
             .slice(0, 10);
             
-        const deliveredRequests = solicitudesData
-            .filter(s => s.estado === 'Entregado')
-            .slice(0, 10);
+        // CÓDIGO NUEVO (IMPLEMENTA EL FILTRO)
+const deliveredRequestsToReview = solicitudesData
+    .filter(s => s.estado === 'Entregado' && !s.comentario_entrega)
+    .slice(0, 10);
 
         // Renderizar tarjetas
         pendingContainer.innerHTML = pendingRequests.length === 0 

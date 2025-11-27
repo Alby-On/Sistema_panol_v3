@@ -5,236 +5,261 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Historial de Solicitudes Entregadas</title>
 
-    <style>
-        /* Variables de Color (Para un look formal y fácil de modificar) */
-        :root {
-            --color-primary: #004d99; /* Azul marino/institucional más oscuro */
-            --color-secondary: #28a745; /* Verde para éxito */
-            --color-background: #eef1f5; /* Fondo más claro y suave */
-            --color-card: #ffffff; /* Fondo de las cajas */
-            --color-text: #333333; /* Texto oscuro */
-            --color-border: #cccccc; /* Borde de inputs */
-            --color-error: #dc3545; /* Rojo para errores */
-        }
+<style>
+    /* Variables de Color (Consistencia Institucional) */
+    :root {
+        --color-primary: #004d99; /* Azul marino/institucional */
+        --color-secondary: #28a745; /* Verde para éxito/Encabezado */
+        --color-info: #2196F3; /* Azul medio para ver materiales */
+        --color-warning: #ff9800; /* Naranja para repetir */
+        --color-muted: #6c757d; /* Gris para volver */
+        --color-background: #eef1f5; /* Fondo claro y suave */
+        --color-card: #ffffff; /* Fondo de las cajas */
+        --color-text: #333333; /* Texto oscuro */
+        --color-border: #cccccc;
+        --color-danger: #dc3545; /* Añadida: Rojo para cerrar/peligro */
+    }
 
-        /* Estilos Generales */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente más moderna */
-            background: var(--color-background);
-            margin: 0;
-            padding: 0;
-            color: var(--color-text);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Alineación superior para mejor visibilidad en móvil */
-            min-height: 100vh;
-        }
+    /* ---- ESTILO GENERAL ---- */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--color-background);
+        margin: 0;
+        padding: 0;
+        color: var(--color-text);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+    }
 
-        /* Caja Principal (Card) */
-        .box {
-            background: var(--color-card);
-            padding: 30px; /* Más espacio interior */
-            width: 100%; /* Ocupa todo el ancho disponible en móviles */
-            max-width: 420px; /* Límite para pantallas grandes */
-            margin: 20px 15px; /* Margen para evitar tocar los bordes del móvil */
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra más suave y profunda */
-            box-sizing: border-box; /* Asegura que el padding no añada ancho extra */
-            transition: transform 0.3s ease; /* Pequeña transición al cargar */
-        }
+    .container {
+        max-width: 1100px;
+        width: 100%;
+        margin: 20px 15px; /* Margen para móviles */
+        background: var(--color-card);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
 
-        /* Encabezados */
+    h2 {
+        text-align: center;
+        color: var(--color-primary);
+        margin-bottom: 25px;
+        font-size: 1.8em;
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+
+    /* ---- BOTÓN VOLVER ---- */
+    .btn-volver {
+        display: inline-block;
+        padding: 12px 18px;
+        background: var(--color-primary);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 1em;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: background-color 0.3s;
+    }
+
+    .btn-volver:hover {
+        background: #003a73;
+    }
+
+    /* ---- FILTROS (FLEXBOX) ---- */
+    .filter-box {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .filter-box input, .filter-box button {
+        padding: 12px;
+        font-size: 1em;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        box-sizing: border-box;
+    }
+    
+    .filter-box input {
+        flex-grow: 1; /* Permite que los campos de fecha crezcan */
+        max-width: none;
+        min-width: 120px;
+    }
+
+    .filter-box button {
+        flex-shrink: 0; /* Evita que el botón se comprima */
+        background: var(--color-secondary);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .filter-box button:hover {
+        background: #1e7e34;
+    }
+
+    /* ---- TABLA RESPONSIVA ---- */
+    .tabla-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 0.95em;
+        min-width: 850px; /* Ancho mínimo para legibilidad */
+    }
+
+    table th {
+        background: var(--color-primary); /* Encabezado de tabla con color principal */
+        color: white;
+        padding: 12px 10px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    table td {
+        border: 1px solid #e0e0e0;
+        padding: 12px 10px;
+        font-size: 0.9em;
+        vertical-align: middle;
+    }
+    
+    #tabla-historial tr:nth-child(even) {
+        background-color: #f8f8f8; /* Cebra */
+    }
+
+    /* Botones de Acción dentro de la Tabla */
+    .btn {
+        padding: 8px 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin: 4px 0;
+        width: 100%;
+        max-width: 140px;
+        display: block; /* Ocupa todo el ancho disponible en la celda */
+        font-weight: 600;
+        text-align: center;
+        transition: background-color 0.2s;
+    }
+
+    .btn-materiales {
+        background: var(--color-info);
+        color: white;
+    }
+    .btn-materiales:hover { background: #1377c0; }
+
+    .btn-repetir {
+        background: var(--color-warning);
+        color: white;
+        margin-top: 8px;
+    }
+    .btn-repetir:hover { background: #e08e00; }
+
+    /* MENSAJE */
+    .mensaje-vacio {
+        text-align: center;
+        padding: 20px;
+        background: #fff8e1; /* Fondo suave de advertencia */
+        border: 1px solid #ffecb3;
+        color: #8f6509;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-size: 1.1em;
+        font-weight: 500;
+    }
+
+    /* MODAL */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: var(--color-card);
+        width: 100%;
+        max-width: 550px;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+        font-size: 1.3em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+        padding-bottom: 10px;
+    }
+
+    .close-btn {
+        float: right;
+        cursor: pointer;
+        font-size: 24px;
+        font-weight: normal;
+        color: var(--color-danger); /* Usa la variable de color */
+        line-height: 1;
+    }
+    
+    /* Tabla del Modal */
+    .modal-content table {
+        min-width: unset;
+    }
+    .modal-content table th {
+        background: var(--color-info); /* Azul para el encabezado del modal */
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        .filter-box {
+            gap: 10px;
+        }
+        /* Distribución de 2 columnas para fechas y 1 columna para botón */
+        .filter-box input {
+            flex-basis: calc(50% - 5px); /* 50% menos la mitad del gap */
+        }
+        .filter-box button {
+            flex-basis: 100%;
+        }
+    }
+    @media (max-width: 600px) {
         h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--color-primary);
-            font-size: 1.8em;
-            border-bottom: 2px solid var(--color-primary); /* Línea de separación formal */
-            padding-bottom: 10px;
+            font-size: 1.6em;
         }
-
-        h3 {
-            text-align: center;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            color: var(--color-text);
-            font-size: 1.2em;
+        .container {
+            padding: 20px;
         }
-
-        /* Inputs y Selects */
-        input, select {
+        .btn-volver {
             width: 100%;
-            padding: 14px; /* Más padding para facilitar el toque en móvil */
-            margin: 10px 0 18px;
-            border-radius: 6px;
-            border: 1px solid var(--color-border);
-            font-size: 1em;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-            background-color: #f9f9f9;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--color-primary);
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
-        }
-
-        /* Botones */
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s, opacity 0.3s;
-            text-transform: uppercase; /* Formaliza el texto del botón */
-        }
-
-        button:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: var(--color-primary);
-            color: var(--color-card);
-        }
-
-        .btn-success {
-            background: var(--color-secondary);
-            color: var(--color-card);
-        }
-
-        /* Elementos de Estado y Mensajes */
-        .hidden {
-            display: none !important; /* Uso de !important para asegurar ocultación */
-        }
-
-        a {
-            color: var(--color-primary);
-            cursor: pointer;
-            text-decoration: none; /* Quitamos el subrayado por defecto */
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 5px;
-            transition: color 0.3s;
-        }
-        
-        a:hover {
-            color: #0066cc;
-            text-decoration: underline; /* Lo añadimos al pasar el ratón */
-        }
-
-        .error {
-            color: var(--color-error);
-            font-size: 0.9em;
-            margin-bottom: 15px;
-            padding: 5px;
-            border: 1px dashed var(--color-error);
-            border-radius: 4px;
             text-align: center;
         }
-
-        /* Listas (Consideraciones) */
-        ul {
-            padding-left: 20px;
-            margin-top: 0;
-            list-style-type: '👉 '; /* Viñeta más visual */
+        /* Todo a una sola columna en el filtro */
+        .filter-box input {
+            flex-basis: 100%;
         }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        #mensaje, #loginMsg {
-            font-weight: 600;
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        /* Ajustes Específicos para Móviles (Aunque .box ya es responsive, esto afina) */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px 0; /* Menos padding en los bordes del cuerpo */
-            }
-            .box {
-                margin: 10px 10px;
-                padding: 20px;
-            }
-            h2 {
-                font-size: 1.6em;
-            }
-            input, select, button {
-                padding: 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-<div class="box" id="welcomeBox">
-    <h2>Bienvenido(a) 🛠️</h2>
-    <p style="text-align:center;">Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
-    <h3>📝 Consideraciones Importantes:</h3>
-    <ul>
-        <li>Todo material facilitado debe **regresar en las mismas condiciones**.</li>
-        <li>Los estudiantes deben entregar su **TNE** o **Cédula de Identidad**.</li>
-        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
-    </ul>
-    <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
-    <button class="btn-success" onclick="showRegister()">Registrarse</button>
-</div>
-
-<div class="box hidden" id="loginBox">
-    <h2>🔑 Iniciar Sesión</h2>
-    <input type="email" placeholder="📧 Correo" id="loginEmail">
-    <input type="password" placeholder="🔒 Contraseña" id="loginPass">
-    <button class="btn-primary" onclick="login()">Ingresar</button>
-    
-    <p id="loginMsg"></p>
-    
-    <a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
-    
-    <p class="register-link">
-        <a onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</a>
-    </p>
-    
-    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
-</div>
-
-<div class="box hidden" id="registerBox">
-    <h2>📝 Registro de Usuario</h2>
-    <input type="text" id="regNombre" placeholder="👤 Nombre Completo">
-    <input type="text" id="regRut" placeholder="💳 RUT (Ej: 12.345.678-5)">
-    <p id="rutError" class="error"></p>
-
-    <select id="regCarrera">
-        <option value="">🏫 Seleccione una carrera</option>
-        <option>Ingeniería Eléctrica</option>
-        <option>Técnico de nivel superior en Electricidad Industrial</option>
-        <option>Ingeniería en Automatización y Robótica</option>
-        <option>Técnico de nivel superior en Automatización y Robótica</option>
-        <option>Ingeniería en Mecatrónica</option>
-        <option>Técnico de nivel superior en Mecatrónica</option>
-        <option>Área Mecánica</option>
-        <option>Otras Áreas</option>
-    </select>
-
-    <input type="tel" id="regTelefono" placeholder="📱 Teléfono (Ej: +56911111111)">
-    <input type="email" id="regEmail" placeholder="📧 Correo Electrónico">
-    <input type="password" id="regPass" placeholder="🔒 Contraseña">
-
-    <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
-    <p id="mensaje"></p>
-    <p style="text-align:center;"><a onclick="showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
-    <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
-</div>
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 

@@ -359,7 +359,7 @@
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES'); 
+        return date.toLocaleDateString('es-ES');
     };
 
     // --- LÓGICA DE INTERFAZ DEL MODAL ---
@@ -405,6 +405,7 @@
         msg.textContent = `✅ Comentario guardado con éxito.`;
         
         // Recargar el dashboard para reflejar el cambio inmediatamente
+        // Usamos la función optimizada para que el cambio sea rápido
         await loadDashboardData(); 
         
         // Cerrar el modal después de un breve retraso para que el usuario vea la confirmación
@@ -430,12 +431,7 @@
 
     // Función al presionar "Sin Comentario" en la tarjeta
     window.guardarSinComentario = (solicitudId) => {
-         if(confirm(`¿Desea registrar "Sin Comentarios" para la Solicitud S-${solicitudId}?`)) {
-            // Usamos la misma función de actualización, pero con el texto predefinido
-            // Para el mensaje en el modal, usamos el ID global si el modal está abierto.
-            const tempMsgElement = document.getElementById('delivered-container').querySelector(`.request-card:has(.actions button[onclick*="${solicitudId}"]) #modalMsg`) || document.getElementById('modalMsg');
-            
-            // Si bien el modal no está abierto, usamos un simple alert de confirmación y actualizamos
+          if(confirm(`¿Desea registrar "Sin Comentarios" para la Solicitud S-${solicitudId}?`)) {
             actualizarComentario(solicitudId, "Sin Comentarios");
         }
     };
@@ -450,8 +446,9 @@
             <li>${m.material} (Cantidad: ${m.cantidad})</li>
         `).join('');
 
+        // CAMBIO 1: SE AGREGA data-solicitud-id PARA LA LÓGICA DE ACTUALIZACIÓN DINÁMICA
         let html = `
-            <div class="request-card">
+            <div class="request-card" data-solicitud-id="${solicitud.id}">
                 <div class="card-header">
                     <strong>ID: S-${solicitud.id}</strong>
                     <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
@@ -489,7 +486,62 @@
         return html;
     };
 
-    // Función principal para cargar los datos
+    // NUEVA FUNCIÓN: Actualiza el contenedor agregando/quitando tarjetas de forma eficiente.
+    function updateContainerDynamically(container, newSolicitudes, emptyMessage) {
+        const newIds = newSolicitudes.map(s => String(s.id));
+        
+        // 1. ELIMINAR: Quitar tarjetas existentes que ya no están en la lista (e.g., cambió de estado)
+        Array.from(container.children).forEach(card => {
+            const cardId = card.dataset.solicitudId;
+            // Solo procesar si tiene data-solicitud-id
+            if (cardId && !newIds.includes(cardId)) {
+                card.remove();
+            }
+        });
+
+        // 2. AGREGAR/MANTENER: Crear o asegurar la existencia de nuevas tarjetas
+        newSolicitudes.forEach(solicitud => {
+            const solicitudIdStr = String(solicitud.id);
+            
+            let cardElement = container.querySelector(`[data-solicitud-id="${solicitudIdStr}"]`);
+            
+            // Si la tarjeta NO existe, la crea y la agrega al inicio (más reciente)
+            if (!cardElement) {
+                 const materiales = solicitud.materiales_solicitados;
+                 const usuario = solicitud.usuario;
+                 const cardHtml = createRequestCard(solicitud, materiales, usuario);
+
+                 // Crear un elemento temporal para envolver el HTML y obtener el elemento DOM
+                 const tempDiv = document.createElement('div');
+                 tempDiv.innerHTML = cardHtml.trim();
+                 cardElement = tempDiv.firstChild;
+                 cardElement.dataset.solicitudId = solicitudIdStr; // Asegurar el ID
+
+                 // Añadir el nuevo elemento al inicio de la lista (prepend)
+                 container.prepend(cardElement);
+            } else {
+                 // Si la tarjeta ya existe, no hacemos nada más, evitando redibujar
+                 // y manteniendo el orden y cualquier estado interno que pudiera tener.
+            }
+        });
+
+        // 3. MENSAJE DE VACÍO: Gestionar el mensaje cuando la lista está vacía
+        if (newSolicitudes.length === 0) {
+            // Si no hay hijos o el único hijo no es una tarjeta, mostrar el mensaje.
+            if (container.children.length === 0 || container.children[0].dataset.solicitudId === undefined) {
+                 container.innerHTML = `<p>${emptyMessage}</p>`;
+            }
+        } else {
+            // Asegurarse de que el mensaje de vacío se quite si hay tarjetas
+            const firstChild = container.children[0];
+            if (firstChild && firstChild.tagName === 'P') {
+                firstChild.remove();
+            }
+        }
+    }
+
+
+    // Función principal para cargar los datos (Ahora usa la lógica dinámica)
     async function loadDashboardData() {
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
@@ -512,24 +564,21 @@
             .filter(s => s.estado === 'Pendiente')
             .slice(0, 10);
             
-        // CÓDIGO NUEVO (IMPLEMENTA EL FILTRO)
-const deliveredRequestsToReview = solicitudesData
-    .filter(s => s.estado === 'Entregado' && !s.comentario_entrega)
-    .slice(0, 10);
+        const deliveredRequestsToReview = solicitudesData
+            .filter(s => s.estado === 'Entregado' && !s.comentario_entrega)
+            .slice(0, 10);
 
-        // Renderizar tarjetas
-        pendingContainer.innerHTML = pendingRequests.length === 0 
-            ? '<p>No hay solicitudes pendientes.</p>'
-            : pendingRequests.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
-
-   // CÓDIGO NUEVO PARA RENDERIZAR
-deliveredContainer.innerHTML = deliveredRequestsToReview.length === 0
-    ? '<p>No hay solicitudes entregadas pendientes de revisión de comentario.</p>'
-    : deliveredRequestsToReview.map(s => createRequestCard(s, s.materiales_solicitados, s.usuario)).join('');
+        // Renderizar/Actualizar tarjetas usando la función dinámica
+        updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
+        updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');
     }
 
     // Cargar los datos al iniciar la página
     loadDashboardData();
+
+    // NUEVO: Establecer el refresco automático cada 5 segundos (5000 milisegundos)
+    const intervalTime = 5000; 
+    setInterval(loadDashboardData, intervalTime);
 </script>
 
 

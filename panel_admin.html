@@ -378,9 +378,6 @@
     
     // --- LÓGICA DE ACTUALIZACIÓN DE SUPABASE ---
 
-    /**
-     * Actualiza el estado y el comentario_entrega en Supabase y recarga el dashboard.
-     */
     async function actualizarComentario(solicitudId, comentario) {
         const msg = document.getElementById('modalMsg');
         msg.style.color = '#333';
@@ -406,10 +403,7 @@
         msg.style.color = '#4caf50';
         msg.textContent = '✅ Solicitud actualizada con éxito.';
         
-        // Recargar el dashboard para reflejar el cambio inmediatamente
         await loadDashboardData(); 
-        
-        // Cerrar el modal después de un breve retraso para que el usuario vea la confirmación
         setTimeout(cerrarFormulario, 1000); 
         return true;
     }
@@ -438,20 +432,19 @@
     };
 
     // Función para crear el HTML de una tarjeta (Card)
-    const createRequestCard = (solicitud, materiales, usuario) => {
+    const createRequestCard = (solicitud, materiales) => {
         const isDelivered = solicitud.estado === 'Entregado';
         const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
         
-        const materialListItems = materiales.map(m =>             '<li>' + m.material + ' (Cantidad: ' + m.cantidad + ')</li>'
-        ).join('');
+        const materialListItems = materiales.map(m => '<li>' + m.material + ' (Cantidad: ' + m.cantidad + ')</li>').join('');
 
-        let html =              '<div class="request-card" data-solicitud-id="' + solicitud.id + '">' +
+        let html = '<div class="request-card" data-solicitud-id="' + solicitud.id + '">' +
                 '<div class="card-header">' +
                     '<strong>ID: S-' + solicitud.id + '</strong>' +
                     '<span>Fecha Solicitud: ' + formatDate(solicitud.fecha_solicitud) + '</span>' +
                 '</div>' +
-                // CORRECCIÓN: Acceder correctamente al nombre del usuario
-                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuarios ? solicitud.usuarios.nombre : 'Desconocido') + '</div>' +
+                // USAMOS nombre_usuario que viene de la combinación de datos
+                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.nombre_usuario || 'Desconocido') + '</div>' +
                 '<div class="card-detail"><label>Docente:</label> ' + solicitud.docente + '</div>' +
                 '<div class="card-detail"><label>Asignatura:</label> ' + solicitud.asignatura + '</div>' +
                 
@@ -465,14 +458,11 @@
                 '<div class="card-detail"><label>Estado:</label> <span class="' + statusClass + '">' + solicitud.estado.toUpperCase() + '</span></div>';
 
         if (isDelivered) {
-            html +=              
-                      '<div class="card-detail"><label>Entrega:</label> **' + formatDate(solicitud.fecha_entrega) + '**</div>' +
+            html += '<div class="card-detail"><label>Entrega:</label> ' + formatDate(solicitud.fecha_entrega) + '</div>' +
+                    '<div class="card-detail"><label>Comentario:</label> ' + (solicitud.comentario_entrega || 'N/A') + '</div>';
                       
-                      '<div class="card-detail"><label>Comentario:</label> ' + (solicitud.comentario_entrega || 'N/A') + '</div>';
-                      
-            if (!solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A' || solicitud.comentario_entrega === 'undefined') {
-                html +=              
-                      '<div class="actions">' +
+            if (!solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A') {
+                html += '<div class="actions">' +
                         '<button class="btn-comment" onclick="abrirFormulario(' + solicitud.id + ')">Agregar Comentario</button>' +
                         '<button class="btn-no-comment" onclick="guardarSinComentario(' + solicitud.id + ')">Sin Comentario</button>' +
                       '</div>';
@@ -509,8 +499,7 @@
             
             if (!cardElement) {
                  const materiales = solicitud.materiales_solicitados;
-                 const usuario = solicitud.usuarios; // Cambiado a 'usuarios'
-                 const cardHtml = createRequestCard(solicitud, materiales, usuario);
+                 const cardHtml = createRequestCard(solicitud, materiales);
 
                  const tempDiv = document.createElement('div');
                  tempDiv.innerHTML = cardHtml.trim();
@@ -536,23 +525,12 @@
 
     // Función principal para cargar los datos
     async function loadDashboardData() {
-        // CONSULTA CORREGIDA: Sin especificar nombre de FK
+        // PRIMERO: Obtener solicitudes con materiales
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
-            .select(`
-                *, 
-                materiales_solicitados (material, cantidad), 
-                usuarios (nombre, email, carrera)
-            `)
+            .select('*, materiales_solicitados (material, cantidad)')
             .order('fecha_solicitud', { ascending: false })
             .limit(20);
-
-        // DEBUG: Agregar console.log para ver la estructura de datos
-        console.log('Estructura de datos recibida:', solicitudesData);
-        if (solicitudesData && solicitudesData.length > 0) {
-            console.log('Ejemplo de primera solicitud:', solicitudesData[0]);
-            console.log('Usuario asociado:', solicitudesData[0].usuarios);
-        }
 
         if (error) {
             console.error('Error al cargar solicitudes:', error);
@@ -561,16 +539,31 @@
             return;
         }
 
-        // Solicitudes Pendientes (estado 'Pendiente')
-        const pendingRequests = solicitudesData
-            .filter(s => s.estado === 'Pendiente');
-            
-        // Solicitudes Entregadas que necesitan Comentario
-        const deliveredRequestsToReview = solicitudesData
-            .filter(s => s.estado === 'Entregado' && (!s.comentario_entrega || s.comentario_entrega === 'Sin Comentarios' || s.comentario_entrega === 'N/A'))
-            .slice(0, 10);
+        // SEGUNDO: Obtener usuarios correspondientes
+        const emails = [...new Set(solicitudesData.map(s => s.email).filter(Boolean))];
+        const { data: usuariosData } = await supabaseClient
+            .from('usuarios')
+            .select('email, nombre')
+            .in('email', emails);
 
-        // Renderizar/Actualizar tarjetas
+        console.log('🔍 Emails en solicitudes:', emails);
+        console.log('👤 Usuarios encontrados:', usuariosData);
+
+        // TERCERO: Combinar datos manualmente
+        const solicitudesConUsuarios = solicitudesData.map(solicitud => {
+            const usuario = usuariosData?.find(u => u.email === solicitud.email);
+            return {
+                ...solicitud,
+                nombre_usuario: usuario ? usuario.nombre : 'Desconocido'
+            };
+        });
+
+        console.log('✅ Datos combinados:', solicitudesConUsuarios);
+
+        // CUARTO: Filtrar y mostrar
+        const pendingRequests = solicitudesConUsuarios.filter(s => s.estado === 'Pendiente');
+        const deliveredRequestsToReview = solicitudesConUsuarios.filter(s => s.estado === 'Entregado' && (!s.comentario_entrega || s.comentario_entrega === 'Sin Comentarios' || s.comentario_entrega === 'N/A')).slice(0, 10);
+
         updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
         updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');
     }

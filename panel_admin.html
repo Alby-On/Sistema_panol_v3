@@ -437,62 +437,70 @@
     };
 
 
-    // Función para crear el HTML de una tarjeta (Card)
-    // CAMBIOS AQUÍ: Se eliminó el argumento 'usuario' y se cambió la forma de acceder al nombre.
-    const createRequestCard = (solicitud, materiales) => {
-        const isDelivered = solicitud.estado === 'Entregado';
-        const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
-        
-        const materialListItems = materiales.map(m => `
-            <li>${m.material} (Cantidad: ${m.cantidad})</li>
-        `).join('');
+// Función para crear el HTML de una tarjeta (Card)
+const createRequestCard = (solicitud, materiales) => {
+    const isDelivered = solicitud.estado === 'Entregado';
+    const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
+    
+    const materialListItems = materiales.map(m => `
+        <li>${m.material} (Cantidad: ${m.cantidad})</li>
+    `).join('');
 
-        // LÓGICA CORREGIDA PARA EL NOMBRE DEL USUARIO
-        const userName = solicitud.usuario && solicitud.usuario.length > 0
-            ? solicitud.usuario[0].nombre // Supabase a veces devuelve el join como un array de 1 elemento
-            : solicitud.usuario && solicitud.usuario.nombre
-                ? solicitud.usuario.nombre // El caso más común
-                : 'Desconocido (Error en JOIN)'; // Fallback
+    // *** LÓGICA CORREGIDA PARA EXTRAER EL NOMBRE DEL USUARIO ***
+    let userName = 'Desconocido (Error de JOIN)';
+    
+    // 1. Verificar si el objeto 'usuario' existe
+    if (solicitud.usuario) {
+        // 2. Si 'usuario' es un array (común en Supabase JOINs)
+        if (Array.isArray(solicitud.usuario) && solicitud.usuario.length > 0) {
+            userName = solicitud.usuario[0].nombre;
+        } 
+        // 3. Si 'usuario' es un objeto (relación uno a uno directa)
+        else if (typeof solicitud.usuario === 'object' && solicitud.usuario.nombre) {
+            userName = solicitud.usuario.nombre;
+        }
+    }
+    // *** FIN DE LA LÓGICA CORREGIDA ***
 
-        // CAMBIO 1: SE AGREGA data-solicitud-id PARA LA LÓGICA DE ACTUALIZACIÓN DINÁMICA
-        let html = `
-            <div class="request-card" data-solicitud-id="${solicitud.id}">
-                <div class="card-header">
-                    <strong>ID: S-${solicitud.id}</strong>
-                    <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
-                </div>
-                <div class="card-detail"><label>Usuario:</label> ${userName}</div>
-                <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
-                <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
-                
-                <div class="card-detail material-block">
-                    <label>Materiales:</label>
-                    <ul class="material-list">
-                        ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
-                    </ul>
-                </div>
-                
-                <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
-        `;
+    // CAMBIO 1: SE AGREGA data-solicitud-id PARA LA LÓGICA DE ACTUALIZACIÓN DINÁMICA
+    let html = `
+        <div class="request-card" data-solicitud-id="${solicitud.id}">
+            <div class="card-header">
+                <strong>ID: S-${solicitud.id}</strong>
+                <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
+            </div>
+            <div class="card-detail"><label>Usuario:</label> ${userName}</div>
+            <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
+            <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
+            
+            <div class="card-detail material-block">
+                <label>Materiales:</label>
+                <ul class="material-list">
+                    ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
+                </ul>
+            </div>
+            
+            <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado.toUpperCase()}</span></div>
+    `;
 
-        if (isDelivered) {
-            html += `
-                <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
-                
-                <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div> 
-                
-                ${!solicitud.comentario_entrega || solicitud.comentario_entrega === 'N/A' ? `
-                    <div class="actions">
-                        <button class="btn-comment" onclick="abrirFormulario('${solicitud.id}')">Agregar Comentario</button>
-                        <button class="btn-no-comment" onclick="guardarSinComentario('${solicitud.id}')">Sin Comentario</button>
-                    </div>
-                ` : `<p style="text-align: right; margin-top: 15px; font-style: italic; color: #5cb85c;">Comentario registrado.</p>`}
-            `;
-        }
-        
-        html += `</div>`;
-        return html;
-    };
+    if (isDelivered) {
+        html += `
+            <div class="card-detail"><label>Entrega:</label> **${formatDate(solicitud.fecha_entrega)}**</div>
+            
+            <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div> 
+            
+            ${!solicitud.comentario_entrega || solicitud.comentario_entrega === 'N/A' ? `
+                <div class="actions">
+                    <button class="btn-comment" onclick="abrirFormulario('${solicitud.id}')">Agregar Comentario</button>
+                    <button class="btn-no-comment" onclick="guardarSinComentario('${solicitud.id}')">Sin Comentario</button>
+                </div>
+            ` : `<p style="text-align: right; margin-top: 15px; font-style: italic; color: #5cb85c;">Comentario registrado.</p>`}
+        `;
+    }
+    
+    html += `</div>`;
+    return html;
+};
 
     // NUEVA FUNCIÓN: Actualiza el contenedor agregando/quitando tarjetas de forma eficiente.
     function updateContainerDynamically(container, newSolicitudes, emptyMessage) {

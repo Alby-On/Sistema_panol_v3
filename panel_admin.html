@@ -380,7 +380,7 @@
     // --- LÓGICA DE ACTUALIZACIÓN DE SUPABASE ---
 
     /**
-     * Actualiza la columna comentario_entrega en Supabase y recarga el dashboard.
+     * Actualiza el estado y el comentario_entrega en Supabase y recarga el dashboard.
      */
     async function actualizarComentario(solicitudId, comentario) {
         const msg = document.getElementById('modalMsg');
@@ -391,6 +391,8 @@
         const { error } = await supabaseClient
             .from('solicitudes')
             .update({ 
+                estado: 'Entregado', // ** Corregido: Actualiza el estado a Entregado **
+                fecha_entrega: new Date().toISOString(), // ** Corregido: Agrega la fecha de entrega **
                 comentario_entrega: comentario
             })
             .eq('id', solicitudId);
@@ -403,7 +405,7 @@
         }
 
         msg.style.color = '#4caf50';
-        msg.textContent = '✅ Comentario guardado con éxito.';
+        msg.textContent = '✅ Solicitud actualizada con éxito.';
         
         // Recargar el dashboard para reflejar el cambio inmediatamente
         await loadDashboardData(); 
@@ -445,12 +447,13 @@
         const materialListItems = materiales.map(m =>             '<li>' + m.material + ' (Cantidad: ' + m.cantidad + ')</li>'
         ).join('');
 
-        let html =             '<div class="request-card" data-solicitud-id="' + solicitud.id + '">' +
+        let html =              '<div class="request-card" data-solicitud-id="' + solicitud.id + '">' +
                 '<div class="card-header">' +
                     '<strong>ID: S-' + solicitud.id + '</strong>' +
                     '<span>Fecha Solicitud: ' + formatDate(solicitud.fecha_solicitud) + '</span>' +
                 '</div>' +
-                '<div class="card-detail"><label>Usuario:</label> ' + (usuario ? usuario.nombre : 'Desconocido') + '</div>' +
+                // CORRECCIÓN CLAVE AQUÍ: El nombre del alias es 'usuario' (singular)
+                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuario ? solicitud.usuario.nombre : 'Desconocido') + '</div>' + 
                 '<div class="card-detail"><label>Docente:</label> ' + solicitud.docente + '</div>' +
                 '<div class="card-detail"><label>Asignatura:</label> ' + solicitud.asignatura + '</div>' +
                 
@@ -464,18 +467,27 @@
                 '<div class="card-detail"><label>Estado:</label> <span class="' + statusClass + '">' + solicitud.estado.toUpperCase() + '</span></div>';
 
         if (isDelivered) {
-            html +=                 '<div class="card-detail"><label>Entrega:</label> **' + formatDate(solicitud.fecha_entrega) + '**</div>' +
-                
-                '<div class="card-detail"><label>Comentario:</label> ' + (solicitud.comentario_entrega || 'N/A') + '</div>';
-                
-            if (!solicitud.comentario_entrega || solicitud.comentario_entrega === 'N/A') {
-                html +=                     '<div class="actions">' +
-                        '<button class="btn-comment" onclick="abrirFormulario(\'' + solicitud.id + '\')">Agregar Comentario</button>' +
-                        '<button class="btn-no-comment" onclick="guardarSinComentario(\'' + solicitud.id + '\')">Sin Comentario</button>' +
-                    '</div>';
+            html +=              
+                      '<div class="card-detail"><label>Entrega:</label> **' + formatDate(solicitud.fecha_entrega) + '**</div>' +
+                      
+                      '<div class="card-detail"><label>Comentario:</label> ' + (solicitud.comentario_entrega || 'N/A') + '</div>';
+                      
+            // La lógica para mostrar los botones de comentario debe ir aquí
+            // Esto solo se mostrará si está "Entregado" y no tiene comentario.
+            if (!solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A' || solicitud.comentario_entrega === 'undefined') {
+                html +=              
+                      '<div class="actions">' +
+                        '<button class="btn-comment" onclick="abrirFormulario(' + solicitud.id + ')">Agregar Comentario</button>' + // Corregido: paso de ID sin comillas
+                        '<button class="btn-no-comment" onclick="guardarSinComentario(' + solicitud.id + ')">Sin Comentario</button>' + // Corregido: paso de ID sin comillas
+                      '</div>';
             } else {
                 html += '<p style="text-align: right; margin-top: 15px; font-style: italic; color: #5cb85c;">Comentario registrado.</p>';
             }
+        } else {
+            // Si está PENDIENTE, se añade el botón de marcar como entregado
+            html += '<div class="actions">' +
+                        '<button class="btn-comment" style="background-color: #4caf50;" onclick="actualizarComentario(' + solicitud.id + ', \'Sin Comentarios\')">Marcar como Entregado</button>' +
+                    '</div>';
         }
         
         html += '</div>';
@@ -484,6 +496,7 @@
 
     // Función: Actualiza el contenedor agregando/quitando tarjetas de forma eficiente.
     function updateContainerDynamically(container, newSolicitudes, emptyMessage) {
+        // ... (El resto de esta función es correcto y se mantiene igual) ...
         const newIds = newSolicitudes.map(s => String(s.id));
         
         // 1. ELIMINAR: Quitar tarjetas existentes que ya no están en la lista (e.g., cambió de estado)
@@ -503,8 +516,9 @@
             
             // Si la tarjeta NO existe, la crea y la agrega al inicio (más reciente)
             if (!cardElement) {
+                 // Corregido: La relación se trae como 'usuario' (singular)
                  const materiales = solicitud.materiales_solicitados;
-                 const usuario = solicitud.usuario;
+                 const usuario = solicitud.usuario; 
                  const cardHtml = createRequestCard(solicitud, materiales, usuario);
 
                  // Crear un elemento temporal para envolver el HTML y obtener el elemento DOM
@@ -541,7 +555,9 @@
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
             .select(
-                '*, usuarios:usuarios!solicitudes_email_fkey (nombre, email), materiales_solicitados (material, cantidad)'
+                // CORRECCIÓN CLAVE EN EL SELECT:
+                // Se usa el alias 'usuario' (singular) en lugar de 'usuarios' para la relación.
+                '*, materiales_solicitados (material, cantidad), usuario:usuarios!solicitudes_email_fkey (nombre)' 
             )
             .order('fecha_solicitud', { ascending: false })
             .limit(20);
@@ -555,13 +571,12 @@
 
         // Solicitudes Pendientes (estado 'Pendiente')
         const pendingRequests = solicitudesData
-            .filter(s => s.estado === 'Pendiente')
-            .slice(0, 10);
+            .filter(s => s.estado === 'Pendiente');
             
-        // Solicitudes Entregadas sin Comentario (estado 'Entregado' y sin comentario_entrega)
+        // Solicitudes Entregadas que necesitan Comentario (estado 'Entregado' y sin comentario_entrega)
         const deliveredRequestsToReview = solicitudesData
-            .filter(s => s.estado === 'Entregado' && (!s.comentario_entrega || s.comentario_entrega === 'N/A'))
-            .slice(0, 10);
+            .filter(s => s.estado === 'Entregado' && (!s.comentario_entrega || s.comentario_entrega === 'Sin Comentarios' || s.comentario_entrega === 'N/A'))
+            .slice(0, 10); // Limitar a las 10 más recientes a revisar
 
         // Renderizar/Actualizar tarjetas usando la función dinámica
         updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
@@ -575,7 +590,6 @@
     const intervalTime = 5000; 
     setInterval(loadDashboardData, intervalTime);
 </script>
-
 
 </body>
 </html>

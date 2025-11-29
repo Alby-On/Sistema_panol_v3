@@ -499,6 +499,7 @@
             
             if (!cardElement) {
                  const materiales = solicitud.materiales_solicitados;
+                 const usuarios = solicitud.usuarios;
                  const cardHtml = createRequestCard(solicitud, materiales);
 
                  const tempDiv = document.createElement('div');

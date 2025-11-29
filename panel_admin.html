@@ -551,8 +551,7 @@ async function loadDashboardData() {
             s.comentario_entrega === 'N/A'                // O si tiene el texto predeterminado 2
         )
     ).slice(0, 10); // Limita a los primeros 10 para la revisión
-    console.log('✅
- TEST:', solicitudesData.usuarios);
+    console.log('TEST:', solicitudesData.usuarios);
     updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
     updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');
 }

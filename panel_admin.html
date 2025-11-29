@@ -444,7 +444,7 @@
                     '<span>Fecha Solicitud: ' + formatDate(solicitud.fecha_solicitud) + '</span>' +
                 '</div>' +
                 // USAMOS nombre_usuario que viene de la combinación de datos
-                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.email || 'Desconocido') + '</div>' +
+                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuarios.nombre || 'Desconocido') + '</div>' +
                 '<div class="card-detail"><label>Docente:</label> ' + solicitud.docente + '</div>' +
                 '<div class="card-detail"><label>Asignatura:</label> ' + solicitud.asignatura + '</div>' +
                 
@@ -523,12 +523,11 @@
         }
     }
 
-    // Función principal para cargar los datos
     async function loadDashboardData() {
         // PRIMERO: Obtener solicitudes con materiales
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
-            .select('*, materiales_solicitados (material, cantidad)')
+            .select('*, materiales_solicitados (material, cantidad),usuarios (nombre, email)')
             .order('fecha_solicitud', { ascending: false })
             .limit(20);
 
@@ -539,30 +538,15 @@
             return;
         }
 
-        // SEGUNDO: Obtener usuarios correspondientes
-        const emails = [...new Set(solicitudesData.map(s => s.email).filter(Boolean))];
-        const { data: usuariosData } = await supabaseClient
-            .from('usuarios')
-            .select('email, nombre')
-            .in('email', emails);
-
-        console.log('🔍 Emails en solicitudes:', emails);
-        console.log('👤 Usuarios encontrados:', usuariosData);
-
-        // TERCERO: Combinar datos manualmente
-        const solicitudesConUsuarios = solicitudesData.map(solicitud => {
-            const usuario = usuariosData?.find(u => u.email === solicitud.email);
+        const solicitudes = solicitudesData.map(solicitud => {
             return {
                 ...solicitud,
-                nombre_usuario: usuario ? usuario.nombre : 'Desconocido'
             };
         });
 
-        console.log('✅ Datos combinados:', solicitudesConUsuarios);
-
         // CUARTO: Filtrar y mostrar
-        const pendingRequests = solicitudesConUsuarios.filter(s => s.estado === 'Pendiente');
-        const deliveredRequestsToReview = solicitudesConUsuarios.filter(s => s.estado === 'Entregado' && (!s.comentario_entrega || s.comentario_entrega === 'Sin Comentarios' || s.comentario_entrega === 'N/A')).slice(0, 10);
+        const pendingRequests = solicitudes.filter(s => s.estado === 'Pendiente');
+        const deliveredRequestsToReview = solicitudes.filter(s => s.estado === 'Entregado' && (!s.comentario_entrega  s.comentario_entrega === 'Sin Comentarios'  s.comentario_entrega === 'N/A')).slice(0, 10);
 
         updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
         updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');

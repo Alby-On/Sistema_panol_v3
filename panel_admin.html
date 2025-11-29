@@ -444,7 +444,7 @@
                     '<span>Fecha Solicitud: ' + formatDate(solicitud.fecha_solicitud) + '</span>' +
                 '</div>' +
                 // USAMOS nombre_usuario que viene de la combinación de datos
-                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuarios.nombre || 'Desconocido') + '</div>' +
+                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuarios?.nombre ?? 'Usuario Desconocido / ID Inválido') + '</div>' +
                 '<div class="card-detail"><label>Docente:</label> ' + solicitud.docente + '</div>' +
                 '<div class="card-detail"><label>Asignatura:</label> ' + solicitud.asignatura + '</div>' +
                 

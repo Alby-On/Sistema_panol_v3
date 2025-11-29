@@ -523,7 +523,7 @@
         }
     }
 
-    async function loadDashboardData() {
+async function loadDashboardData() {
         // PRIMERO: Obtener solicitudes con materiales
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
@@ -538,15 +538,9 @@
             return;
         }
 
-        const solicitudes = solicitudesData.map(solicitud => {
-            return {
-                ...solicitud,
-            };
-        });
-
         // CUARTO: Filtrar y mostrar
-        const pendingRequests = solicitudes.filter(s => s.estado === 'Pendiente');
-        const deliveredRequestsToReview = solicitudes.filter(s => s.estado === 'Entregado' && (!s.comentario_entrega  s.comentario_entrega === 'Sin Comentarios'  s.comentario_entrega === 'N/A')).slice(0, 10);
+        const pendingRequests = solicitudesData.filter(s => s.estado === 'Pendiente');
+        const deliveredRequestsToReview = solicitudesData.filter(s => s.estado === 'Entregado' && (!s.comentario_entrega  s.comentario_entrega === 'Sin Comentarios'  s.comentario_entrega === 'N/A')).slice(0, 10);
 
         updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
         updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');

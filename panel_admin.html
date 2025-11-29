@@ -432,7 +432,7 @@
     };
 
     // Función para crear el HTML de una tarjeta (Card)
-    const createRequestCard = (solicitud, materiales) => {
+    const createRequestCard = (solicitud, materiales, usuarios) => {
         const isDelivered = solicitud.estado === 'Entregado';
         const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
         
@@ -444,7 +444,7 @@
                     '<span>Fecha Solicitud: ' + formatDate(solicitud.fecha_solicitud) + '</span>' +
                 '</div>' +
                 // USAMOS nombre_usuario que viene de la combinación de datos
-                '<div class="card-detail"><label>Usuario:</label> ' + (solicitud.usuarios?.nombre ?? 'Usuario Desconocido / ID Inválido') + '</div>' +
+                '<div class="card-detail"><label>Usuario:</label> ' + (usuarios.nombre || 'Desconocido') + '</div>' +
                 '<div class="card-detail"><label>Docente:</label> ' + solicitud.docente + '</div>' +
                 '<div class="card-detail"><label>Asignatura:</label> ' + solicitud.asignatura + '</div>' +
                 
@@ -500,7 +500,7 @@
             if (!cardElement) {
                  const materiales = solicitud.materiales_solicitados;
                  const usuarios = solicitud.usuarios;
-                 const cardHtml = createRequestCard(solicitud, materiales);
+                 const cardHtml = createRequestCard(solicitud, materiales, usuarios);
 
                  const tempDiv = document.createElement('div');
                  tempDiv.innerHTML = cardHtml.trim();

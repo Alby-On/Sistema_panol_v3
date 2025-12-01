@@ -149,8 +149,8 @@
     <button onclick="location.href='solicitar.html'">📝 Solicitar Materiales</button>
     <button onclick="location.href='entregar.html'">📦 Entregar Materiales</button>
     <button onclick="location.href='historial.html'">📜 Historial de Entregas</button>
-
-    <button id="adminButton" style="display:none;" onclick="location.href='panel_admin.html'">🛠️ Panel Admin</button>
+    <button id="admin_panel_Button" style="display:none;" onclick="location.href='panel_admin.html'">🛠️ Panel Admin</button>
+    <button id="admin_estadisticas_Button" style="display:none;" onclick="location.href='panel_estadisticas.html'">📈 Panel de estadisticas</button>
     
     <button class="logout" onclick="logout()">Cerrar Sesión</button>
 </div>
@@ -182,9 +182,14 @@ window.logout = logout;
 
 // Mostrar botón Admin solo si el usuario es Admin
 if (user.rol === "admin") {
-    document.getElementById("adminButton").style.display = "block";
+    document.getElementById("admin_panel_Button").style.display = "block";
 }
-    
+
+// Mostrar botón Admin solo si el usuario es Admin
+if (user.rol === "admin") {
+    document.getElementById("admin_estadisticas_Button").style.display = "block";
+}
+
 </script>
 
 </body>

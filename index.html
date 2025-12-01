@@ -289,7 +289,7 @@ function validarRutCompleto(rutCompleto){
 }
 
 // ----------------------------------------
-// FUNCIÓN REGISTRAR (Lógica sin tocar)
+// FUNCIÓN REGISTRAR (CON MENSAJES PREESTABLECIDOS)
 // ----------------------------------------
 async function registrar() {
     const nombre = regNombre.value.trim();
@@ -300,12 +300,30 @@ async function registrar() {
     const pass = regPass.value.trim();
 
     const mensaje = document.getElementById("mensaje");
-    mensaje.style.color = "red";
-    rutError.textContent = ""; // Limpiar error de RUT anterior
+    // Asumo que 'rutError' está definido
+    const rutError = document.getElementById("rutError"); 
+    
+    // Función de utilidad para mostrar errores
+    const showError = (text) => {
+        mensaje.textContent = `❌ ${text}`;
+        mensaje.style.color = "red";
+        mensaje.style.backgroundColor = "#ffdddd";
+    };
+    
+    // Función de utilidad para mostrar éxito
+    const showSuccess = (text) => {
+        mensaje.textContent = `✅ ${text}`;
+        mensaje.style.color = "green";
+        mensaje.style.backgroundColor = "#ddffdd";
+    };
+
+    // Limpiar mensajes anteriores
+    mensaje.textContent = ""; 
+    rutError.textContent = "";
+    mensaje.style.backgroundColor = "transparent";
 
     if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
-        mensaje.textContent = "⚠️ Complete todos los campos.";
-        mensaje.style.backgroundColor = "#ffdddd";
+        showError("Complete todos los campos.");
         return;
     }
 
@@ -316,8 +334,7 @@ async function registrar() {
     }
 
     if (!/^\+569\d{8}$/.test(telefono)) {
-        mensaje.textContent = "⚠️ Teléfono inválido. Use +569XXXXXXXX";
-        mensaje.style.backgroundColor = "#ffdddd";
+        showError("Teléfono inválido. Use +569XXXXXXXX");
         return;
     }
 
@@ -328,8 +345,12 @@ async function registrar() {
     });
 
     if (e1) {
-        mensaje.textContent = "❌ " + e1.message;
-        mensaje.style.backgroundColor = "#ffdddd";
+        // Mensaje preestablecido para CORREO YA REGISTRADO
+        if (e1.message.includes("already registered")) {
+            showError("El correo electrónico ya está registrado. Intente iniciar sesión.");
+        } else {
+            showError(`Error al registrar usuario: ${e1.message}`);
+        }
         return;
     }
 
@@ -339,29 +360,46 @@ async function registrar() {
     ]);
 
     if (e2) {
-        mensaje.textContent = "❌ Error al guardar perfil: " + e2.message;
-        mensaje.style.backgroundColor = "#ffdddd";
+        // Mensaje preestablecido para RUT/EMAIL DUPLICADO EN LA TABLA DE PERFIL (Código de unicidad 23505)
+        if (e2.code === '23505') { 
+            showError("El RUT o el correo electrónico ya están asociados a otro perfil.");
+        } else {
+            showError(`Error al guardar perfil: ${e2.message}`);
+        }
+        // Nota: Si esto falla después de Auth, el usuario queda en Auth pero sin perfil.
         return;
     }
 
-    mensaje.style.color = "green";
-    mensaje.style.backgroundColor = "#ddffdd";
-    mensaje.textContent = "✅ Registro exitoso. Revisa tu correo para confirmar.";
+    showSuccess("Registro exitoso. Revisa tu correo para confirmar.");
 }
 
 // ----------------------------------------
-// FUNCIÓN LOGIN (Lógica sin tocar)
+// FUNCIÓN LOGIN (CON MENSAJES PREESTABLECIDOS)
 // ----------------------------------------
 async function login() {
     const email = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
-    msg.style.backgroundColor = "transparent"; // Limpiar fondo
-
-    if (!email || !pass) {
-        msg.textContent = "⚠️ Complete todos los campos.";
+    
+    // Función de utilidad para mostrar errores
+    const showError = (text) => {
+        msg.textContent = `❌ ${text}`;
         msg.style.color = "red";
         msg.style.backgroundColor = "#ffdddd";
+    };
+    
+    // Función de utilidad para mostrar éxito
+    const showSuccess = (text) => {
+        msg.textContent = `✅ ${text}`;
+        msg.style.color = "green";
+        msg.style.backgroundColor = "#ddffdd";
+    };
+
+    msg.style.backgroundColor = "transparent"; // Limpiar fondo
+    msg.textContent = "";
+
+    if (!email || !pass) {
+        showError("Complete todos los campos.");
         return;
     }
 
@@ -371,9 +409,12 @@ async function login() {
     });
 
     if (error) {
-        msg.textContent = "❌ Correo o contraseña incorrectos.";
-        msg.style.color = "red";
-        msg.style.backgroundColor = "#ffdddd";
+        // Mensaje preestablecido para FALLO EN AUTENTICACIÓN
+        if (error.message.includes("Invalid login credentials") || error.message.includes("Email not confirmed")) {
+            showError("Correo o contraseña incorrectos, o el correo aún no ha sido confirmado.");
+        } else {
+            showError(`Error al iniciar sesión: ${error.message}`);
+        }
         return;
     }
 
@@ -383,12 +424,18 @@ async function login() {
         .select("*")
         .eq("email", email)
         .single();
+        
+    // Mensaje preestablecido si el usuario se autenticó pero no tiene perfil
+    if (!perfil) {
+        showError("Usuario autenticado, pero el perfil no fue encontrado. Contacte a soporte.");
+        // Opcional: Cerrar sesión si solo se autenticó pero no hay perfil
+        await supabaseClient.auth.signOut();
+        return;
+    }
 
     localStorage.setItem("currentUser", JSON.stringify(perfil));
 
-    msg.textContent = "✅ Bienvenido, " + perfil.nombre;
-    msg.style.color = "green";
-    msg.style.backgroundColor = "#ddffdd";
+    showSuccess(`Bienvenido, ${perfil.nombre}`);
 
     setTimeout(() => {
         window.location.href = "menu.html";
@@ -397,7 +444,6 @@ async function login() {
 
 showWelcome();
 </script>
-
 </body>
 </html>
 

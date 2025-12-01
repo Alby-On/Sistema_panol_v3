@@ -343,29 +343,29 @@
     </div>
 </div>
 <script>
-    // CONFIGURACIÓN DE SUPABASE
+    // CONFIGURACIÓN DE SUPABASE (SIN CAMBIOS)
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    // Crear cliente de Supabase
+    // Crear cliente de Supabase (SIN CAMBIOS)
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Contenedores DOM
+    // Contenedores DOM (SIN CAMBIOS)
     const pendingContainer = document.getElementById('pending-container');
     const deliveredContainer = document.getElementById('delivered-container');
 
-    // Variable global para almacenar el ID de la solicitud actual y el ID del intervalo
+    // Variable global para almacenar el ID de la solicitud actual y el ID del intervalo (SIN CAMBIOS)
     let currentSolicitudId = null;
     let intervalId = null;
 
-    // Función auxiliar para formatear fechas
+    // Función auxiliar para formatear fechas (SIN CAMBIOS)
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('es-ES');
     };
 
-    // --- LÓGICA DE INTERFAZ DEL MODAL ---
+    // --- LÓGICA DE INTERFAZ DEL MODAL (SIN CAMBIOS) ---
 
     window.abrirFormulario = (solicitudId) => {
         currentSolicitudId = solicitudId;
@@ -381,7 +381,7 @@
 
     // --- LÓGICA DE ACTUALIZACIÓN DE SUPABASE ---
 
-    // Función para iniciar el refresco automático
+    // Función para iniciar el refresco automático (SIN CAMBIOS)
     function startAutoRefresh() {
         const intervalTime = 5000;
         if (intervalId) {
@@ -390,7 +390,10 @@
         intervalId = setInterval(loadDashboardData, intervalTime);
     }
     
-    // La función principal de actualización
+    /**
+     * Función principal para marcar como Entregado, incluyendo la actualización del Comentario.
+     * Se usa para el modal (comentario manual) y el botón "Sin Comentarios".
+     */
     async function actualizarComentario(solicitudId, comentario) {
         // Detener el refresco mientras actualizamos
         clearInterval(intervalId);
@@ -409,7 +412,7 @@
             .update({
                 estado: 'Entregado',
                 fecha_entrega: new Date().toISOString(),
-                comentario_entrega: comentario
+                comentario_entrega: comentario // <--- ACTIVA LA ACTUALIZACIÓN DE COMENTARIO
             })
             .eq('id', solicitudId);
 
@@ -431,9 +434,6 @@
             msgElement.style.color = '#4caf50';
             msgElement.textContent = '✅ Solicitud actualizada con éxito.';
             setTimeout(cerrarFormulario, 1000); // Cerrar modal después de un segundo
-        } else {
-            // Caso de botón directo (Sin Comentarios o Marcar como Entregado)
-            // Se usa alert() para dar feedback en acciones directas
         }
 
         // Recargar datos y reanudar el refresco
@@ -443,7 +443,40 @@
         return true;
     }
 
-    // Función al presionar "Enviar y Guardar" dentro del modal
+
+    /**
+     * 🌟 NUEVA FUNCIÓN: Marcar Entregado de forma simple. Solo actualiza estado y fecha.
+     * Se usa para el botón "Marcar como Entregado" en las tarjetas pendientes.
+     */
+    window.marcarEntregaSimple = async (solicitudId) => {
+        // Detener el refresco mientras actualizamos
+        clearInterval(intervalId);
+        document.body.style.cursor = 'wait';
+
+        const { error } = await supabaseClient
+            .from('solicitudes')
+            .update({
+                estado: 'Entregado', // SOLO ESTADO
+                fecha_entrega: new Date().toISOString() // Y FECHA
+            })
+            .eq('id', solicitudId);
+
+        if (error) {
+            console.error('Error al marcar como entregado:', error);
+            alert('❌ Error al marcar como entregado: ' + error.message);
+        } else {
+            console.log(`✅ Solicitud S-${solicitudId} marcada como Entregada.`);
+        }
+
+        // Recargar datos y reanudar el refresco
+        await loadDashboardData();
+        document.body.style.cursor = 'default';
+        startAutoRefresh();
+        return true;
+    };
+
+
+    // Función al presionar "Enviar y Guardar" dentro del modal (SIN CAMBIOS)
     document.getElementById('btnEnviarComentario').onclick = () => {
         const comentario = document.getElementById('modalComentario').value.trim();
         if (!currentSolicitudId) {
@@ -459,19 +492,15 @@
         actualizarComentario(currentSolicitudId, comentario);
     };
 
-    // Función al presionar "Sin Comentario" en la tarjeta (debe ser global o llamada desde window)
+    // Función al presionar "Sin Comentario" en la tarjeta (mantiene la confirmación)
     window.guardarSinComentario = async (solicitudId) => {
         if(confirm('¿Desea registrar "Sin Comentarios" para la Solicitud S-' + solicitudId + '?')) {
-            await actualizarComentario(solicitudId, "Sin Comentarios");
+            // Llama a la función completa de actualización de comentarios
+            await actualizarComentario(solicitudId, "Sin Comentarios"); 
         }
     };
     
-    // Función para marcar directamente como Entregado (Para botón de Pendientes)
-    window.markAsDelivered = async (solicitudId) => {
-        if(confirm('¿Marcar Solicitud S-' + solicitudId + ' como Entregada (Sin Comentarios)?')) {
-            await actualizarComentario(solicitudId, "Sin Comentarios");
-        }
-    };
+    // ❌ ELIMINADA: La función markAsDelivered anterior ha sido reemplazada por marcarEntregaSimple
 
 
     // Función para crear el HTML de una tarjeta (Card)
@@ -479,7 +508,7 @@
         const isDelivered = solicitud.estado === 'Entregado';
         const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
         
-        // **CORRECCIÓN/VERIFICACIÓN**: Extracción del nombre del usuario
+        // **CORRECCIÓN/VERIFICACIÓN**: Extracción del nombre del usuario (SIN CAMBIOS)
         const materiales = solicitud.materiales_solicitados || [];
         const usuarioNombre = solicitud.usuarios?.nombre || 'Desconocido';
 
@@ -507,7 +536,7 @@
             html += `<div class="card-detail"><label>Entrega:</label> ${formatDate(solicitud.fecha_entrega)}</div>
                     <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div>`;
 
-            // Lógica de botones para tarjetas Entregadas
+            // Lógica de botones para tarjetas Entregadas (Mantiene 2 botones/opciones de comentario)
             const needsCommentAction = !solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A';
 
             if (needsCommentAction) {
@@ -520,17 +549,17 @@
             }
 
         } else {
-            // Lógica de botones para tarjetas Pendientes
+            // Lógica de botones para tarjetas Pendientes (SOLO 1 botón)
             html += `<div class="actions">
-                        <button class="btn-comment" style="background-color: #4caf50;" onclick="markAsDelivered(${solicitud.id})">Marcar como Entregado</button>
-                    </div>`;
+                        <button class="btn-comment" style="background-color: #4caf50;" onclick="marcarEntregaSimple(${solicitud.id})">Marcar como Entregado</button>
+                    </div>`; // 🎯 CAMBIO CLAVE: Llama a la nueva función simple
         }
 
         html += '</div>';
         return html;
     };
 
-    // Función: Actualiza el contenedor agregando/quitando/reemplazando tarjetas de forma eficiente.
+    // Función: Actualiza el contenedor agregando/quitando/reemplazando tarjetas de forma eficiente. (SIN CAMBIOS)
     function updateContainerDynamically(container, newSolicitudes, emptyMessage) {
         const newIds = newSolicitudes.map(s => String(s.id));
 
@@ -578,7 +607,7 @@
     }
 
     async function loadDashboardData() {
-        // La consulta clave: pide todos los datos de las solicitudes, más los materiales y el nombre del usuario relacionado
+        // La consulta clave: pide todos los datos de las solicitudes, más los materiales y el nombre del usuario relacionado (SIN CAMBIOS)
         const { data: solicitudesData, error } = await supabaseClient
             .from('solicitudes')
             .select(`
@@ -613,10 +642,9 @@
         );
     }
 
-    // 🚀 Ejecutar carga inicial y comenzar el refresco
+    // 🚀 Ejecutar carga inicial y comenzar el refresco (SIN CAMBIOS)
     loadDashboardData();
     startAutoRefresh();
 </script>
-
 </body>
 </html>

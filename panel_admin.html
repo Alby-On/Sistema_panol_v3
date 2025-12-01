@@ -525,40 +525,43 @@
     }
 
 async function loadDashboardData() {
-    // PRIMERO: Obtener solicitudes con materiales
+    // Obtener solicitudes, materiales y usuario
     const { data: solicitudesData, error } = await supabaseClient
         .from('solicitudes')
-        .select('*, materiales_solicitados (material, cantidad),usuarios (nombre, email)')
-        .order('fecha_solicitud', { ascending: false })
-        .limit(20);
+        .select(`
+            *,
+            materiales_solicitados (material, cantidad),
+            usuarios (nombre, email)
+        `)
+        .order('fecha_solicitud', { ascending: false });
 
     if (error) {
-        console.error('Error al cargar solicitudes:', error);
-        pendingContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
-        deliveredContainer.innerHTML = '<p>Error al cargar datos. Verifique la conexión y las RLS de Supabase.</p>';
+        console.error("Error al cargar datos:", error);
+        pendingContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
+        deliveredContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
         return;
     }
 
-    // CUARTO: Filtrar y mostrar
+    // Separar según estado
+    const pendientes = solicitudesData.filter(s => s.estado !== "Entregado");
+    const entregadas = solicitudesData.filter(s => s.estado === "Entregado");
 
-    // 1. Solicitudes Pendientes (sin cambios)
-    const pendingRequests = solicitudesData.filter(s => s.estado === 'Pendiente');
+    // Actualizar dinámicamente el DOM
+    updateContainerDynamically(
+        pendingContainer,
+        pendientes,
+        "No hay solicitudes pendientes."
+    );
 
-    // 2. Solicitudes Entregadas Pendientes de Revisión de Comentario (CORREGIDO)
-    const deliveredRequestsToReview = solicitudesData.filter(s => 
-        s.estado === 'Entregado' && (
-            !s.comentario_entrega ||                     // Si es null, undefined, o string vacío
-            s.comentario_entrega === 'Sin Comentarios' || // O si tiene el texto predeterminado 1
-            s.comentario_entrega === 'N/A'                // O si tiene el texto predeterminado 2
-        )
-    ).slice(0, 10); // Limita a los primeros 10 para la revisión
-    console.log('TEST:', solicitudesData.usuarios);
-    updateContainerDynamically(pendingContainer, pendingRequests, 'No hay solicitudes pendientes.');
-    updateContainerDynamically(deliveredContainer, deliveredRequestsToReview, 'No hay solicitudes entregadas pendientes de revisión de comentario.');
+    updateContainerDynamically(
+        deliveredContainer,
+        entregadas,
+        "No hay solicitudes entregadas."
+    );
 }
 
-    // Cargar los datos al iniciar la página
-    loadDashboardData();
+// 🚀 Ejecutar carga inicial
+loadDashboardData();
 
     // Establecer el refresco automático cada 5 segundos
     const intervalTime = 5000; 

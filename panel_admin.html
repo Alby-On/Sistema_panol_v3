@@ -445,8 +445,7 @@
 
 
     /**
-     * 🌟 NUEVA FUNCIÓN: Marcar Entregado de forma simple. Solo actualiza estado y fecha.
-     * Se usa para el botón "Marcar como Entregado" en las tarjetas pendientes.
+     * FUNCIÓN SIMPLE: Marcar Entregado de forma simple.
      */
     window.marcarEntregaSimple = async (solicitudId) => {
         // Detener el refresco mientras actualizamos
@@ -492,23 +491,21 @@
         actualizarComentario(currentSolicitudId, comentario);
     };
 
-    // Función al presionar "Sin Comentario" en la tarjeta (mantiene la confirmación)
+    // Función al presionar "Sin Comentario" en la tarjeta (guarda el marcador "Sin Comentarios")
     window.guardarSinComentario = async (solicitudId) => {
         if(confirm('¿Desea registrar "Sin Comentarios" para la Solicitud S-' + solicitudId + '?')) {
             // Llama a la función completa de actualización de comentarios
+            // Una vez que se guarda "Sin Comentarios", la solicitud desaparecerá del panel.
             await actualizarComentario(solicitudId, "Sin Comentarios"); 
         }
     };
     
-    // ❌ ELIMINADA: La función markAsDelivered anterior ha sido reemplazada por marcarEntregaSimple
-
 
     // Función para crear el HTML de una tarjeta (Card)
     const createRequestCard = (solicitud) => {
         const isDelivered = solicitud.estado === 'Entregado';
         const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
         
-        // **CORRECCIÓN/VERIFICACIÓN**: Extracción del nombre del usuario (SIN CAMBIOS)
         const materiales = solicitud.materiales_solicitados || [];
         const usuarioNombre = solicitud.usuarios?.nombre || 'Desconocido';
 
@@ -536,23 +533,27 @@
             html += `<div class="card-detail"><label>Entrega:</label> ${formatDate(solicitud.fecha_entrega)}</div>
                     <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div>`;
 
-            // Lógica de botones para tarjetas Entregadas (Mantiene 2 botones/opciones de comentario)
+            // Lógica de botones para tarjetas Entregadas
+            // Si la tarjeta está siendo mostrada aquí, es porque ya pasó el filtro de loadDashboardData,
+            // lo que implica que el comentario está pendiente (null, "", o "N/A").
             const needsCommentAction = !solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A';
-
+            
+            // Puesto que el filtro en loadDashboardData elimina los que dicen "Sin Comentarios", 
+            // este bloque solo se ejecutará para tarjetas que requieren acción.
             if (needsCommentAction) {
                 html += `<div class="actions">
                             <button class="btn-comment" onclick="abrirFormulario(${solicitud.id})">Agregar/Editar Comentario</button>
-                            ${solicitud.comentario_entrega !== 'Sin Comentarios' ? `<button class="btn-no-comment" onclick="guardarSinComentario(${solicitud.id})">Sin Comentario</button>` : ''}
+                            <button class="btn-no-comment" onclick="guardarSinComentario(${solicitud.id})">Sin Comentario</button>
                         </div>`;
-            } else {
-                 html += '<p style="text-align: right; margin-top: 15px; font-style: italic; color: #5cb85c;">Comentario registrado.</p>';
-            }
+            } 
+            // La cláusula 'else' anterior (que mostraba "Comentario registrado") ya no es necesaria 
+            // porque si tiene un comentario, ya fue filtrada y no llega hasta aquí.
 
         } else {
             // Lógica de botones para tarjetas Pendientes (SOLO 1 botón)
             html += `<div class="actions">
                         <button class="btn-comment" style="background-color: #4caf50;" onclick="marcarEntregaSimple(${solicitud.id})">Marcar como Entregado</button>
-                    </div>`; // 🎯 CAMBIO CLAVE: Llama a la nueva función simple
+                    </div>`; 
         }
 
         html += '</div>';
@@ -613,7 +614,7 @@
             .select(`
                 *,
                 materiales_solicitados (material, cantidad),
-                usuarios (nombre, email) // <-- ¡Incluye la relación de la tabla usuarios!
+                usuarios (nombre, email) 
             `)
             .order('fecha_solicitud', { ascending: false });
 
@@ -624,9 +625,22 @@
             return;
         }
 
-        // Separar según estado
+        // 1. Separar las pendientes (las que no están 'Entregado')
         const pendientes = solicitudesData.filter(s => s.estado !== "Entregado");
-        const entregadas = solicitudesData.filter(s => s.estado === "Entregado");
+
+        // 2. Separar las entregadas Y que AÚN requieren acción de comentario.
+        // 🎯 MODIFICACIÓN CLAVE: Solo muestra si el campo de comentario está vacío o es nulo.
+        const entregadas = solicitudesData.filter(s => {
+            const isDelivered = s.estado === "Entregado";
+            
+            // Solo se muestra si el comentario está null, vacío (""), o "N/A".
+            const isCommentMissing = !s.comentario_entrega || 
+                                     s.comentario_entrega.trim() === '' || 
+                                     s.comentario_entrega === 'N/A';
+            
+            // Si el comentario es "Sin Comentarios", se considera completado y se excluye (ya que !s.comentario_entrega es false)
+            return isDelivered && isCommentMissing; 
+        });
 
         // Actualizar dinámicamente el DOM
         updateContainerDynamically(
@@ -638,7 +652,7 @@
         updateContainerDynamically(
             deliveredContainer,
             entregadas,
-            "No hay solicitudes entregadas."
+            "No hay solicitudes entregadas pendientes de comentario/revisión."
         );
     }
 

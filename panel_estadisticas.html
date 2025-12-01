@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Reportes de Uso del Pañol</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Carga la librería Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Variables de Color */
+        :root {
+            --color-primary: #004d99; /* Azul institucional */
+            --color-secondary: #28a745; /* Verde */
+            --color-danger: #dc3545; /* Rojo para acentuar */
+            --color-background: #f4f6f9; /* Fondo muy claro */
+            --color-card: #ffffff;
+            --color-text: #333333;
+            --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra más suave */
+        }
+
+        /* Estilos Generales y Contenedor */
+        body { 
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--color-background); 
+            color: var(--color-text); 
+            margin: 0; 
+            padding: 0;
+        }
+        
+        /* Título Principal */
+        h2 { 
+            text-align: center; 
+            color: var(--color-primary); 
+            margin: 20px 0 10px; 
+            font-size: 2.5em; 
+            font-weight: 800; 
+        }
+
+        /* CONTENEDOR DEL ENCABEZADO (BOTÓN Y ALINEACIÓN) */
+        .dashboard-header {
+            max-width: 1200px; 
+            margin: 0 auto;
+            padding: 0 20px 25px 20px; 
+            display: flex;
+            justify-content: flex-start; 
+        }
+        
+        /* Estilos del botón Imprimir */
+        .print-button {
+            background-color: var(--color-secondary); 
+            color: white;
+            border: none;
+            padding: 12px 25px; 
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05em; 
+            font-weight: 700;
+            box-shadow: 0 3px 8px rgba(40, 167, 69, 0.4); 
+            transition: all 0.2s ease;
+        }
+
+        .print-button:hover {
+            background-color: #1e7e34; 
+            transform: translateY(-1px); 
+            box-shadow: 0 5px 10px rgba(40, 167, 69, 0.5);
+        }
+
+        /* Grid del Dashboard: Layout responsivo */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 25px; 
+            padding: 0 20px 20px 20px;
+            max-width: 1200px; 
+            margin: 0 auto;
+        }
+        
+        /* Contenedor de cada Card/Gráfico */
+        .chart-container { 
+            background: var(--color-card); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: var(--shadow-subtle); 
+            height: 400px; 
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease; 
+        }
+
+        .chart-container:hover {
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        /* Ajustes de Canvas y Altura */
+        .chart-container canvas {
+            flex-grow: 1; 
+            max-height: 100%;
+            min-height: 0; 
+        }
+
+        /* Títulos de las Tarjetas */
+        h3 { 
+            color: var(--color-primary); 
+            font-size: 1.3em; 
+            border-bottom: 2px solid #e0e0e0; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+            font-weight: 700; 
+        }
+
+        /* ESTILOS PARA LA CARD DE COMENTARIOS DINÁMICA */
+        .comments-content {
+            flex-grow: 1;
+            overflow-y: auto; 
+            padding-right: 10px; 
+        }
+        .comments-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .comments-list li {
+            padding: 12px 0; 
+            border-bottom: 1px dashed #e0e0e0; 
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .comments-list li strong {
+            color: var(--color-primary); 
+            font-weight: 600;
+            display: block; 
+            margin-bottom: 4px;
+        }
+        .comments-list li .comment-date {
+            font-size: 0.8em;
+            color: #888;
+            float: right;
+        }
+        .comments-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Estilos de la zona de ingreso de comentario */
+        .comment-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        #newCommentText {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            min-height: 60px;
+            resize: vertical;
+            font-size: 0.9em;
+            box-sizing: border-box; /* Incluye padding en el ancho */
+        }
+        .submit-comment-button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .submit-comment-button:hover {
+            background-color: #003366;
+        }
+
+
+        /* Ajustes para móviles */
+        @media (max-width: 768px) {
+            h2 { font-size: 2em; margin-top: 15px; }
+            .dashboard-grid { padding: 10px; gap: 15px; }
+            .chart-container { height: 350px; }
+            .dashboard-header { justify-content: center; padding-bottom: 15px; } 
+        }
+
+        /* Oculta el botón de impresión al imprimir el documento */
+        @media print {
+            .dashboard-header {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2>📈 Panel de Reportes de Uso del Pañol</h2>
+
+<!-- CONTENEDOR DE ENCABEZADO Y BOTÓN -->
+<div class="dashboard-header">
+    <button class="print-button" onclick="window.print()">
+        🖨️ Imprimir reporte
+    </button>
+</div>
+<!-- FIN DEL CONTENEDOR -->
+
+<div class="dashboard-grid">
+    
+    <!-- CARD 1: Top Docentes (Barra Horizontal) -->
+    <div class="chart-container">
+        <h3>🥇 Top 10 Docentes Solicitantes</h3>
+        <canvas id="docentesChart"></canvas>
+    </div>
+
+    <!-- CARD 2: Proporción por Carrera (Doughnut) -->
+    <div class="chart-container">
+        <h3>🏛️ Proporción de Solicitudes por Carrera</h3>
+        <canvas id="carrerasChart"></canvas>
+    </div>
+
+    <!-- CARD 3: Materiales Más Demandados (Barra Horizontal para etiquetas largas) -->
+    <div class="chart-container">
+        <h3>🔩 Materiales Más Demandados (Unidades Totales)</h3>
+        <canvas id="materialesChart"></canvas>
+    </div>
+
+    <!-- CARD 4: Consumo por Asignatura (Barra Horizontal para etiquetas largas) -->
+    <div class="chart-container">
+        <h3>📚 Consumo por Asignatura</h3>
+        <canvas id="asignaturasChart"></canvas>
+    </div>
+
+    <!-- CARD 5: Comentarios a la entrega (Lista DINÁMICA y Formulario) -->
+    <div class="chart-container">
+        <h3>💬 Registro de Novedades del Pañol</h3>
+        <div id="commentsList" class="comments-content">
+            <!-- La lista se renderizará aquí dinámicamente desde Firestore -->
+            <p id="loadingMessage" style="text-align: center; color: #888;">Cargando registro de novedades...</p>
+        </div>
+        <div class="comment-input-area">
+            <textarea id="newCommentText" placeholder="Ej: Faltó un componente en el kit #3. Se notificó al docente."></textarea>
+            <button id="submitCommentButton" class="submit-comment-button" disabled>Guardar Novedad</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Importaciones de Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let db;
+    let auth;
+    let userId = null;
+    let isAuthReady = false;
+
+    // Colores para los gráficos (se mantienen)
+    const primaryColor = 'rgb(0, 77, 153)';
+    const secondaryColor = 'rgb(40, 167, 69)';
+    const dangerColor = 'rgb(220, 53, 69)'; 
+    
+    // Ruta de la colección para comentarios públicos del pañol
+    const COMMENTS_COLLECTION_PATH = `/artifacts/${appId}/public/data/delivery_incidents`; // Renombrada para mayor claridad
+
+    async function setupFirebase() {
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            // 1. Manejar autenticación
+            await setPersistence(auth, browserSessionPersistence);
+
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    isAuthReady = true;
+                    console.log("Firebase Auth listo. User ID:", userId);
+                    // Una vez autenticado, cargar reportes y comentarios
+                    renderizarReportes();
+                    setupCommentListener();
+                    document.getElementById('submitCommentButton').disabled = false;
+                } else {
+                    isAuthReady = true;
+                    console.log("Sesión anónima iniciada o no hay usuario.");
+                    document.getElementById('loadingMessage').textContent = "Necesitas autenticación para ver/agregar novedades.";
+                }
+            });
+
+        } catch (error) {
+            console.error("Error al configurar Firebase:", error);
+            // Mensaje de error visible
+            const msg = document.getElementById('loadingMessage');
+            if (msg) msg.textContent = "Error de conexión con la base de datos.";
+        }
+    }
+
+    // --- LÓGICA DE COMENTARIOS ---
+
+    function setupCommentListener() {
+        if (!db || !isAuthReady) return;
+
+        const commentsRef = collection(db, COMMENTS_COLLECTION_PATH);
+        // Consulta para obtener comentarios, ordenados por marca de tiempo (descendente)
+        // Nota: Se elimina el uso de orderBy("timestamp", "desc") para evitar posibles errores de índice
+        const commentsQuery = query(commentsRef);
+        const commentsListEl = document.getElementById('commentsList');
+
+        onSnapshot(commentsQuery, (snapshot) => {
+            const sortedDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                .sort((a, b) => (b.timestamp?.toDate()?.getTime() || 0) - (a.timestamp?.toDate()?.getTime() || 0));
+
+            const commentsHtml = sortedDocs.map(data => {
+                const userDisplayId = data.userId ? `Pañol (${data.userId.substring(0, 4)}...)` : 'Pañol Desconocido';
+                const date = data.timestamp ? 
+                    new Date(data.timestamp.toDate()).toLocaleString('es-ES', { 
+                        day: '2-digit', month: '2-digit', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit' 
+                    }) : 
+                    'Fecha y Hora Desconocidas';
+
+                // Usamos el campo 'comment' que guardaremos en la DB
+                return `
+                    <li>
+                        <strong>${userDisplayId}</strong>
+                        <span class="comment-date">${date}</span>
+                        ${data.comment}
+                    </li>
+                `;
+            }).join('');
+
+            commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
+
+            if (snapshot.empty) {
+                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas. Todo en orden.</p>`;
+            }
+        }, (error) => {
+            console.error("Error al escuchar comentarios:", error);
+            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades: ${error.message}</p>`;
+        });
+    }
+
+    async function saveComment() {
+        const commentTextarea = document.getElementById('newCommentText');
+        const comment = commentTextarea.value.trim();
+
+        if (!comment || !db || !userId) {
+            // Usamos un modal o un mensaje de error visible si no podemos usar alert
+            if (comment) console.warn("Firebase no inicializado o usuario no autenticado.");
+            return;
+        }
+
+        try {
+            const commentsRef = collection(db, COMMENTS_COLLECTION_PATH);
+            await addDoc(commentsRef, {
+                userId: userId,
+                comment: comment,
+                timestamp: serverTimestamp() // Marca de tiempo del servidor
+            });
+
+            commentTextarea.value = ''; // Limpiar el área de texto
+            console.log("Novedad guardada con éxito.");
+
+        } catch (error) {
+            console.error("Error al guardar la novedad:", error);
+            // Reemplazo de alert()
+            console.error("No se pudo guardar la novedad. Intente de nuevo."); 
+        }
+    }
+
+    // Asignar el listener al botón de guardar
+    document.addEventListener('DOMContentLoaded', () => {
+        const submitButton = document.getElementById('submitCommentButton');
+        if (submitButton) {
+            submitButton.addEventListener('click', saveComment);
+        }
+    });
+
+    // --- LÓGICA DE GRÁFICOS (Manteniendo la estructura anterior) ---
+
+    async function cargarReportesEstadisticos() {
+        // Simulación de una carga de datos
+        const mockData = {
+            docentes: [
+                { docente: "Ing. García (Electrónica)", conteo: 58 },
+                { docente: "Prof. Ramírez (Mecánica)", conteo: 42 },
+                { docente: "Dr. Pérez (Sistemas)", conteo: 35 },
+                { docente: "Lic. Soto (Arquitectura)", conteo: 29 },
+                { docente: "Ing. Núñez (Civil)", conteo: 21 },
+            ],
+            carreras: [
+                { usuarios: { carrera: "Ingeniería Mecánica" }, conteo: 180 },
+                { usuarios: { carrera: "Ingeniería Eléctrica" }, conteo: 130 },
+                { usuarios: { carrera: "Técnico Industrial" }, conteo: 90 },
+                { usuarios: { carrera: "Arquitectura" }, conteo: 60 },
+                { usuarios: { carrera: "Ingeniería Civil" }, conteo: 40 },
+            ],
+            materiales: [
+                { material: "Multímetro Digital M300 (Stock Alto)", cantidad_total: 120 },
+                { material: "Set de Llaves Allen Mixtas", cantidad_total: 85 },
+                { material: "Osciloscopio DS2000 Pro", cantidad_total: 60 },
+                { material: "Arduino Uno R3 Kit Básico", cantidad_total: 45 },
+                { material: "Kit de Soldadura R-50", cantidad_total: 30 },
+            ],
+            asignaturas: [
+                { asignatura: "Circuitos I (Lab Práctico)", total_materiales: 450 },
+                { asignatura: "Taller Mecánico Avanzado", total_materiales: 380 },
+                { asignatura: "Electrónica Aplicada", total_materiales: 220 },
+                { asignatura: "Dibujo Técnico Industrial", total_materiales: 150 },
+            ],
+        };
+        return mockData;
+    }
+
+    async function renderizarReportes() {
+        if (!isAuthReady) return; 
+
+        try {
+            const reportes = await cargarReportesEstadisticos();
+
+            // 1. Docentes (Barra Horizontal)
+            const docentesLabels = reportes.docentes.map(d => d.docente);
+            const docentesData = reportes.docentes.map(d => d.conteo);
+            crearBarraHorizontal('docentesChart', 'Solicitudes', docentesLabels, docentesData, primaryColor, ' solicitudes');
+
+            // 2. Carreras (Dona con Total en el Centro)
+            const carrerasLabels = reportes.carreras.map(c => c.usuarios.carrera);
+            const carrerasData = reportes.carreras.map(c => c.conteo);
+            crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
+
+            // 3. Materiales (Barra Horizontal)
+            const materialesLabels = reportes.materiales.map(m => m.material);
+            const materialesData = reportes.materiales.map(m => m.cantidad_total);
+            crearBarraHorizontal('materialesChart', 'Unidades Pedidas', materialesLabels, materialesData, secondaryColor, ' unidades');
+
+            // 4. Asignaturas (Barra Horizontal)
+            const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
+            const asignaturasData = reportes.asignaturas.map(a => a.total_materiales);
+            crearBarraHorizontal('asignaturasChart', 'Total de Materiales Usados', asignaturasLabels, asignaturasData, dangerColor, ' unidades');
+
+        } catch (error) {
+            console.error("Error al cargar o renderizar reportes:", error);
+        }
+    }
+
+    // ----------------------------------------------------
+    // Funciones de Dibujo de Gráficos (sin cambios)
+    // ----------------------------------------------------
+    
+    function crearBarraHorizontal(id, label, labels, data, color, unit) {
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: color,
+                    borderColor: color,
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9,
+                }]
+            },
+            options: {
+                indexAxis: 'y', 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: false }, 
+                    tooltip: { 
+                        callbacks: { 
+                            label: (context) => `${context.label}: ${context.parsed.x.toLocaleString('es-ES')}${unit}`
+                        } 
+                    }
+                },
+                scales: { 
+                    x: { 
+                        beginAtZero: true, 
+                        ticks: {
+                            callback: function(value) { return value.toLocaleString('es-ES'); }
+                        },
+                        grid: { display: true, drawBorder: false }
+                    },
+                    y: { 
+                        ticks: { autoSkip: false },
+                        grid: { display: false }
+                    } 
+                }
+            }
+        });
+    }
+
+    const totalDoughnutPlugin = {
+        id: 'totalDoughnut',
+        beforeDraw(chart) {
+            if (chart.config.type === 'doughnut') {
+                const { ctx, data, width, height } = chart;
+                ctx.save();
+                
+                const total = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
+                const centerX = width / 2;
+                const centerY = (height / 2); 
+                
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                ctx.fillStyle = primaryColor;
+                ctx.font = 'bold 28px Inter, sans-serif';
+                ctx.fillText(total.toLocaleString('es-ES'), centerX, centerY - 15);
+                
+                ctx.fillStyle = 'var(--color-text)';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillText('Total Solicitudes', centerX, centerY + 15);
+                
+                ctx.restore();
+            }
+        }
+    };
+    
+    Chart.register(totalDoughnutPlugin);
+
+    function crearDona(id, label, labels, data) {
+        new Chart(document.getElementById(id), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
+                    hoverOffset: 4
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: {
+                    legend: { position: 'bottom' },
+                    totalDoughnut: {} 
+                }
+            }
+        });
+    }
+    
+    // Inicialización de Firebase
+    setupFirebase();
+</script>
+
+</body>
+</html>

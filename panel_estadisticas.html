@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Panel de Reportes de Uso del Pañol</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Carga la librería Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Variables de Color */
         :root {
@@ -195,270 +195,191 @@
 
 <h2>📈 Panel de Reportes de Uso del Pañol</h2>
 
-<!-- CONTENEDOR DE ENCABEZADO Y BOTÓN -->
 <div class="dashboard-header">
     <button class="print-button" onclick="window.print()">
         🖨️ Imprimir reporte
     </button>
 </div>
-<!-- FIN DEL CONTENEDOR -->
-
 <div class="dashboard-grid">
     
-    <!-- CARD 1: Top Docentes (Barra Horizontal) -->
     <div class="chart-container">
         <h3>🥇 Top 10 Docentes Solicitantes</h3>
         <canvas id="docentesChart"></canvas>
     </div>
 
-    <!-- CARD 2: Proporción por Carrera (Doughnut) -->
     <div class="chart-container">
         <h3>🏛️ Proporción de Solicitudes por Carrera</h3>
         <canvas id="carrerasChart"></canvas>
     </div>
 
-    <!-- CARD 3: Materiales Más Demandados (Barra Horizontal para etiquetas largas) -->
     <div class="chart-container">
         <h3>🔩 Materiales Más Demandados (Unidades Totales)</h3>
         <canvas id="materialesChart"></canvas>
     </div>
 
-    <!-- CARD 4: Consumo por Asignatura (Barra Horizontal para etiquetas largas) -->
     <div class="chart-container">
         <h3>📚 Consumo por Asignatura</h3>
         <canvas id="asignaturasChart"></canvas>
     </div>
 
-    <!-- CARD 5: Comentarios a la entrega (Lista DINÁMICA y Formulario) -->
     <div class="chart-container">
         <h3>💬 Registro de Novedades del Pañol</h3>
         <div id="commentsList" class="comments-content">
-            <!-- La lista se renderizará aquí dinámicamente desde Firestore -->
-            <p id="loadingMessage" style="text-align: center; color: #888;">Cargando registro de novedades...</p>
+            <p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
         </div>
         <div class="comment-input-area">
-            <textarea id="newCommentText" placeholder="Ej: Faltó un componente en el kit #3. Se notificó al docente."></textarea>
+            <textarea id="newCommentText" placeholder="La edición de novedades se gestiona en la vista operativa." disabled></textarea>
             <button id="submitCommentButton" class="submit-comment-button" disabled>Guardar Novedad</button>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // Importaciones de Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // --- CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    let db;
-    let auth;
-    let userId = null;
-    let isAuthReady = false;
+    // --- IMPORTACIONES Y CONFIGURACIÓN DE SUPABASE ---
+    
+    // ** ATENCIÓN: DEBES REEMPLAZAR ESTOS VALORES CON LOS TUYOS DE SUPABASE **
+    const SUPABASE_URL = 'TU_URL_SUPABASE'; // Ej: 'https://xyz.supabase.co'
+    const SUPABASE_ANON_KEY = 'TU_ANON_KEY_SUPABASE'; // Clave pública 'anon'
+    
+    // Inicializar Supabase Client
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Colores para los gráficos (se mantienen)
     const primaryColor = 'rgb(0, 77, 153)';
     const secondaryColor = 'rgb(40, 167, 69)';
     const dangerColor = 'rgb(220, 53, 69)'; 
-    
-    // Ruta de la colección para comentarios públicos del pañol
-    const COMMENTS_COLLECTION_PATH = `/artifacts/${appId}/public/data/delivery_incidents`; // Renombrada para mayor claridad
 
-    async function setupFirebase() {
+    // --- LÓGICA DE COMENTARIOS (Novedades de Entrega) ---
+
+    // Usaremos la tabla 'solicitudes' para mostrar los últimos comentarios de entrega
+    async function setupCommentListener() {
+        const commentsListEl = document.getElementById('commentsList');
+        const loadingMessageEl = document.getElementById('loadingMessage');
+        loadingMessageEl.textContent = "Cargando novedades de entrega...";
+
         try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            // 1. Manejar autenticación
-            await setPersistence(auth, browserSessionPersistence);
+            // Cargar las últimas 5 solicitudes con comentario de entrega no nulo
+            const { data: solicitudes, error } = await supabase
+                .from('solicitudes')
+                .select(`
+                    docente,
+                    fecha_entrega,
+                    comentario_entrega
+                `)
+                .not('comentario_entrega', 'is', null)
+                .order('fecha_entrega', { ascending: false })
+                .limit(5);
 
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
-                await signInAnonymously(auth);
+            if (error) throw error;
+
+            if (solicitudes.length === 0) {
+                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas en las entregas.</p>`;
+                return;
             }
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    isAuthReady = true;
-                    console.log("Firebase Auth listo. User ID:", userId);
-                    // Una vez autenticado, cargar reportes y comentarios
-                    renderizarReportes();
-                    setupCommentListener();
-                    document.getElementById('submitCommentButton').disabled = false;
-                } else {
-                    isAuthReady = true;
-                    console.log("Sesión anónima iniciada o no hay usuario.");
-                    document.getElementById('loadingMessage').textContent = "Necesitas autenticación para ver/agregar novedades.";
-                }
-            });
-
-        } catch (error) {
-            console.error("Error al configurar Firebase:", error);
-            // Mensaje de error visible
-            const msg = document.getElementById('loadingMessage');
-            if (msg) msg.textContent = "Error de conexión con la base de datos.";
-        }
-    }
-
-    // --- LÓGICA DE COMENTARIOS ---
-
-    function setupCommentListener() {
-        if (!db || !isAuthReady) return;
-
-        const commentsRef = collection(db, COMMENTS_COLLECTION_PATH);
-        // Consulta para obtener comentarios, ordenados por marca de tiempo (descendente)
-        // Nota: Se elimina el uso de orderBy("timestamp", "desc") para evitar posibles errores de índice
-        const commentsQuery = query(commentsRef);
-        const commentsListEl = document.getElementById('commentsList');
-
-        onSnapshot(commentsQuery, (snapshot) => {
-            const sortedDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .sort((a, b) => (b.timestamp?.toDate()?.getTime() || 0) - (a.timestamp?.toDate()?.getTime() || 0));
-
-            const commentsHtml = sortedDocs.map(data => {
-                const userDisplayId = data.userId ? `Pañol (${data.userId.substring(0, 4)}...)` : 'Pañol Desconocido';
-                const date = data.timestamp ? 
-                    new Date(data.timestamp.toDate()).toLocaleString('es-ES', { 
+            const commentsHtml = solicitudes.map(data => {
+                const userDisplay = data.docente || 'Docente Desconocido';
+                const date = data.fecha_entrega ?
+                    new Date(data.fecha_entrega).toLocaleString('es-ES', { 
                         day: '2-digit', month: '2-digit', year: 'numeric', 
                         hour: '2-digit', minute: '2-digit' 
-                    }) : 
-                    'Fecha y Hora Desconocidas';
+                    }) :
+                    'Fecha Desconocida';
 
-                // Usamos el campo 'comment' que guardaremos en la DB
                 return `
                     <li>
-                        <strong>${userDisplayId}</strong>
+                        <strong>${userDisplay}</strong>
                         <span class="comment-date">${date}</span>
-                        ${data.comment}
+                        ${data.comentario_entrega}
                     </li>
                 `;
             }).join('');
 
             commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
 
-            if (snapshot.empty) {
-                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas. Todo en orden.</p>`;
-            }
-        }, (error) => {
-            console.error("Error al escuchar comentarios:", error);
-            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades: ${error.message}</p>`;
-        });
+        } catch (error) {
+            console.error("Error al cargar novedades de Supabase:", error);
+            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades: ${error.message || error.details}</p>`;
+        }
     }
 
-    async function saveComment() {
-        const commentTextarea = document.getElementById('newCommentText');
-        const comment = commentTextarea.value.trim();
 
-        if (!comment || !db || !userId) {
-            // Usamos un modal o un mensaje de error visible si no podemos usar alert
-            if (comment) console.warn("Firebase no inicializado o usuario no autenticado.");
-            return;
-        }
+    // --- LÓGICA DE GRÁFICOS (Extrayendo datos de Supabase) ---
+    
+    async function cargarReportesEstadisticos() {
+        // Ejecución de consultas SQL mediante Supabase RPC (Remote Procedure Call) o View
+
+        // **NOTA:** Para ejecutar estas consultas de agregación (GROUP BY), lo más eficiente
+        // en Supabase es crear una **Vista (View)** o una **Función (RPC)** en tu base de datos PostgreSQL.
+        // Aquí simulamos la llamada a una función (RPC) para cada reporte.
 
         try {
-            const commentsRef = collection(db, COMMENTS_COLLECTION_PATH);
-            await addDoc(commentsRef, {
-                userId: userId,
-                comment: comment,
-                timestamp: serverTimestamp() // Marca de tiempo del servidor
-            });
+            // 1. Top Docentes Solicitantes (RPC: 'get_top_docentes')
+            // Se asume que has creado una función en Supabase llamada `get_top_docentes`
+            const { data: docentes, error: errDoc } = await supabase.rpc('get_top_docentes');
+            if (errDoc) throw new Error("Error en Top Docentes: " + errDoc.message);
 
-            commentTextarea.value = ''; // Limpiar el área de texto
-            console.log("Novedad guardada con éxito.");
+            // 2. Proporción por Carrera (RPC: 'get_solicitudes_por_carrera')
+            const { data: carreras, error: errCarr } = await supabase.rpc('get_solicitudes_por_carrera');
+            if (errCarr) throw new Error("Error en Solicitudes por Carrera: " + errCarr.message);
+
+            // 3. Materiales Más Demandados (RPC: 'get_top_materiales')
+            const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales');
+            if (errMat) throw new Error("Error en Materiales Demandados: " + errMat.message);
+
+            // 4. Consumo por Asignatura (RPC: 'get_consumo_por_asignatura')
+            const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura');
+            if (errAsig) throw new Error("Error en Consumo por Asignatura: " + errAsig.message);
+
+            return {
+                docentes: docentes || [],
+                carreras: carreras || [],
+                materiales: materiales || [],
+                asignaturas: asignaturas || [],
+            };
 
         } catch (error) {
-            console.error("Error al guardar la novedad:", error);
-            // Reemplazo de alert()
-            console.error("No se pudo guardar la novedad. Intente de nuevo."); 
+            console.error("Error al obtener datos de Supabase:", error);
+            // Mostrar error en el dashboard
+            document.getElementById('docentesChart').parentNode.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">Error de BD: ${error.message}</p>`;
+            return { docentes: [], carreras: [], materiales: [], asignaturas: [] };
         }
-    }
-
-    // Asignar el listener al botón de guardar
-    document.addEventListener('DOMContentLoaded', () => {
-        const submitButton = document.getElementById('submitCommentButton');
-        if (submitButton) {
-            submitButton.addEventListener('click', saveComment);
-        }
-    });
-
-    // --- LÓGICA DE GRÁFICOS (Manteniendo la estructura anterior) ---
-
-    async function cargarReportesEstadisticos() {
-        // Simulación de una carga de datos
-        const mockData = {
-            docentes: [
-                { docente: "Ing. García (Electrónica)", conteo: 58 },
-                { docente: "Prof. Ramírez (Mecánica)", conteo: 42 },
-                { docente: "Dr. Pérez (Sistemas)", conteo: 35 },
-                { docente: "Lic. Soto (Arquitectura)", conteo: 29 },
-                { docente: "Ing. Núñez (Civil)", conteo: 21 },
-            ],
-            carreras: [
-                { usuarios: { carrera: "Ingeniería Mecánica" }, conteo: 180 },
-                { usuarios: { carrera: "Ingeniería Eléctrica" }, conteo: 130 },
-                { usuarios: { carrera: "Técnico Industrial" }, conteo: 90 },
-                { usuarios: { carrera: "Arquitectura" }, conteo: 60 },
-                { usuarios: { carrera: "Ingeniería Civil" }, conteo: 40 },
-            ],
-            materiales: [
-                { material: "Multímetro Digital M300 (Stock Alto)", cantidad_total: 120 },
-                { material: "Set de Llaves Allen Mixtas", cantidad_total: 85 },
-                { material: "Osciloscopio DS2000 Pro", cantidad_total: 60 },
-                { material: "Arduino Uno R3 Kit Básico", cantidad_total: 45 },
-                { material: "Kit de Soldadura R-50", cantidad_total: 30 },
-            ],
-            asignaturas: [
-                { asignatura: "Circuitos I (Lab Práctico)", total_materiales: 450 },
-                { asignatura: "Taller Mecánico Avanzado", total_materiales: 380 },
-                { asignatura: "Electrónica Aplicada", total_materiales: 220 },
-                { asignatura: "Dibujo Técnico Industrial", total_materiales: 150 },
-            ],
-        };
-        return mockData;
     }
 
     async function renderizarReportes() {
-        if (!isAuthReady) return; 
+        const reportes = await cargarReportesEstadisticos();
 
-        try {
-            const reportes = await cargarReportesEstadisticos();
+        // 1. Docentes (Barra Horizontal)
+        // Datos Supabase: { docente: 'Nombre', conteo_solicitudes: 58 }
+        const docentesLabels = reportes.docentes.map(d => d.docente);
+        const docentesData = reportes.docentes.map(d => d.conteo_solicitudes);
+        crearBarraHorizontal('docentesChart', 'Solicitudes', docentesLabels, docentesData, primaryColor, ' solicitudes');
 
-            // 1. Docentes (Barra Horizontal)
-            const docentesLabels = reportes.docentes.map(d => d.docente);
-            const docentesData = reportes.docentes.map(d => d.conteo);
-            crearBarraHorizontal('docentesChart', 'Solicitudes', docentesLabels, docentesData, primaryColor, ' solicitudes');
+        // 2. Carreras (Dona con Total en el Centro)
+        // Datos Supabase: { carrera: 'Nombre', conteo_solicitudes: 180 }
+        const carrerasLabels = reportes.carreras.map(c => c.carrera);
+        const carrerasData = reportes.carreras.map(c => c.conteo_solicitudes);
+        crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
 
-            // 2. Carreras (Dona con Total en el Centro)
-            const carrerasLabels = reportes.carreras.map(c => c.usuarios.carrera);
-            const carrerasData = reportes.carreras.map(c => c.conteo);
-            crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
+        // 3. Materiales (Barra Horizontal)
+        // Datos Supabase: { material: 'Nombre', cantidad_total: 120 }
+        const materialesLabels = reportes.materiales.map(m => m.material);
+        const materialesData = reportes.materiales.map(m => m.cantidad_total);
+        crearBarraHorizontal('materialesChart', 'Unidades Pedidas', materialesLabels, materialesData, secondaryColor, ' unidades');
 
-            // 3. Materiales (Barra Horizontal)
-            const materialesLabels = reportes.materiales.map(m => m.material);
-            const materialesData = reportes.materiales.map(m => m.cantidad_total);
-            crearBarraHorizontal('materialesChart', 'Unidades Pedidas', materialesLabels, materialesData, secondaryColor, ' unidades');
-
-            // 4. Asignaturas (Barra Horizontal)
-            const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
-            const asignaturasData = reportes.asignaturas.map(a => a.total_materiales);
-            crearBarraHorizontal('asignaturasChart', 'Total de Materiales Usados', asignaturasLabels, asignaturasData, dangerColor, ' unidades');
-
-        } catch (error) {
-            console.error("Error al cargar o renderizar reportes:", error);
-        }
+        // 4. Asignaturas (Barra Horizontal)
+        // Datos Supabase: { asignatura: 'Nombre', total_materiales_usados: 450 }
+        const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
+        const asignaturasData = reportes.asignaturas.map(a => a.total_materiales_usados);
+        crearBarraHorizontal('asignaturasChart', 'Total de Materiales Usados', asignaturasLabels, asignaturasData, dangerColor, ' unidades');
     }
 
     // ----------------------------------------------------
-    // Funciones de Dibujo de Gráficos (sin cambios)
+    // Funciones de Dibujo de Gráficos (Sin cambios)
     // ----------------------------------------------------
     
     function crearBarraHorizontal(id, label, labels, data, color, unit) {
+        // ... (Tu función crearBarraHorizontal permanece igual) ...
         new Chart(document.getElementById(id), {
             type: 'bar',
             data: {
@@ -532,6 +453,7 @@
     Chart.register(totalDoughnutPlugin);
 
     function crearDona(id, label, labels, data) {
+        // ... (Tu función crearDona permanece igual) ...
         new Chart(document.getElementById(id), {
             type: 'doughnut',
             data: {
@@ -554,9 +476,14 @@
         });
     }
     
-    // Inicialización de Firebase
-    setupFirebase();
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        // Solo renderizamos los reportes una vez se cargue el DOM
+        renderizarReportes();
+        setupCommentListener();
+    });
 </script>
 
 </body>
+</html>
 </html>

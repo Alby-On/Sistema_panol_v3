@@ -4,50 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración INACAP</title>
-    
+
     <style>
+        /* Tipografía y Base */
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             background-color: #f0f2f5;
             color: #333;
         }
+
+        /* Banner Superior (INACAP) */
         header {
-            background-color: #173753;
+            background-color: #173753; /* Azul Oscuro Corporativo */
             color: white;
             padding: 20px 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
         .header-title h1 {
             font-size: 1.8em;
             margin: 0;
             font-weight: 700;
         }
+
         .header-info {
             text-align: right;
         }
+
         .header-info h2 {
             font-size: 1.4em;
             margin: 0;
             font-weight: 600;
             color: white;
         }
+
         .header-info p {
             font-size: 0.9em;
             margin: 5px 0 0;
             color: #b0c4de;
         }
+
+        /* Contenedor Principal */
         .main-content {
             max-width: 1400px;
             margin: 20px auto;
             padding: 0 20px;
         }
+
+        /* Botón Volver al Menú */
         .back-button-container {
             margin-bottom: 20px;
         }
+
         .btn-menu {
             background-color: #007bff;
             color: white;
@@ -60,19 +72,25 @@
             display: inline-flex;
             align-items: center;
         }
+
         .btn-menu:hover {
             background-color: #0056b3;
         }
+
         .btn-menu span {
             margin-right: 8px;
         }
+
+        /* Estructura de Columnas */
         .dashboard-container {
             display: flex;
             gap: 25px;
         }
+
         .column {
             flex: 1;
         }
+
         .column h2 {
             font-size: 1.5em;
             color: #173753;
@@ -81,20 +99,31 @@
             border-bottom: 2px solid #e1e4e8;
             padding-bottom: 5px;
         }
+
+        /* Estilos de Tarjetas */
         .request-card {
             background-color: #ffffff;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
             padding: 20px;
             margin-bottom: 15px;
             transition: all 0.2s ease-in-out;
             border: 1px solid #f0f2f5;
         }
+
         .request-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        .pending-requests .request-card { border-left: 5px solid #ff9800; }
-        .delivered-requests .request-card { border-left: 5px solid #4caf50; }
+
+        /* Diferenciación visual de tarjetas */
+        .pending-requests .request-card {
+            border-left: 5px solid #ff9800; /* Naranja para Pendientes */
+        }
+        .delivered-requests .request-card {
+            border-left: 5px solid #4caf50; /* Verde para Entregadas */
+        }
+
+        /* Contenido y Etiquetas */
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -102,8 +131,17 @@
             padding-bottom: 8px;
             border-bottom: 1px dashed #eee;
         }
-        .card-header strong { font-size: 1.2em; color: #007bff; }
-        .card-detail { margin-bottom: 6px; font-size: 0.95em; }
+
+        .card-header strong {
+            font-size: 1.2em;
+            color: #007bff;
+        }
+
+        .card-detail {
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+
         .card-detail label {
             font-weight: 600;
             color: #555;
@@ -111,28 +149,137 @@
             width: 85px;
             vertical-align: top;
         }
-        .material-block { display: flex; align-items: flex-start; margin-top: 5px; padding-top: 5px; border-top: 1px dotted #f0f0f0; }
-        .material-block label { flex-shrink: 0; width: 85px; }
-        .material-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
-        .material-list li { margin-bottom: 2px; font-size: 0.9em; }
-        .material-list li:before { content: "•"; color: #888; display: inline-block; width: 1em; margin-right: 0.2em; }
-        .card-status-pending { color: #ff9800; font-weight: 700; }
-        .card-status-delivered { color: #4caf50; font-weight: 700; }
-        .actions { margin-top: 20px; padding-top: 15px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 10px; }
-        .actions button { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: background-color 0.2s, transform 0.1s; }
-        .actions button:active { transform: scale(0.98); }
-        .btn-comment { background-color: #007bff; color: white; box-shadow: 0 2px 4px rgba(0,123,255,0.3); }
-        .btn-comment:hover { background-color: #0056b3; }
-        .btn-no-comment { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; }
-        .btn-no-comment:hover { background-color: #ced4da; }
-        #commentModal textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; resize: vertical; font-size: 1em; }
-        #btnEnviarComentario, #commentModal button:nth-child(4) { width: 100%; padding: 12px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        #btnEnviarComentario { background-color: #4caf50; color: white; }
-        #commentModal button:nth-child(4) { padding: 10px; margin-top: 10px; background-color: #dc3545; color: white; }
+
+        /* BLOQUE PARA MATERIALES */
+        .material-block {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px dotted #f0f0f0;
+        }
+
+        .material-block label {
+            flex-shrink: 0;
+            width: 85px;
+        }
+
+        .material-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .material-list li {
+            margin-bottom: 2px;
+            font-size: 0.9em;
+        }
+
+        .material-list li:before {
+            content: "•";
+            color: #888;
+            display: inline-block;
+            width: 1em;
+            margin-right: 0.2em;
+        }
+
+        .card-status-pending {
+            color: #ff9800;
+            font-weight: 700;
+        }
+
+        .card-status-delivered {
+            color: #4caf50;
+            font-weight: 700;
+        }
+
+        /* Estilos de Acciones (Botones) */
+        .actions {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .actions button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .actions button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-comment {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-comment:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-no-comment {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+
+        .btn-no-comment:hover {
+            background-color: #ced4da;
+        }
+
+        /* Estilos para el Modal y sus elementos */
+        #commentModal textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            resize: vertical;
+            font-size: 1em;
+        }
+
+        #btnEnviarComentario {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background-color: #4caf50;
+            color: white;
+        }
+
+        #commentModal button[onclick="cerrarFormulario()"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
     </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
     <header>
         <div class="header-title">
             <h1>Panel de Administrador</h1>
@@ -145,143 +292,331 @@
 
     <div class="main-content">
         <div class="back-button-container">
-            <a href="menu.html" class="btn-menu"><span>&#x2190;</span> Volver al Menú</a>
+            <a href="menu.html" class="btn-menu">
+                <span>&#x2190;</span> Volver al Menú
+            </a>
         </div>
+
         <div class="dashboard-container">
+
             <div class="column pending-requests">
                 <h2>⏳ Solicitudes Pendientes</h2>
-                <div id="pending-container"><p>Cargando solicitudes...</p></div>
+                <div id="pending-container">
+                    <p>Cargando solicitudes...</p>
+                </div>
             </div>
+
             <div class="column delivered-requests">
                 <h2>✅ Solicitudes Entregadas</h2>
-                <div id="delivered-container"><p>Cargando solicitudes...</p></div>
+                <div id="delivered-container">
+                    <p>Cargando solicitudes...</p>
+                </div>
             </div>
+
         </div>
     </div>
 
-    <div id="commentModal" style="position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); z-index:1000; display:none; justify-content:center; align-items:center;">
-        <div style="background-color:#fff; padding:30px; border-radius:8px; box-shadow:0 5px 15px rgba(0,0,0,0.3); max-width:400px; width:90%;">
-            <h3 style="margin-top:0; color:#173753;">Agregar Comentario de Entrega</h3>
-            <p>Solicitud ID: <strong id="modalSolicitudId"></strong></p>
-            <textarea id="modalComentario" rows="5" placeholder="Escriba el comentario de la entrega (ej: equipo completo, faltó calibrar, etc.)"></textarea>
-            <button id="btnEnviarComentario">Enviar y Guardar</button>
-            <button onclick="cerrarFormulario()">Cancelar</button>
-            <p id="modalMsg" style="margin-top:15px; text-align:center; font-weight:600;"></p>
-        </div>
-    </div>
+<div id="commentModal" style="
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); z-index: 1000;
+    display: none;
+    justify-content: center; align-items: center;">
 
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%;">
+
+        <h3 style="margin-top: 0; color: #173753;">Agregar Comentario de Entrega</h3>
+        <p>Solicitud ID: <strong id="modalSolicitudId"></strong></p>
+
+        <textarea id="modalComentario" rows="5" placeholder="Escriba el comentario de la entrega (ej: equipo completo, faltó calibrar, etc.)"></textarea>
+
+        <button id="btnEnviarComentario">
+            Enviar y Guardar
+        </button>
+
+        <button onclick="cerrarFormulario()">
+            Cancelar
+        </button>
+
+        <p id="modalMsg" style="margin-top: 15px; text-align: center; font-weight: 600;"></p>
+
+    </div>
+</div>
 <script>
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co"; 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const pendingContainer = document.getElementById('pending-container');
-const deliveredContainer = document.getElementById('delivered-container');
-let currentSolicitudId = null;
+    // Crear cliente de Supabase
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const formatDate = (dateString) => {
-    if(!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
-};
+    // Contenedores DOM
+    const pendingContainer = document.getElementById('pending-container');
+    const deliveredContainer = document.getElementById('delivered-container');
 
-window.abrirFormulario = (solicitudId) => {
-    currentSolicitudId = solicitudId;
-    document.getElementById('modalSolicitudId').textContent = 'S-'+solicitudId;
-    document.getElementById('modalComentario').value = '';
-    document.getElementById('modalMsg').textContent = '';
-    document.getElementById('commentModal').style.display = 'flex';
-};
+    // Variable global para almacenar el ID de la solicitud actual y el ID del intervalo
+    let currentSolicitudId = null;
+    let intervalId = null;
 
-window.cerrarFormulario = () => { document.getElementById('commentModal').style.display = 'none'; };
+    // Función auxiliar para formatear fechas
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES');
+    };
 
-async function actualizarComentario(solicitudId, comentario){
-    const msg = document.getElementById('modalMsg');
-    msg.style.color='#333'; msg.style.backgroundColor='transparent'; msg.textContent='Guardando...';
-    const { error } = await supabaseClient.from('solicitudes')
-        .update({ estado:'Entregado', fecha_entrega: new Date().toISOString(), comentario_entrega: comentario })
-        .eq('id', solicitudId);
-    if(error){
-        console.error(error);
-        msg.style.color='#dc3545'; msg.textContent='❌ Error al guardar';
-        return false;
+    // --- LÓGICA DE INTERFAZ DEL MODAL ---
+
+    window.abrirFormulario = (solicitudId) => {
+        currentSolicitudId = solicitudId;
+        document.getElementById('modalSolicitudId').textContent = 'S-' + solicitudId;
+        document.getElementById('modalComentario').value = ''; // Limpiar textarea
+        document.getElementById('modalMsg').textContent = ''; // Limpiar mensaje
+        document.getElementById('commentModal').style.display = 'flex';
+    };
+
+    window.cerrarFormulario = () => {
+        document.getElementById('commentModal').style.display = 'none';
+    };
+
+    // --- LÓGICA DE ACTUALIZACIÓN DE SUPABASE ---
+
+    // Función para iniciar el refresco automático
+    function startAutoRefresh() {
+        const intervalTime = 5000;
+        if (intervalId) {
+            clearInterval(intervalId); // Asegura que solo hay un intervalo corriendo
+        }
+        intervalId = setInterval(loadDashboardData, intervalTime);
     }
-    msg.style.color='#4caf50'; msg.textContent='✅ Solicitud actualizada';
-    await loadDashboardData();
-    setTimeout(cerrarFormulario,1000);
-    return true;
-}
+    
+    // La función principal de actualización
+    async function actualizarComentario(solicitudId, comentario) {
+        // Detener el refresco mientras actualizamos
+        clearInterval(intervalId);
+        document.body.style.cursor = 'wait';
 
-document.getElementById('btnEnviarComentario').onclick = () => {
-    const comentario = document.getElementById('modalComentario').value.trim();
-    if(!currentSolicitudId){ document.getElementById('modalMsg').style.color='#dc3545'; document.getElementById('modalMsg').textContent='⚠️ ID no encontrado'; return;}
-    if(!comentario){ document.getElementById('modalMsg').style.color='#ff9800'; document.getElementById('modalMsg').textContent='⚠️ El comentario no puede estar vacío'; return;}
-    actualizarComentario(currentSolicitudId, comentario);
-};
+        const isModalUpdate = document.getElementById('commentModal').style.display === 'flex';
+        const msgElement = isModalUpdate ? document.getElementById('modalMsg') : null;
 
-window.guardarSinComentario = (solicitudId) => {
-    if(confirm('¿Registrar "Sin Comentarios" para la Solicitud S-'+solicitudId+'?')) actualizarComentario(solicitudId, "Sin Comentarios");
-};
+        if (msgElement) {
+            msgElement.style.color = '#333';
+            msgElement.textContent = 'Guardando...';
+        }
 
-const createRequestCard = (solicitud, materiales, usuarios) => {
-    const isDelivered = solicitud.estado==='Entregado';
-    const statusClass = isDelivered?'card-status-delivered':'card-status-pending';
-    const materialListItems = materiales.map(m=>'<li>'+m.material+' (Cantidad: '+m.cantidad+')</li>').join('');
-    let html='<div class="request-card" data-solicitud-id="'+solicitud.id+'">'+
-        '<div class="card-header"><strong>ID: S-'+solicitud.id+'</strong><span>Fecha Solicitud: '+formatDate(solicitud.fecha_solicitud)+'</span></div>'+
-        '<div class="card-detail"><label>Usuario:</label> '+(usuarios.nombre||'Desconocido')+'</div>'+
-        '<div class="card-detail"><label>Docente:</label> '+solicitud.docente+'</div>'+
-        '<div class="card-detail"><label>Asignatura:</label> '+solicitud.asignatura+'</div>'+
-        '<div class="card-detail material-block"><label>Materiales:</label><ul class="material-list">'+(materialListItems.length>0?materialListItems:'<li>Sin materiales registrados.</li>')+'</ul></div>'+
-        '<div class="card-detail"><label>Estado:</label> <span class="'+statusClass+'">'+solicitud.estado.toUpperCase()+'</span></div>';
+        const { error } = await supabaseClient
+            .from('solicitudes')
+            .update({
+                estado: 'Entregado',
+                fecha_entrega: new Date().toISOString(),
+                comentario_entrega: comentario
+            })
+            .eq('id', solicitudId);
 
-    if(isDelivered){
-        html+='<div class="card-detail"><label>Entrega:</label> '+formatDate(solicitud.fecha_entrega)+'</div>'+
-              '<div class="card-detail"><label>Comentario:</label> '+(solicitud.comentario_entrega||'N/A')+'</div>'+
-              '<div class="actions"><button class="btn-comment" onclick="abrirFormulario('+solicitud.id+')">Agregar Comentario</button>'+
-              '<button class="btn-no-comment" onclick="guardarSinComentario('+solicitud.id+')">Sin Comentario</button></div>';
-    } else {
-        html+='<div class="actions"><button class="btn-comment" style="background-color:#4caf50;" onclick="actualizarComentario('+solicitud.id+',\'Sin Comentarios\')">Marcar como Entregado</button></div>';
+        if (error) {
+            console.error('Error al guardar comentario:', error);
+            if (msgElement) {
+                msgElement.style.color = '#dc3545';
+                msgElement.textContent = '❌ Error al guardar: ' + error.message.substring(0, 50) + '...';
+            } else {
+                alert('Error al guardar: ' + error.message);
+            }
+            // Reanudar el refresco incluso con error
+            document.body.style.cursor = 'default';
+            startAutoRefresh();
+            return false;
+        }
+
+        if (msgElement) {
+            msgElement.style.color = '#4caf50';
+            msgElement.textContent = '✅ Solicitud actualizada con éxito.';
+            setTimeout(cerrarFormulario, 1000); // Cerrar modal después de un segundo
+        } else {
+            // Caso de botón directo (Sin Comentarios o Marcar como Entregado)
+            // Se usa alert() para dar feedback en acciones directas
+        }
+
+        // Recargar datos y reanudar el refresco
+        await loadDashboardData();
+        document.body.style.cursor = 'default';
+        startAutoRefresh();
+        return true;
     }
-    html+='</div>'; return html;
-};
 
-function updateContainerDynamically(container,newSolicitudes,emptyMessage){
-    const newIds = newSolicitudes.map(s=>String(s.id));
-    Array.from(container.children).forEach(card=>{const cardId=card.dataset.solicitudId;if(cardId&&!newIds.includes(cardId)) card.remove();});
-    newSolicitudes.forEach(solicitud=>{
-        const solicitudIdStr=String(solicitud.id);
-        let cardElement = container.querySelector('[data-solicitud-id="'+solicitudIdStr+'"]');
-        if(!cardElement){
-            const materiales = solicitud.materiales_solicitados;
-            const usuarios = solicitud.usuarios;
-            const cardHtml = createRequestCard(solicitud, materiales, usuarios);
+    // Función al presionar "Enviar y Guardar" dentro del modal
+    document.getElementById('btnEnviarComentario').onclick = () => {
+        const comentario = document.getElementById('modalComentario').value.trim();
+        if (!currentSolicitudId) {
+            document.getElementById('modalMsg').style.color = '#dc3545';
+            document.getElementById('modalMsg').textContent = '⚠️ Error: ID de solicitud no encontrado.';
+            return;
+        }
+        if (!comentario) {
+            document.getElementById('modalMsg').style.color = '#ff9800';
+            document.getElementById('modalMsg').textContent = '⚠️ El comentario no puede estar vacío.';
+            return;
+        }
+        actualizarComentario(currentSolicitudId, comentario);
+    };
+
+    // Función al presionar "Sin Comentario" en la tarjeta (debe ser global o llamada desde window)
+    window.guardarSinComentario = async (solicitudId) => {
+        if(confirm('¿Desea registrar "Sin Comentarios" para la Solicitud S-' + solicitudId + '?')) {
+            await actualizarComentario(solicitudId, "Sin Comentarios");
+        }
+    };
+    
+    // Función para marcar directamente como Entregado (Para botón de Pendientes)
+    window.markAsDelivered = async (solicitudId) => {
+        if(confirm('¿Marcar Solicitud S-' + solicitudId + ' como Entregada (Sin Comentarios)?')) {
+            await actualizarComentario(solicitudId, "Sin Comentarios");
+        }
+    };
+
+
+    // Función para crear el HTML de una tarjeta (Card)
+    const createRequestCard = (solicitud) => {
+        const isDelivered = solicitud.estado === 'Entregado';
+        const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
+        
+        // **CORRECCIÓN/VERIFICACIÓN**: Extracción del nombre del usuario
+        const materiales = solicitud.materiales_solicitados || [];
+        const usuarioNombre = solicitud.usuarios?.nombre || 'Desconocido';
+
+        const materialListItems = materiales.map(m => `<li>${m.material} (Cantidad: ${m.cantidad})</li>`).join('');
+
+        let html = `<div class="request-card" data-solicitud-id="${solicitud.id}">
+                <div class="card-header">
+                    <strong>ID: S-${solicitud.id}</strong>
+                    <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
+                </div>
+                <div class="card-detail"><label>Usuario:</label> ${usuarioNombre}</div>
+                <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
+                <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
+
+                <div class="card-detail material-block">
+                    <label>Materiales:</label>
+                    <ul class="material-list">
+                        ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
+                    </ul>
+                </div>
+
+                <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado ? solicitud.estado.toUpperCase() : 'N/A'}</span></div>`;
+
+        if (isDelivered) {
+            html += `<div class="card-detail"><label>Entrega:</label> ${formatDate(solicitud.fecha_entrega)}</div>
+                    <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div>`;
+
+            // Lógica de botones para tarjetas Entregadas
+            const needsCommentAction = !solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A';
+
+            if (needsCommentAction) {
+                html += `<div class="actions">
+                            <button class="btn-comment" onclick="abrirFormulario(${solicitud.id})">Agregar/Editar Comentario</button>
+                            ${solicitud.comentario_entrega !== 'Sin Comentarios' ? `<button class="btn-no-comment" onclick="guardarSinComentario(${solicitud.id})">Sin Comentario</button>` : ''}
+                        </div>`;
+            } else {
+                 html += '<p style="text-align: right; margin-top: 15px; font-style: italic; color: #5cb85c;">Comentario registrado.</p>';
+            }
+
+        } else {
+            // Lógica de botones para tarjetas Pendientes
+            html += `<div class="actions">
+                        <button class="btn-comment" style="background-color: #4caf50;" onclick="markAsDelivered(${solicitud.id})">Marcar como Entregado</button>
+                    </div>`;
+        }
+
+        html += '</div>';
+        return html;
+    };
+
+    // Función: Actualiza el contenedor agregando/quitando/reemplazando tarjetas de forma eficiente.
+    function updateContainerDynamically(container, newSolicitudes, emptyMessage) {
+        const newIds = newSolicitudes.map(s => String(s.id));
+
+        // 1. ELIMINAR tarjetas viejas
+        Array.from(container.children).forEach(card => {
+            const cardId = card.dataset.solicitudId;
+            if (cardId && !newIds.includes(cardId)) {
+                card.remove();
+            }
+        });
+
+        // 2. AGREGAR/REEMPLAZAR tarjetas
+        newSolicitudes.forEach(solicitud => {
+            const solicitudIdStr = String(solicitud.id);
+            let cardElement = container.querySelector(`[data-solicitud-id="${solicitudIdStr}"]`);
+
+            // Generar el nuevo HTML de la tarjeta
+            const cardHtml = createRequestCard(solicitud);
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = cardHtml.trim();
-            cardElement = tempDiv.firstChild;
-            cardElement.dataset.solicitudId=solicitudIdStr;
-            container.prepend(cardElement);
+            const newCardElement = tempDiv.firstChild;
+            newCardElement.dataset.solicitudId = solicitudIdStr;
+
+            if (cardElement) {
+                // Reemplazar el elemento completo (asegura la actualización de los botones)
+                cardElement.replaceWith(newCardElement);
+            } else {
+                // Si no existe, añadir la nueva tarjeta al inicio
+                container.prepend(newCardElement);
+            }
+        });
+
+        // 3. MENSAJE DE VACÍO
+        const hasCards = container.querySelector('[data-solicitud-id]') !== null;
+
+        if (newSolicitudes.length === 0 && !hasCards) {
+             container.innerHTML = `<p>${emptyMessage}</p>`;
+        } else if (hasCards) {
+            // Eliminar el mensaje de vacío si existen tarjetas
+            const emptyP = container.querySelector('p');
+            if (emptyP && !emptyP.dataset.solicitudId) {
+                emptyP.remove();
+            }
         }
-    });
-    if(newSolicitudes.length===0){ if(container.children.length===0||container.children[0].dataset.solicitudId===undefined) container.innerHTML='<p>'+emptyMessage+'</p>'; }
-    else{ const firstChild=container.children[0]; if(firstChild&&firstChild.tagName==='P') firstChild.remove(); }
-}
+    }
 
-async function loadDashboardData(){
-    const { data: solicitudesData, error } = await supabaseClient
-        .from('solicitudes')
-        .select(`*, materiales_solicitados(material,cantidad), usuarios(nombre,email)`)
-        .order('fecha_solicitud',{ascending:false});
-    if(error){ console.error(error); pendingContainer.innerHTML="<p>Error cargando solicitudes.</p>"; deliveredContainer.innerHTML="<p>Error cargando solicitudes.</p>"; return;}
-    const pendientes = solicitudesData.filter(s=>s.estado!=='Entregado');
-    const entregadas = solicitudesData.filter(s=>s.estado==='Entregado');
-    updateContainerDynamically(pendingContainer, pendientes, "No hay solicitudes pendientes.");
-    updateContainerDynamically(deliveredContainer, entregadas, "No hay solicitudes entregadas.");
-}
+    async function loadDashboardData() {
+        // La consulta clave: pide todos los datos de las solicitudes, más los materiales y el nombre del usuario relacionado
+        const { data: solicitudesData, error } = await supabaseClient
+            .from('solicitudes')
+            .select(`
+                *,
+                materiales_solicitados (material, cantidad),
+                usuarios (nombre, email) // <-- ¡Incluye la relación de la tabla usuarios!
+            `)
+            .order('fecha_solicitud', { ascending: false });
 
-loadDashboardData();
-setInterval(loadDashboardData,5000);
+        if (error) {
+            console.error("Error al cargar datos:", error);
+            pendingContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
+            deliveredContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
+            return;
+        }
+
+        // Separar según estado
+        const pendientes = solicitudesData.filter(s => s.estado !== "Entregado");
+        const entregadas = solicitudesData.filter(s => s.estado === "Entregado");
+
+        // Actualizar dinámicamente el DOM
+        updateContainerDynamically(
+            pendingContainer,
+            pendientes,
+            "No hay solicitudes pendientes."
+        );
+
+        updateContainerDynamically(
+            deliveredContainer,
+            entregadas,
+            "No hay solicitudes entregadas."
+        );
+    }
+
+    // 🚀 Ejecutar carga inicial y comenzar el refresco
+    loadDashboardData();
+    startAutoRefresh();
 </script>
+
 </body>
 </html>
-

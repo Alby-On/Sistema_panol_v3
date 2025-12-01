@@ -482,7 +482,7 @@ function removeRow() {
     else alert("Debe haber al menos un material.");
 }
 
-/* 📤 Enviar Solicitud */
+/* 📤 Enviar Solicitud (CORREGIDA) */
 async function enviar() {
     const btn = document.querySelector(".btnEnviar");
     btn.disabled = true;
@@ -493,14 +493,19 @@ async function enviar() {
     const filas = document.querySelectorAll("#tbody tr");
     const materiales = [];
 
+    // 1. OBTENER EL ID DEL USUARIO
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!user || !user.id) return finishError("Error de usuario: El ID de usuario no está disponible.");
+    const userId = user.id; // Asumimos que 'user.id' contiene el ID de la tabla 'usuarios'
+
     if (!docente) return finishError("Seleccione un docente.");
     if (!asignatura) return finishError("Ingrese la asignatura.");
-
+    // ... (El resto de la validación de materiales sigue igual)
+    
     filas.forEach(f => {
         const inputMaterial = f.querySelector("input[type=text]");
         const inputCantidad = f.querySelector("input[type=number]");
         
-        // Se asegura de que los elementos existan antes de acceder a su valor
         const nombre = inputMaterial ? inputMaterial.value.trim() : "";
         const cantidad = inputCantidad ? parseInt(inputCantidad.value.trim(), 10) : 0;
         
@@ -518,7 +523,10 @@ async function enviar() {
                 docente,
                 asignatura,
                 fecha_solicitud: new Date().toISOString(),
-                estado: "Pendiente"
+                estado: "Pendiente",
+                
+                // 🔑 ¡LÍNEA CORREGIDA Y CLAVE!
+                id_usuario: userId 
             }])
             .select()
             .single();
@@ -526,6 +534,7 @@ async function enviar() {
         if (error) throw error;
 
         /* 2️⃣ Insertar materiales */
+        // ... (El resto del código de inserción de materiales sigue igual)
         for (const m of materiales) {
             const { error: materialError } = await supabaseClient
                 .from("materiales_solicitados")
@@ -541,7 +550,6 @@ async function enviar() {
         finishError("Error al enviar: " + err.message);
     }
 }
-
 function finishError(msg) {
     alert("❌ " + msg);
     const btn = document.querySelector(".btnEnviar");

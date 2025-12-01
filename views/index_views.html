@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Materiales - Inicio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* [ ... Todos los estilos CSS que tenías antes ... ] */
+        :root {
+            --color-primary: #004d99; /* Azul marino/institucional más oscuro */
+            --color-secondary: #28a745; /* Verde para éxito */
+            --color-background: #eef1f5; /* Fondo más claro y suave */
+            --color-card: #ffffff; /* Fondo de las cajas */
+            --color-text: #333333; /* Texto oscuro */
+            --color-border: #cccccc; /* Borde de inputs */
+            --color-error: #dc3545; /* Rojo para errores */
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--color-background);
+            margin: 0;
+            padding: 0;
+            color: var(--color-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .box {
+            background: var(--color-card);
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+            margin: 20px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            transition: transform 0.3s ease;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--color-primary);
+            font-size: 1.8em;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+        }
+        h3 {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: var(--color-text);
+            font-size: 1.2em;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0 18px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            background-color: #f9f9f9;
+        }
+        input:focus, select:focus {
+            border-color: var(--color-primary);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s, opacity 0.3s;
+            text-transform: uppercase;
+        }
+        button:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--color-card);
+        }
+        .btn-success {
+            background: var(--color-secondary);
+            color: var(--color-card);
+        }
+        .hidden {
+            display: none !important;
+        }
+        a {
+            color: var(--color-primary);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 5px;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        .error {
+            color: var(--color-error);
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            padding: 5px;
+            border: 1px dashed var(--color-error);
+            border-radius: 4px;
+            text-align: center;
+        }
+        ul {
+            padding-left: 20px;
+            margin-top: 0;
+            list-style-type: '👉 ';
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        #mensaje, #loginMsg {
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 0;
+            }
+            .box {
+                margin: 10px 10px;
+                padding: 20px;
+            }
+            h2 {
+                font-size: 1.6em;
+            }
+            input, select, button {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="box" id="welcomeBox">
+    <h2>Bienvenido(a) 🛠️</h2>
+    <p style="text-align:center;">Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
+    <h3>📝 Consideraciones Importantes:</h3>
+    <ul>
+        <li>Todo material facilitado debe **regresar en las mismas condiciones**.</li>
+        <li>Los estudiantes deben entregar su **TNE** o **Cédula de Identidad**.</li>
+        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
+    </ul>
+    <button class="btn-primary" onclick="Controller.showLogin()">Iniciar Sesión</button>
+    <button class="btn-success" onclick="Controller.showRegister()">Registrarse</button>
+</div>
+
+<div class="box hidden" id="loginBox">
+    <h2>🔑 Iniciar Sesión</h2>
+    <input type="email" placeholder="📧 Correo" id="loginEmail">
+    <input type="password" placeholder="🔒 Contraseña" id="loginPass">
+    <button class="btn-primary" onclick="Controller.login()">Ingresar</button>
+    
+    <p id="loginMsg"></p>
+    
+    <a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
+    
+    <p class="register-link">
+        <a onclick="Controller.showRegister()">¿No tienes cuenta? Regístrate aquí</a>
+    </p>
+    
+    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
+</div>
+
+<div class="box hidden" id="registerBox">
+    <h2>📝 Registro de Usuario</h2>
+    <input type="text" id="regNombre" placeholder="👤 Nombre Completo">
+    <input type="text" id="regRut" placeholder="💳 RUT (Ej: 12345678-5)">
+    <p id="rutError" class="error"></p>
+
+    <select id="regCarrera">
+        <option value="">🏫 Seleccione una carrera</option>
+        <option>Ingeniería Eléctrica</option>
+        <option>Técnico de nivel superior en Electricidad Industrial</option>
+        <option>Ingeniería en Automatización y Robótica</option>
+        <option>Técnico de nivel superior en Automatización y Robótica</option>
+        <option>Ingeniería en Mecatrónica</option>
+        <option>Técnico de nivel superior en Mecatrónica</option>
+        <option>Área Mecánica</option>
+        <option>Otras Áreas</option>
+    </select>
+
+    <input type="tel" id="regTelefono" placeholder="📱 Teléfono (Ej: +56911111111)">
+    <input type="email" id="regEmail" placeholder="📧 Correo Electrónico">
+    <input type="password" id="regPass" placeholder="🔒 Contraseña">
+
+    <button class="btn-success" onclick="Controller.registrar()">Crear Cuenta</button>
+    <p id="mensaje"></p>
+    <p style="text-align:center;"><a onclick="Controller.showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
+    <p style="text-align:center;"><a onclick="Controller.showWelcome()">Volver a la Bienvenida</a></p>
+</div>
+    
+<script type="module">
+    // Importamos todas las funciones del controller.js
+    import * as Controller from './controller.js';
+    
+    // Hacemos el objeto Controller disponible globalmente para los `onclick` del HTML
+    window.Controller = Controller;
+    
+    // Inicializamos la aplicación
+    Controller.init();
+</script>
+
+</body>
+</html>

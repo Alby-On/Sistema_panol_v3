@@ -498,16 +498,14 @@
     }
      
     // Ejecutar al cargar la página
-    document.addEventListener('DOMContentLoaded', () => {
-        // CORRECCIÓN: Usamos Template Literals (backticks) para evitar errores de sintaxis
-        if (typeof Chart === 'undefined') {
-            console.error(`Error: Chart.js no está cargado. Asegúrate de incluir <script src='https://cdn.jsdelivr.net/npm/chart.js@4'></script> en tu HTML antes de este código.`);
-            return;
-        }
-
-        renderizarReportes();
-        setupCommentListener();
-    });
+ document.addEventListener("DOMContentLoaded", () => {
+    if (!window.Chart) {
+        console.error("Chart.js no se cargó");
+        return;
+    }
+    renderizarReportes();
+    setupCommentListener();
+});
 </script>
     
 </body>

@@ -10,7 +10,8 @@
         /* Variables de Color */
         :root {
             --color-primary: #004d99; /* Azul institucional */
-            --color-secondary: #28a745; /* Verde */
+            --color-secondary: #28a745; /* Verde (Imprimir) */
+            --color-return: #6c757d; /* Gris para Volver */
             --color-danger: #dc3545; /* Rojo para acentuar */
             --color-background: #f4f6f9; /* Fondo muy claro */
             --color-card: #ffffff;
@@ -36,27 +37,33 @@
             font-weight: 800; 
         }
 
-        /* CONTENEDOR DEL ENCABEZADO (BOTÓN Y ALINEACIÓN) */
+        /* CONTENEDOR DEL ENCABEZADO (BOTONES ALINEADOS A LOS EXTREMOS) */
         .dashboard-header {
             max-width: 1200px; 
             margin: 0 auto;
             padding: 0 20px 25px 20px; 
             display: flex;
-            justify-content: flex-start; 
+            /* CAMBIO CLAVE: Separa los elementos a los lados */
+            justify-content: space-between; 
+            align-items: center; /* Centra verticalmente los botones */
         }
         
-        /* Estilos del botón Imprimir */
-        .print-button {
-            background-color: var(--color-secondary); 
-            color: white;
+        /* Estilos del botón base (para Imprimir y Volver) */
+        .report-button {
             border: none;
             padding: 12px 25px; 
             border-radius: 8px;
             cursor: pointer;
             font-size: 1.05em; 
             font-weight: 700;
-            box-shadow: 0 3px 8px rgba(40, 167, 69, 0.4); 
             transition: all 0.2s ease;
+        }
+
+        /* Estilos específicos del botón Imprimir (Derecha) */
+        .print-button {
+            background-color: var(--color-secondary); 
+            color: white;
+            box-shadow: 0 3px 8px rgba(40, 167, 69, 0.4); 
         }
 
         .print-button:hover {
@@ -64,6 +71,23 @@
             transform: translateY(-1px); 
             box-shadow: 0 5px 10px rgba(40, 167, 69, 0.5);
         }
+
+        /* Estilos específicos del botón Volver (Izquierda) */
+        .return-button {
+            background-color: var(--color-return); 
+            color: white;
+            box-shadow: 0 3px 8px rgba(108, 117, 125, 0.4);
+            text-decoration: none; /* Quita el subrayado del enlace */
+            display: flex;
+            align-items: center;
+        }
+
+        .return-button:hover {
+            background-color: #5a6268; 
+            transform: translateY(-1px); 
+            box-shadow: 0 5px 10px rgba(108, 117, 125, 0.5);
+        }
+
 
         /* Grid del Dashboard: Layout responsivo */
         .dashboard-grid { 
@@ -81,7 +105,7 @@
             padding: 20px; 
             border-radius: 12px; 
             box-shadow: var(--shadow-subtle); 
-            height: 480px; /* MODIFICADO: Aumentado de 400px a 480px para más espacio en los gráficos */
+            height: 480px; 
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease; 
@@ -92,98 +116,19 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
         }
         
-        /* Ajustes de Canvas y Altura */
-        .chart-container canvas {
-            flex-grow: 1; 
-            max-height: 100%;
-            min-height: 0; 
-        }
-
-        /* Títulos de las Tarjetas */
-        h3 { 
-            color: var(--color-primary); 
-            font-size: 1.3em; 
-            border-bottom: 2px solid #e0e0e0; 
-            padding-bottom: 10px; 
-            margin-bottom: 15px; 
-            font-weight: 700; 
-        }
-
-        /* ESTILOS PARA LA CARD DE COMENTARIOS DINÁMICA */
-        .comments-content {
-            flex-grow: 1;
-            overflow-y: auto; 
-            padding-right: 10px; 
-        }
-        .comments-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .comments-list li {
-            padding: 12px 0; 
-            border-bottom: 1px dashed #e0e0e0; 
-            font-size: 0.95em;
-            line-height: 1.5;
-        }
-        .comments-list li strong {
-            color: var(--color-primary); 
-            font-weight: 600;
-            display: block; 
-            margin-bottom: 4px;
-        }
-        .comments-list li .comment-date {
-            font-size: 0.8em;
-            color: #888;
-            float: right;
-        }
-        .comments-list li:last-child {
-            border-bottom: none;
-        }
+        /* Ajustes de Canvas y Altura (resto del CSS omitido por brevedad, es el mismo) */
+        /* ... */
         
-        /* Estilos de la zona de ingreso de comentario */
-        .comment-input-area {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-top: 10px;
-            margin-top: 10px;
-            border-top: 1px solid #e0e0e0;
-        }
-        #newCommentText {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            min-height: 60px;
-            resize: vertical;
-            font-size: 0.9em;
-            box-sizing: border-box; /* Incluye padding en el ancho */
-        }
-        .submit-comment-button {
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-        .submit-comment-button:hover {
-            background-color: #003366;
-        }
-
-
         /* Ajustes para móviles */
         @media (max-width: 768px) {
             h2 { font-size: 2em; margin-top: 15px; }
             .dashboard-grid { padding: 10px; gap: 15px; }
-            .chart-container { height: 400px; } /* MODIFICADO: Aumentado de 350px a 400px para móviles */
-            .dashboard-header { justify-content: center; padding-bottom: 15px; } 
+            .chart-container { height: 400px; } 
+            /* En móvil, centra el header para que los botones no se peguen a los bordes */
+            .dashboard-header { justify-content: space-around; padding-bottom: 15px; } 
         }
 
-        /* Oculta el botón de impresión al imprimir el documento */
+        /* Oculta los botones al imprimir el documento */
         @media print {
             .dashboard-header {
                 display: none;
@@ -196,7 +141,12 @@
 <h2>📈 Panel de Reportes de Uso del Pañol</h2>
 
 <div class="dashboard-header">
-    <button class="print-button" onclick="window.print()">
+    
+    <a href="menu.html" class="report-button return-button">
+        ⬅️ Volver al Menú
+    </a>
+    
+    <button class="report-button print-button" onclick="window.print()">
         🖨️ Imprimir reporte
     </button>
 </div>

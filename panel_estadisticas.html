@@ -38,7 +38,7 @@ font-weight: 800;
 
 /* CONTENEDOR DEL ENCABEZADO (BOTÓN Y ALINEACIÓN) */
 .dashboard-header {
-max-width: 1400px; /* AJUSTADO: Aumenta el ancho del panel */
+max-width: 1200px;
 margin: 0 auto;
 padding: 0 20px 25px 20px;
 display: flex;
@@ -65,7 +65,7 @@ transform: translateY(-1px);
 box-shadow: 0 5px 10px rgba(40, 167, 69, 0.5);
 }
 
-/* NUEVO ESTILO: Botón Volver al Menú */
+/* Botón Volver al Menú */
 .menu-button {
 background-color: var(--color-menu);
 color: white;
@@ -77,7 +77,7 @@ font-size: 1.05em;
 font-weight: 700;
 box-shadow: 0 3px 8px rgba(108, 117, 125, 0.4);
 transition: all 0.2s ease;
-text-decoration: none; /* Para que funcione como enlace */
+text-decoration: none;
 display: flex;
 align-items: center;
 gap: 5px;
@@ -89,13 +89,14 @@ transform: translateY(-1px);
 box-shadow: 0 5px 10px rgba(108, 117, 125, 0.5);
 }
 
-/* Grid del Dashboard: Layout responsivo */
+/* Grid del Dashboard: Layout vertical (una card por fila) */
 .dashboard-grid {
 display: grid;
-grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+/* CAMBIO CLAVE: Una sola columna que ocupa el 100% del ancho */
+grid-template-columns: 1fr;
 gap: 25px;
 padding: 0 20px 20px 20px;
-max-width: 1400px; /* AJUSTADO: Aumenta el ancho del grid */
+max-width: 1200px;
 margin: 0 auto;
 }
 /* Contenedor de cada Card/Gráfico */
@@ -104,7 +105,8 @@ background: var(--color-card);
 padding: 20px;
 border-radius: 12px;
 box-shadow: var(--shadow-subtle);
-height: 550px; /* AJUSTADO: Aumentado la altura de las tarjetas para más espacio */
+/* AJUSTADO: Mayor altura para dar espacio a etiquetas largas */
+height: 600px; 
 display: flex;
 flex-direction: column;
 transition: transform 0.3s ease;
@@ -199,9 +201,15 @@ background-color: #003366;
 /* Ajustes para móviles */
 @media (max-width: 768px) {
 h2 { font-size: 2em; margin-top: 15px; }
-.dashboard-grid { padding: 10px; gap: 15px; }
-.chart-container { height: 450px; } /* AJUSTADO: También aumenta la altura en móvil */
-/* MODIFICADO: Mantiene separación en móvil */
+.dashboard-grid { 
+    /* En móvil, la única columna sigue siendo apropiada */
+    grid-template-columns: 1fr; 
+    padding: 10px; 
+    gap: 15px; 
+}
+.chart-container { 
+    height: 450px; /* Se ajusta a una altura más práctica en móvil */
+}
 .dashboard-header { justify-content: space-around; padding-bottom: 15px; }
 }
 

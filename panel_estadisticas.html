@@ -39,11 +39,10 @@
 
         /* CONTENEDOR DEL ENCABEZADO (BOTÓN Y ALINEACIÓN) */
         .dashboard-header {
-            max-width: 1200px; 
+            max-width: 1400px; /* MODIFICADO: Aumentado el ancho máximo */
             margin: 0 auto;
             padding: 0 20px 25px 20px; 
             display: flex;
-            /* MODIFICADO: Mueve los elementos a los extremos */
             justify-content: space-between; 
             align-items: center; /* Asegura alineación vertical */
         }
@@ -95,10 +94,11 @@
         /* Grid del Dashboard: Layout responsivo */
         .dashboard-grid { 
             display: grid; 
+            /* Se mantiene el minmax para que siga siendo responsivo, pero en pantallas grandes, los contenedores serán más grandes */
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
             gap: 25px; 
             padding: 0 20px 20px 20px;
-            max-width: 1200px; 
+            max-width: 1400px; /* MODIFICADO: Aumentado el ancho máximo */
             margin: 0 auto;
         }
         
@@ -220,9 +220,7 @@
     </style>
 </head>
 <body>
-
 <h2>📈 Panel de Reportes de Uso del Pañol</h2>
-
 <div class="dashboard-header">
     <a href="menu.html" class="menu-button">
         ⬅️ Volver al Menú

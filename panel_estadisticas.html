@@ -234,9 +234,8 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script> 
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    
 <script>
     // --- IMPORTACIONES Y CONFIGURACIÓN DE SUPABASE ---
@@ -246,7 +245,6 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
     // Inicializar Supabase Client
-    // Ahora 'Supabase' está disponible globalmente
     const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Colores para los gráficos (se mantienen)
@@ -256,14 +254,12 @@
 
     // --- LÓGICA DE COMENTARIOS (Novedades de Entrega) ---
 
-    // Usaremos la tabla 'solicitudes' para mostrar los últimos comentarios de entrega
     async function setupCommentListener() {
         const commentsListEl = document.getElementById('commentsList');
         const loadingMessageEl = document.getElementById('loadingMessage');
         loadingMessageEl.textContent = "Cargando novedades de entrega...";
 
         try {
-            // Cargar las últimas 5 solicitudes con comentario de entrega no nulo
             const { data: solicitudes, error } = await supabase
                 .from('solicitudes')
                 .select(`
@@ -291,9 +287,16 @@
                     }) :
                     'Fecha Desconocida';
 
-                // Usar innerText o similar si el comentario pudiera contener HTML malicioso,
-                // pero por ahora mantenemos el template literal si confías en la fuente de datos.
-                const commentContent = data.comentario_entrega ? data.comentario_entrega.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+                // Usamos una función simple para escapar el contenido y evitar XSS
+                const escapeHTML = (str) => String(str).replace(/[&<>"']/g, (m) => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m]));
+                
+                const commentContent = data.comentario_entrega ? escapeHTML(data.comentario_entrega) : '';
 
                 return `
                     <li>
@@ -305,11 +308,11 @@
             }).join('');
 
             commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
-            loadingMessageEl.textContent = ""; // Ocultar mensaje de carga al finalizar
+            loadingMessageEl.textContent = "";
 
         } catch (error) {
             console.error("Error al cargar novedades de Supabase:", error);
-            loadingMessageEl.textContent = ""; // Ocultar mensaje de carga
+            loadingMessageEl.textContent = "";
             commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades: ${error.message || error.details}</p>`;
         }
     }
@@ -319,19 +322,16 @@
      
     async function cargarReportesEstadisticos() {
         try {
-            // 1. Top Docentes Solicitantes (RPC: 'get_top_docentes')
+            // Se asume que has creado las funciones RPC en Supabase
             const { data: docentes, error: errDoc } = await supabase.rpc('get_top_docentes');
             if (errDoc) throw new Error("Error en Top Docentes: " + errDoc.message);
 
-            // 2. Proporción por Carrera (RPC: 'get_solicitudes_por_carrera')
             const { data: carreras, error: errCarr } = await supabase.rpc('get_solicitudes_por_carrera');
             if (errCarr) throw new Error("Error en Solicitudes por Carrera: " + errCarr.message);
 
-            // 3. Materiales Más Demandados (RPC: 'get_top_materiales')
             const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales');
             if (errMat) throw new Error("Error en Materiales Demandados: " + errMat.message);
 
-            // 4. Consumo por Asignatura (RPC: 'get_consumo_por_asignatura')
             const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura');
             if (errAsig) throw new Error("Error en Consumo por Asignatura: " + errAsig.message);
 
@@ -344,7 +344,6 @@
 
         } catch (error) {
             console.error("Error al obtener datos de Supabase:", error);
-            // Mostrar error en el dashboard
             const docenteChartEl = document.getElementById('docentesChart');
             if(docenteChartEl && docenteChartEl.parentNode) {
                 docenteChartEl.parentNode.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">Error de BD: ${error.message}</p>`;
@@ -354,6 +353,13 @@
     }
 
     async function renderizarReportes() {
+        // Se añade una validación para Chart.js aquí también, para evitar la ejecución si no está cargado.
+        if (typeof Chart === 'undefined') {
+            const errorContainer = document.querySelector('.main-dashboard') || document.body;
+            errorContainer.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">ERROR: La librería Chart.js no se cargó correctamente. Revisa el CDN.</p>`;
+            return;
+        }
+
         const reportes = await cargarReportesEstadisticos();
 
         // 1. Docentes (Barra Horizontal)
@@ -386,11 +392,10 @@
     }
 
     // ----------------------------------------------------
-    // Funciones de Dibujo de Gráficos (Sin cambios)
+    // Funciones de Dibujo de Gráficos
     // ----------------------------------------------------
      
     function crearBarraHorizontal(id, label, labels, data, color, unit) {
-        // Validación para asegurar que el elemento existe antes de crear el gráfico
         if (!document.getElementById(id)) return;
 
         new Chart(document.getElementById(id), {
@@ -454,7 +459,7 @@
                 ctx.font = 'bold 28px Inter, sans-serif';
                 ctx.fillText(total.toLocaleString('es-ES'), centerX, centerY - 15);
                  
-                ctx.fillStyle = 'var(--color-text)'; // Asume que tienes esta variable CSS definida
+                ctx.fillStyle = 'var(--color-text)';
                 ctx.font = '14px Inter, sans-serif';
                 ctx.fillText('Total Solicitudes', centerX, centerY + 15);
                  
@@ -462,16 +467,14 @@
             }
         }
     };
-    
-    // Asegurarse de que Chart existe antes de registrar el plugin
+     
     if (typeof Chart !== 'undefined') {
         Chart.register(totalDoughnutPlugin);
     }
 
     function crearDona(id, label, labels, data) {
-        // Validación para asegurar que el elemento existe antes de crear el gráfico
         if (!document.getElementById(id)) return;
-        
+         
         new Chart(document.getElementById(id), {
             type: 'doughnut',
             data: {
@@ -479,7 +482,6 @@
                 datasets: [{
                     label: label,
                     data: data,
-                    // Colores por defecto para el gráfico de dona
                     backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
                     hoverOffset: 4
                 }]
@@ -497,9 +499,9 @@
      
     // Ejecutar al cargar la página
     document.addEventListener('DOMContentLoaded', () => {
-        // Se añade una validación para Chart.js aquí también, aunque la importación de CDN es clave.
+        // CORRECCIÓN: Usamos Template Literals (backticks) para evitar errores de sintaxis
         if (typeof Chart === 'undefined') {
-            console.error("Error: Chart.js no está cargado. Asegúrate de incluir <script src='https://cdn.jsdelivr.net/npm/chart.js@4'></script> en tu HTML antes de este código.");
+            console.error(`Error: Chart.js no está cargado. Asegúrate de incluir <script src='https://cdn.jsdelivr.net/npm/chart.js@4'></script> en tu HTML antes de este código.`);
             return;
         }
 
@@ -507,7 +509,7 @@
         setupCommentListener();
     });
 </script>
-
+    
 </body>
 </html>
 </html>

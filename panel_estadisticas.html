@@ -92,7 +92,6 @@ box-shadow: 0 5px 10px rgba(108, 117, 125, 0.5);
 /* Grid del Dashboard: Layout vertical (una card por fila) */
 .dashboard-grid {
 display: grid;
-/* CAMBIO CLAVE: Una sola columna que ocupa el 100% del ancho */
 grid-template-columns: 1fr;
 gap: 25px;
 padding: 0 20px 20px 20px;
@@ -105,12 +104,17 @@ background: var(--color-card);
 padding: 20px;
 border-radius: 12px;
 box-shadow: var(--shadow-subtle);
-/* AJUSTADO: Mayor altura para dar espacio a etiquetas largas */
 height: 600px; 
 display: flex;
 flex-direction: column;
 transition: transform 0.3s ease;
 }
+
+/* Reducimos un poco la altura de la tarjeta de comentarios, ya que no tiene el área de entrada */
+.chart-container:nth-child(5) { 
+    height: 450px; 
+}
+
 
 .chart-container:hover {
 transform: translateY(-3px);
@@ -164,51 +168,21 @@ float: right;
 .comments-list li:last-child {
 border-bottom: none;
 }
-/* Estilos de la zona de ingreso de comentario */
-.comment-input-area {
-display: flex;
-flex-direction: column;
-gap: 10px;
-padding-top: 10px;
-margin-top: 10px;
-border-top: 1px solid #e0e0e0;
-}
-#newCommentText {
-width: 100%;
-padding: 10px;
-border: 1px solid #ccc;
-border-radius: 6px;
-min-height: 60px;
-resize: vertical;
-font-size: 0.9em;
-box-sizing: border-box; /* Incluye padding en el ancho */
-}
-.submit-comment-button {
-background-color: var(--color-primary);
-color: white;
-border: none;
-padding: 8px 15px;
-border-radius: 6px;
-cursor: pointer;
-font-weight: 600;
-transition: background-color 0.2s;
-}
-.submit-comment-button:hover {
-background-color: #003366;
-}
-
+/* Estilos de la zona de ingreso de comentario (ELIMINADOS) */
 
 /* Ajustes para móviles */
 @media (max-width: 768px) {
 h2 { font-size: 2em; margin-top: 15px; }
 .dashboard-grid { 
-    /* En móvil, la única columna sigue siendo apropiada */
-    grid-template-columns: 1fr; 
-    padding: 10px; 
-    gap: 15px; 
+    grid-template-columns: 1fr; 
+    padding: 10px; 
+    gap: 15px; 
 }
 .chart-container { 
-    height: 450px; /* Se ajusta a una altura más práctica en móvil */
+    height: 450px; 
+}
+.chart-container:nth-child(5) { /* Asegura que la card de comentarios se vea bien en móvil */
+    height: 350px; 
 }
 .dashboard-header { justify-content: space-around; padding-bottom: 15px; }
 }
@@ -257,14 +231,8 @@ display: none;
 <div id="commentsList" class="comments-content">
 <p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
 </div>
-<div class="comment-input-area">
-<textarea id="newCommentText" placeholder="La edición de novedades se gestiona en la vista operativa." disabled></textarea>
-<button id="submitCommentButton" class="submit-comment-button" disabled>Guardar Novedad</button>
 </div>
 </div>
-</div>
-</body>
-</html>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

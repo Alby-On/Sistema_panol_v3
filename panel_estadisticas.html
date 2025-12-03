@@ -378,12 +378,13 @@ display: none;
             crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
         }
 
-        // 3. Materiales (Barra Horizontal)
+        // 3. Materiales (Barra Horizontal) - MODIFICACIÓN APLICADA AQUÍ
         if (document.getElementById('materialesChart')) {
             const materialesLabels = reportes.materiales.map(m => m.material);
-            // Mantenemos 'cantidad_total' para coincidir con la definición de tu función SQL que suma unidades
-            const materialesData = reportes.materiales.map(m => m.cantidad_total); 
-            crearBarraHorizontal('materialesChart', 'Unidades Pedidas', materialesLabels, materialesData, secondaryColor, ' unidades');
+            // *** CAMBIO: Usamos 'veces_solicitado' para reflejar la frecuencia ***
+            const materialesData = reportes.materiales.map(m => m.veces_solicitado); 
+            // *** CAMBIO: Actualizamos la etiqueta del gráfico ***
+            crearBarraHorizontal('materialesChart', 'Veces Solicitado', materialesLabels, materialesData, secondaryColor, ' veces');
         }
 
         // 4. Asignaturas (Barra Horizontal)

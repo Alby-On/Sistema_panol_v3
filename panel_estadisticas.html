@@ -329,11 +329,11 @@ display: none;
             const { data: carreras, error: errCarr } = await supabase.rpc('get_solicitudes_por_carrera');
             if (errCarr) throw new Error("Error en Solicitudes por Carrera: " + errCarr.message);
 
-            // LLAMADA A MATERIALES: Se asume que get_top_materiales devuelve 'veces_solicitado' o 'cantidad_total'. Lo mantendré en la última versión que usaste.
-            const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales');
+            // CORRECCIÓN APLICADA AQUÍ: Se pasa 'material_filtro: null' para resolver la ambigüedad.
+            const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales', { material_filtro: null });
             if (errMat) throw new Error("Error en Materiales Demandados: " + errMat.message);
 
-            // LLAMADA CORREGIDA (1): Se pasa 'asignatura_filtro: null' para resolver la ambigüedad de la función
+            // LLAMADA CORREGIDA (1): Se pasa 'asignatura_filtro: null' para resolver la ambigüedad de la función (esta corrección estaba en el ejemplo anterior)
             const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura', { asignatura_filtro: null });
             if (errAsig) throw new Error("Error en Consumo por Asignatura: " + errAsig.message);
 
@@ -381,8 +381,7 @@ display: none;
         // 3. Materiales (Barra Horizontal)
         if (document.getElementById('materialesChart')) {
             const materialesLabels = reportes.materiales.map(m => m.material);
-            // Mantenemos 'cantidad_total' si la función get_top_materiales suma unidades.
-            // Si la función devuelve la frecuencia, usa 'veces_solicitado'
+            // Mantenemos 'cantidad_total' para coincidir con la definición de tu función SQL que suma unidades
             const materialesData = reportes.materiales.map(m => m.cantidad_total); 
             crearBarraHorizontal('materialesChart', 'Unidades Pedidas', materialesLabels, materialesData, secondaryColor, ' unidades');
         }
@@ -390,9 +389,8 @@ display: none;
         // 4. Asignaturas (Barra Horizontal)
         if (document.getElementById('asignaturasChart')) {
             const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
-            // MAPEO CORREGIDO (2): Usamos 'numero_de_solicitudes' que es el nombre de la columna que devuelve tu función actual.
+            // Se mantiene la corrección de la función anterior para que este gráfico también funcione
             const asignaturasData = reportes.asignaturas.map(a => a.numero_de_solicitudes);
-            // Etiqueta del gráfico corregida
             crearBarraHorizontal('asignaturasChart', 'Número de Solicitudes', asignaturasLabels, asignaturasData, dangerColor, ' solicitudes');
         }
     }

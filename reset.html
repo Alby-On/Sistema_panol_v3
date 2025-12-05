@@ -18,6 +18,8 @@
             --color-border: #cccccc;
             --color-success: #28a745;
             --color-danger: #dc3545;
+            --icon-width: 40px; /* Ancho reservado para el icono del ojo */
+            --height-message-match: 25px; /* Altura reservada para el mensaje de coincidencia */
         }
 
         body {
@@ -55,10 +57,11 @@
             margin-bottom: 15px;
         }
 
+        /* Estilos generales de input */
         input {
             width: 100%;
             padding: 12px;
-            margin-top: 10px;
+            margin: 0; /* Aseguramos que no tenga margen superior */
             border-radius: 6px;
             border: 1px solid var(--color-border);
             box-sizing: border-box;
@@ -125,51 +128,63 @@
             border: 1px solid #b8ffb8;
         }
 
-        /* Estilos para los campos de contraseña */
-.password-container {
-    position: relative;
-    margin-bottom: 25px; /* Más espacio para acomodar el mensaje */
-}
+        /* ------------------------------------- */
+        /* CORRECCIONES DE ALINEACIÓN DE CONTRASEÑA */
+        /* ------------------------------------- */
 
-.password-container input {
-    margin: 0; /* Remover el margen por defecto */
-}
+        .password-container {
+            position: relative;
+            margin-top: 10px; /* Espacio antes del input */
+            margin-bottom: 5px; 
+        }
 
-/* Estilos para el icono de mostrar/ocultar */
-.toggle-password {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
-    cursor: pointer;
-    user-select: none;
-    color: var(--color-border);
-    font-size: 1.2em;
-    transition: color 0.3s;
-}
+        .password-container input {
+            /* Asegura espacio a la derecha para el icono, evitando desalineación */
+            padding-right: var(--icon-width); 
+        }
 
-.toggle-password:hover {
-    color: var(--color-primary);
-}
+        /* Estilos para el icono de mostrar/ocultar (Centrado vertical estable con Flexbox) */
+        .toggle-password {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%; /* Cubre toda la altura del input */
+            width: var(--icon-width); 
+            display: flex; 
+            align-items: center; /* Centrado vertical */
+            justify-content: center; /* Centrado horizontal */
+            cursor: pointer;
+            user-select: none;
+            color: var(--color-border);
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
 
-/* Estilo para el mensaje de coincidencia de contraseña */
-#password-match-message {
-    font-size: 0.9em;
-    font-weight: 600;
-    margin-top: 5px; /* Posicionar debajo del input */
-    text-align: left;
-    padding-left: 5px;
-    position: absolute; /* Para que no afecte el flujo del botón */
-    bottom: -25px;
-    width: 100%;
-    box-sizing: border-box;
-}
+        .toggle-password:hover {
+            color: var(--color-primary);
+        }
 
-/* Resaltar inputs cuando no coinciden */
-.password-mismatch {
-    border-color: var(--color-danger) !important;
-    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
-}
+        /* Contenedor del mensaje de coincidencia (para estabilizar el layout) */
+        .message-spacer {
+            min-height: var(--height-message-match); /* Reservar el espacio aunque esté vacío */
+            margin-bottom: 10px; /* Espacio antes del botón de actualizar */
+        }
+        
+        /* Estilo para el mensaje de coincidencia de contraseña */
+        #password-match-message {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 5px 0 0 5px; 
+            text-align: left;
+            box-sizing: border-box;
+            display: block; 
+        }
+
+        /* Resaltar inputs cuando no coinciden */
+        .password-mismatch {
+            border-color: var(--color-danger) !important;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
+        }
 
         @media (max-width: 450px) {
             .container {
@@ -185,19 +200,28 @@
         <h2>🔑 Restablecer Contraseña</h2>
         <p>Ingresa tu nueva contraseña:</p>
 
-<div class="password-container">
-    <input type="password" id="nuevaPass" placeholder="🔑 Nueva Contraseña (mín. 8 caracteres)" onkeyup="checkPasswordMatch()" />
-    <span class="toggle-password" onclick="toggleVisibility('nuevaPass', this)">👁️</span>
-</div>
+        <!-- Usar <form> para que el botón de actualizar pueda ser de tipo submit -->
+        <form onsubmit="event.preventDefault(); cambiarPassword();">
+            <div class="password-container">
+                <!-- Placeholder y minlength actualizados a 8 -->
+                <input type="password" id="nuevaPass" placeholder="🔑 Nueva Contraseña (mín. 8 caracteres)" onkeyup="checkPasswordMatch()" required minlength="8"/>
+                <span class="toggle-password" onclick="toggleVisibility('nuevaPass', this)">👁️</span>
+            </div>
 
-<div class="password-container">
-    <input type="password" id="confirmarPass" placeholder="✅ Confirma tu Contraseña" onkeyup="checkPasswordMatch()" />
-    <span class="toggle-password" onclick="toggleVisibility('confirmarPass', this)">👁️</span>
-    <p id="password-match-message"></p>
-</div>
+            <div class="password-container">
+                <!-- minlength actualizado a 8 -->
+                <input type="password" id="confirmarPass" placeholder="✅ Confirma tu Contraseña" onkeyup="checkPasswordMatch()" required minlength="8"/>
+                <span class="toggle-password" onclick="toggleVisibility('confirmarPass', this)">👁️</span>
+            </div>
+            
+            <!-- **CORRECCIÓN:** Contenedor dedicado para el mensaje para estabilizar el layout. -->
+            <div class="message-spacer">
+                <p id="password-match-message"></p>
+            </div>
 
-<button id="btnActualizar" onclick="cambiarPassword()" disabled>Actualizar Contraseña</button>
-        <!-- Botón inicia deshabilitado -->
+            <button id="btnActualizar" type="submit" disabled>Actualizar Contraseña</button>
+        </form>
+        
         <button class="btn-secondary" id="btnLogin" onclick="irLogin()" disabled>Volver al Inicio de Sesión</button>
 
         <p id="msg"></p>

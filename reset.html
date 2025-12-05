@@ -125,6 +125,52 @@
             border: 1px solid #b8ffb8;
         }
 
+        /* Estilos para los campos de contraseña */
+.password-container {
+    position: relative;
+    margin-bottom: 25px; /* Más espacio para acomodar el mensaje */
+}
+
+.password-container input {
+    margin: 0; /* Remover el margen por defecto */
+}
+
+/* Estilos para el icono de mostrar/ocultar */
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    user-select: none;
+    color: var(--color-border);
+    font-size: 1.2em;
+    transition: color 0.3s;
+}
+
+.toggle-password:hover {
+    color: var(--color-primary);
+}
+
+/* Estilo para el mensaje de coincidencia de contraseña */
+#password-match-message {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: 5px; /* Posicionar debajo del input */
+    text-align: left;
+    padding-left: 5px;
+    position: absolute; /* Para que no afecte el flujo del botón */
+    bottom: -25px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Resaltar inputs cuando no coinciden */
+.password-mismatch {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
+}
+
         @media (max-width: 450px) {
             .container {
                 padding: 20px;
@@ -139,9 +185,18 @@
         <h2>🔑 Restablecer Contraseña</h2>
         <p>Ingresa tu nueva contraseña:</p>
 
-        <input type="password" id="nuevaPass" placeholder="Nueva contraseña (mín. 8 caracteres)" />
-        <button onclick="cambiarPassword()">Actualizar Contraseña</button>
+<div class="password-container">
+    <input type="password" id="nuevaPass" placeholder="🔑 Nueva Contraseña (mín. 8 caracteres)" onkeyup="checkPasswordMatch()" />
+    <span class="toggle-password" onclick="toggleVisibility('nuevaPass', this)">👁️</span>
+</div>
 
+<div class="password-container">
+    <input type="password" id="confirmarPass" placeholder="✅ Confirma tu Contraseña" onkeyup="checkPasswordMatch()" />
+    <span class="toggle-password" onclick="toggleVisibility('confirmarPass', this)">👁️</span>
+    <p id="password-match-message"></p>
+</div>
+
+<button id="btnActualizar" onclick="cambiarPassword()" disabled>Actualizar Contraseña</button>
         <!-- Botón inicia deshabilitado -->
         <button class="btn-secondary" id="btnLogin" onclick="irLogin()" disabled>Volver al Inicio de Sesión</button>
 
@@ -187,28 +242,110 @@ async function init() {
 init();
 
 async function cambiarPassword() {
-    const nuevaPass = document.getElementById("nuevaPass").value;
+    // ⬇️ Obtener el valor del campo principal
+    const nuevaPass = document.getElementById("nuevaPass").value; 
     const btnLogin = document.getElementById("btnLogin");
+    const btnActualizar = document.getElementById("btnActualizar"); // Lo usamos para deshabilitarlo
 
+    // Ya no es necesario validar campo vacío aquí si usamos checkPasswordMatch
+    // pero mantenemos la validación de la función por seguridad.
     if (!nuevaPass) {
         showMessage("Ingresa una nueva contraseña.", true);
         return;
     }
+    
+    // 🚫 Impedir el envío si el botón está habilitado por error o manipulación
+    if (btnActualizar.disabled) {
+        showMessage("Las contraseñas no cumplen los requisitos.", true);
+        return;
+    }
+
+    // Deshabilitar botón durante el proceso
+    btnActualizar.disabled = true; 
 
     const { error } = await supabaseClient.auth.updateUser({ password: nuevaPass });
+    
     if (error) {
         showMessage("Error al actualizar contraseña: " + error.message, true);
+        btnActualizar.disabled = false; // Re-habilitar si falla
         return;
     }
 
     showMessage("Contraseña actualizada correctamente.");
-    btnLogin.disabled = false; // 🔹 Habilita el botón después de actualizar
+    btnLogin.disabled = false; // 🔹 Habilita el botón de Volver al Login
 }
 
 function irLogin() {
     window.location.href = "index.html";
 }
+// ----------------------------------------
+// FUNCIONES DE UTILIDAD PARA CONTRASEÑA
+// ----------------------------------------
+
+/**
+ * Alterna la visibilidad de un campo de contraseña.
+ */
+function toggleVisibility(fieldId, toggleElement) {
+    const field = document.getElementById(fieldId);
+    
+    if (field.type === "password") {
+        field.type = "text";
+        toggleElement.textContent = "🔒"; // Icono de cerrado (visible)
+    } else {
+        field.type = "password";
+        toggleElement.textContent = "👁️"; // Icono de abierto (oculto)
+    }
+}
+
+/**
+ * Verifica si las dos contraseñas coinciden.
+ */
+function checkPasswordMatch() {
+    const pass = document.getElementById("nuevaPass");
+    const confirmPass = document.getElementById("confirmarPass");
+    const messageElement = document.getElementById("password-match-message");
+    const btnActualizar = document.getElementById("btnActualizar");
+
+    const passValue = pass.value.trim();
+    const confirmValue = confirmPass.value.trim();
+
+    // Limpiar clases y mensajes
+    messageElement.textContent = "";
+    pass.classList.remove("password-mismatch");
+    confirmPass.classList.remove("password-mismatch");
+    btnActualizar.disabled = true; // Deshabilitar por defecto hasta la validación
+
+    // Mínimo de 6 caracteres (recomendación de Supabase)
+    if (passValue.length > 0 && passValue.length < 6) {
+        messageElement.textContent = "❌ La contraseña debe tener al menos 6 caracteres.";
+        messageElement.style.color = "var(--color-danger)";
+        pass.classList.add("password-mismatch");
+        return false;
+    }
+
+    if (confirmValue.length > 0) {
+        if (passValue !== confirmValue) {
+            // No coinciden
+            messageElement.textContent = "❌ Las contraseñas no coinciden.";
+            messageElement.style.color = "var(--color-danger)";
+            pass.classList.add("password-mismatch");
+            confirmPass.classList.add("password-mismatch");
+            return false;
+        } else if (passValue.length >= 6) {
+            // Coinciden y cumplen el mínimo
+            messageElement.textContent = "✅ Contraseñas coinciden.";
+            messageElement.style.color = "var(--color-success)";
+            btnActualizar.disabled = false; // HABILITAR EL BOTÓN
+            return true;
+        }
+    }
+    return false; // No cumplen los criterios para habilitar el botón
+}
 </script>
 </body>
 </html>
+
+
+
+
 

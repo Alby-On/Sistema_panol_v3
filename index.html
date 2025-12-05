@@ -174,6 +174,48 @@
                 padding: 12px;
             }
         }
+        /* Nuevos estilos para los campos de contraseña */
+.password-container {
+    position: relative; /* Contenedor para posicionar el ojo */
+    margin-bottom: 18px; /* Espacio para separar del siguiente elemento */
+}
+
+/* El input dentro del contenedor */
+.password-container input {
+    margin: 0; /* Remover el margen por defecto para que el contenedor lo maneje */
+}
+
+/* Estilos para el icono de mostrar/ocultar */
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    user-select: none; /* Evita que se seleccione el texto del icono */
+    color: var(--color-border);
+    font-size: 1.2em;
+    transition: color 0.3s;
+}
+
+.toggle-password:hover {
+    color: var(--color-primary);
+}
+
+/* Estilo para el mensaje de coincidencia de contraseña */
+#password-match-message {
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: -10px; /* Acercarlo al input */
+    margin-bottom: 15px;
+    padding-left: 5px;
+}
+
+/* Resaltar inputs cuando no coinciden */
+.password-mismatch {
+    border-color: var(--color-error) !important;
+    box-shadow: 0 0 5px rgba(220, 53, 69, 0.4) !important;
+}
     </style>
 </head>
 <body>
@@ -228,7 +270,18 @@
 
     <input type="tel" id="regTelefono" placeholder="📱 Teléfono (Ej: +56911111111)">
     <input type="email" id="regEmail" placeholder="📧 Correo Electrónico">
-    <input type="password" id="regPass" placeholder="🔒 Contraseña">
+    <label for="regPass" style="font-size: 0.9em; font-weight: 600; display: block; margin-bottom: 5px;">Contraseña:</label>
+<div class="password-container">
+    <input type="password" id="regPass" placeholder="🔒 Escribe tu Contraseña" onkeyup="checkPasswordMatch()">
+    <span class="toggle-password" onclick="toggleVisibility('regPass', this)">👁️</span>
+</div>
+
+<label for="regConfirmPass" style="font-size: 0.9em; font-weight: 600; display: block; margin-bottom: 5px;">Confirmar Contraseña:</label>
+<div class="password-container">
+    <input type="password" id="regConfirmPass" placeholder="✅ Confirma tu Contraseña" onkeyup="checkPasswordMatch()">
+    <span class="toggle-password" onclick="toggleVisibility('regConfirmPass', this)">👁️</span>
+</div>
+<p id="password-match-message"></p>
 
     <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
     <p id="mensaje"></p>
@@ -298,6 +351,8 @@ async function registrar() {
     const telefono = regTelefono.value.trim();
     const email = regEmail.value.trim();
     const pass = regPass.value.trim();
+    // ⬇️ NUEVA LÍNEA: Obtener el valor de la confirmación
+    const confirmPass = regConfirmPass.value.trim();
 
     const mensaje = document.getElementById("mensaje");
     // Asumo que 'rutError' está definido
@@ -321,6 +376,18 @@ async function registrar() {
     mensaje.textContent = ""; 
     rutError.textContent = "";
     mensaje.style.backgroundColor = "transparent";
+
+    // ⬇️ VALIDACIÓN DE CAMPOS VACÍOS: Añadir confirmPass
+    if (!nombre || !rut || !carrera || !telefono || !email || !pass || !confirmPass) {
+        showError("Complete todos los campos, incluyendo la confirmación de contraseña.");
+        return;
+    }
+
+    // ⬇️ NUEVA VALIDACIÓN: Coincidencia de contraseñas
+    if (!checkPasswordMatch()) {
+        showError("Las contraseñas ingresadas no coinciden.");
+        return;
+    }
 
     if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
         showError("Complete todos los campos.");
@@ -371,6 +438,7 @@ async function registrar() {
     }
 
     showSuccess("Registro exitoso. Revisa tu correo para confirmar.");
+    
 }
 
 // ----------------------------------------
@@ -443,10 +511,64 @@ async function login() {
 }
 
 showWelcome();
+// ----------------------------------------
+// FUNCIONES DE UTILIDAD PARA CONTRASEÑA
+// ----------------------------------------
+
+/**
+ * Alterna la visibilidad de un campo de contraseña.
+ * @param {string} fieldId - El ID del campo input.
+ * @param {HTMLElement} toggleElement - El elemento (icono) que fue clickeado.
+ */
+function toggleVisibility(fieldId, toggleElement) {
+    const field = document.getElementById(fieldId);
+    
+    if (field.type === "password") {
+        field.type = "text";
+        toggleElement.textContent = "🔒"; // Icono de cerrado (visible)
+    } else {
+        field.type = "password";
+        toggleElement.textContent = "👁️"; // Icono de abierto (oculto)
+    }
+}
+
+/**
+ * Verifica si las dos contraseñas coinciden y actualiza el mensaje de error.
+ * También aplica un estilo visual al campo si no coinciden.
+ */
+function checkPasswordMatch() {
+    const pass = document.getElementById("regPass");
+    const confirmPass = document.getElementById("regConfirmPass");
+    const messageElement = document.getElementById("password-match-message");
+
+    const passValue = pass.value.trim();
+    const confirmValue = confirmPass.value.trim();
+
+    // Limpiar clases y mensajes
+    messageElement.textContent = "";
+    pass.classList.remove("password-mismatch");
+    confirmPass.classList.remove("password-mismatch");
+    
+    // Solo verificar si el campo de confirmación no está vacío
+    if (confirmValue.length > 0) {
+        if (passValue !== confirmValue) {
+            // No coinciden
+            messageElement.textContent = "❌ Las contraseñas no coinciden.";
+            messageElement.style.color = "var(--color-error)";
+            // Resaltar ambos inputs con el estilo de error
+            pass.classList.add("password-mismatch");
+            confirmPass.classList.add("password-mismatch");
+            return false; // Devuelve false si no coinciden
+        } else {
+            // Coinciden
+            messageElement.textContent = "✅ Contraseñas coinciden.";
+            messageElement.style.color = "var(--color-secondary)";
+            return true; // Devuelve true si coinciden
+        }
+    }
+    return true; // Si el campo de confirmación está vacío, no hay error de coincidencia aún.
+}
 </script>
 </body>
 </html>
-
-
-
 

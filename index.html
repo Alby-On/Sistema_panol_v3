@@ -310,7 +310,6 @@ async function handleRedirect() {
         const refresh_token = params.get("refresh_token");
 
         await supabaseClient.auth.setSession({ access_token, refresh_token });
-
         window.location.href = "menu.html";
     }
 }
@@ -329,7 +328,7 @@ function showLogin(){ hideAll(); loginBox.classList.remove("hidden"); }
 function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
 
 // ----------------------------------------
-// VALIDACIÓN RUT (Lógica sin tocar)
+// VALIDACIÓN RUT
 // ----------------------------------------
 function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
 function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:'K'; }
@@ -343,123 +342,119 @@ function validarRutCompleto(rutCompleto){
 }
 
 // ----------------------------------------
-// FUNCIÓN REGISTRAR (CON MENSAJES PREESTABLECIDOS)
+// FUNCIÓN REGISTRAR
 // ----------------------------------------
 async function registrar() {
+
+    const mensaje = document.getElementById("mensaje");
+    const rutError = document.getElementById("rutError");
+
     const nombre = regNombre.value.trim();
     const rut = regRut.value.trim();
     const carrera = regCarrera.value;
     const telefono = regTelefono.value.trim();
     const email = regEmail.value.trim();
     const pass = regPass.value.trim();
-    // ⬇️ NUEVA LÍNEA: Obtener el valor de la confirmación
     const confirmPass = regConfirmPass.value.trim();
 
-    const mensaje = document.getElementById("mensaje");
-    // Asumo que 'rutError' está definido
-    const rutError = document.getElementById("rutError"); 
-    
-    // Función de utilidad para mostrar errores
     const showError = (text) => {
         mensaje.textContent = `❌ ${text}`;
         mensaje.style.color = "red";
         mensaje.style.backgroundColor = "#ffdddd";
     };
-    
-    // Función de utilidad para mostrar éxito
+
     const showSuccess = (text) => {
         mensaje.textContent = `✅ ${text}`;
         mensaje.style.color = "green";
         mensaje.style.backgroundColor = "#ddffdd";
     };
 
-    // Limpiar mensajes anteriores
-    mensaje.textContent = ""; 
-    rutError.textContent = "";
+    mensaje.textContent = "";
     mensaje.style.backgroundColor = "transparent";
+    rutError.textContent = "";
 
-    // ⬇️ VALIDACIÓN DE CAMPOS VACÍOS: Añadir confirmPass
+    // CAMPOS VACÍOS
     if (!nombre || !rut || !carrera || !telefono || !email || !pass || !confirmPass) {
         showError("Complete todos los campos, incluyendo la confirmación de contraseña.");
         return;
     }
 
-    // ⬇️ NUEVA VALIDACIÓN: Coincidencia de contraseñas
+    // VALIDAR CONTRASEÑAS
     if (!checkPasswordMatch()) {
         showError("Las contraseñas ingresadas no coinciden.");
         return;
     }
 
-    if (!nombre || !rut || !carrera || !telefono || !email || !pass) {
-        showError("Complete todos los campos.");
-        return;
-    }
-
+    // VALIDAR RUT
     const rutVal = validarRutCompleto(rut);
     if (!rutVal.ok) {
         rutError.textContent = rutVal.msg;
         return;
     }
 
+    // VALIDAR TELÉFONO
     if (!/^\+569\d{8}$/.test(telefono)) {
         showError("Teléfono inválido. Use +569XXXXXXXX");
         return;
     }
 
-    // 1. Crear usuario en AUTH
-    const { error: e1 } = await supabaseClient.auth.signUp({
-        email,
-        password: pass
-    });
+    // VALIDAR DOMINIO CORREO
+    const dominiosPermitidos = [
+        "@gmail.com",
+        "@hotmail.com",
+        "@outlook.com",
+        "@icloud.com",
+        "@inacapmail.cl",
+        "@inacap.cl"
+    ];
+
+    const dominioValido = dominiosPermitidos.some(d => email.endsWith(d));
+
+    if (!dominioValido) {
+        showError("El correo ingresado no es válido o no está permitido.");
+        return;
+    }
+
+    // CREAR EN AUTH
+    const { error: e1 } = await supabaseClient.auth.signUp({ email, password: pass });
 
     if (e1) {
-        // Mensaje preestablecido para CORREO YA REGISTRADO
         if (e1.message.includes("already registered")) {
-            showError("El correo electrónico ya está registrado. Intente iniciar sesión.");
+            showError("El correo ya está registrado. Intente iniciar sesión.");
         } else {
             showError(`Error al registrar usuario: ${e1.message}`);
         }
         return;
     }
 
-    // 2. Guardar datos en tabla usuarios
+    // GUARDAR PERFIL
     const { error: e2 } = await supabaseClient.from("usuarios").insert([
         { nombre, rut, carrera, telefono, email }
     ]);
 
     if (e2) {
-        // Mensaje preestablecido para RUT/EMAIL DUPLICADO EN LA TABLA DE PERFIL (Código de unicidad 23505)
-        if (e2.code === '23505') { 
-            showError("El RUT o el correo electrónico ya están asociados a otro perfil.");
+        if (e2.code === '23505') {
+            showError("El RUT o correo ya están en uso.");
         } else {
             showError(`Error al guardar perfil: ${e2.message}`);
         }
-        // Nota: Si esto falla después de Auth, el usuario queda en Auth pero sin perfil.
         return;
     }
 
     showSuccess("Registro exitoso. Revisa tu correo para confirmar.");
-    
 }
 
 // ----------------------------------------
-// FUNCIÓN LOGIN (CON MENSAJES PREESTABLECIDOS)
+// FUNCIÓN LOGIN
 // ----------------------------------------
-// -------------------------------
-// Validar RUT (formato y DV)
-// -------------------------------
 function validarRutFormatoYDigito(rut) {
-    if (typeof rut !== "string") return false;
-
-    // 7 u 8 dígitos + guión + dígito verificador 0-9 o K
     const re = /^\d{7,8}-[0-9kK]$/;
     if (!re.test(rut)) return false;
 
     const [cuerpo, dvIngresado] = rut.split("-");
     const dv = dvIngresado.toUpperCase();
 
-    let suma = 0;
-    let multiplicador = 2;
+    let suma = 0, multiplicador = 2;
 
     for (let i = cuerpo.length - 1; i >= 0; i--) {
         suma += parseInt(cuerpo[i], 10) * multiplicador;
@@ -467,20 +462,13 @@ function validarRutFormatoYDigito(rut) {
     }
 
     const resto = 11 - (suma % 11);
-    let dvCalculado;
-
-    if (resto === 11) dvCalculado = "0";
-    else if (resto === 10) dvCalculado = "K";
-    else dvCalculado = String(resto);
+    const dvCalculado = resto === 11 ? "0" : resto === 10 ? "K" : String(resto);
 
     return dvCalculado === dv;
 }
 
-// -------------------------------
-// FUNCIÓN LOGIN COMPLETA
-// -------------------------------
 async function login() {
-    const input = loginEmail.value.trim(); // Puede ser RUT o email
+    const input = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
 
@@ -496,8 +484,8 @@ async function login() {
         msg.style.backgroundColor = "#ddffdd";
     };
 
-    msg.style.backgroundColor = "transparent";
     msg.textContent = "";
+    msg.style.backgroundColor = "transparent";
 
     if (!input || !pass) {
         showError("Complete todos los campos.");
@@ -506,36 +494,25 @@ async function login() {
 
     let emailParaLogin = input;
 
-    // ------------------------------------
-    // Detectar si el usuario ingresó RUT
-    // ------------------------------------
-    const esEmail = input.includes("@");
-
-    if (!esEmail) {
-        // Validar formato del RUT
+    if (!input.includes("@")) {
         if (!validarRutFormatoYDigito(input)) {
-            showError("RUT inválido. Debe ser como 12345678-9 (sin puntos).");
+            showError("RUT inválido. Ejemplo: 12345678-9");
             return;
         }
 
-        // Buscar email asociado al RUT con RPC
-        const { data: emailEncontrado, error: rutError } = await supabaseClient.rpc(
-            "buscar_email_por_rut",
-            { rut_input: input }
-        );
+        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", {
+            rut_input: input
+        });
 
-        if (rutError || !emailEncontrado) {
-            showError("El RUT no está registrado en el sistema.");
+        if (error || !data) {
+            showError("El RUT no está registrado.");
             return;
         }
 
-        emailParaLogin = emailEncontrado;
+        emailParaLogin = data;
     }
 
-    // ------------------------------------
-    // Login con Supabase usando el email final
-    // ------------------------------------
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    const { error } = await supabaseClient.auth.signInWithPassword({
         email: emailParaLogin,
         password: pass
     });
@@ -552,9 +529,6 @@ async function login() {
         return;
     }
 
-    // ------------------------------------
-    // Obtener perfil desde tabla usuarios
-    // ------------------------------------
     const { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("*")
@@ -568,73 +542,48 @@ async function login() {
     }
 
     localStorage.setItem("currentUser", JSON.stringify(perfil));
-
     showSuccess(`Bienvenido, ${perfil.nombre}`);
 
-    setTimeout(() => {
-        window.location.href = "menu.html";
-    }, 1200);
+    setTimeout(() => window.location.href = "menu.html", 1200);
 }
 
 showWelcome();
-// ----------------------------------------
-// FUNCIONES DE UTILIDAD PARA CONTRASEÑA
-// ----------------------------------------
 
-/**
- * Alterna la visibilidad de un campo de contraseña.
- * @param {string} fieldId - El ID del campo input.
- * @param {HTMLElement} toggleElement - El elemento (icono) que fue clickeado.
- */
+// ----------------------------------------
+// VISIBILIDAD DE CONTRASEÑAS
+// ----------------------------------------
 function toggleVisibility(fieldId, toggleElement) {
     const field = document.getElementById(fieldId);
-    
-    if (field.type === "password") {
-        field.type = "text";
-        toggleElement.textContent = "🔒"; // Icono de cerrado (visible)
-    } else {
-        field.type = "password";
-        toggleElement.textContent = "👁️"; // Icono de abierto (oculto)
-    }
+    field.type = field.type === "password" ? "text" : "password";
+    toggleElement.textContent = field.type === "password" ? "👁️" : "🔒";
 }
 
-/**
- * Verifica si las dos contraseñas coinciden y actualiza el mensaje de error.
- * También aplica un estilo visual al campo si no coinciden.
- */
 function checkPasswordMatch() {
-    const pass = document.getElementById("regPass");
-    const confirmPass = document.getElementById("regConfirmPass");
-    const messageElement = document.getElementById("password-match-message");
+    const pass = regPass;
+    const confirmPass = regConfirmPass;
+    const msg = document.getElementById("password-match-message");
 
-    const passValue = pass.value.trim();
-    const confirmValue = confirmPass.value.trim();
-
-    // Limpiar clases y mensajes
-    messageElement.textContent = "";
+    msg.textContent = "";
     pass.classList.remove("password-mismatch");
     confirmPass.classList.remove("password-mismatch");
-    
-    // Solo verificar si el campo de confirmación no está vacío
-    if (confirmValue.length > 0) {
-        if (passValue !== confirmValue) {
-            // No coinciden
-            messageElement.textContent = "❌ Las contraseñas no coinciden.";
-            messageElement.style.color = "var(--color-error)";
-            // Resaltar ambos inputs con el estilo de error
+
+    if (confirmPass.value.trim().length > 0) {
+        if (pass.value !== confirmPass.value) {
+            msg.textContent = "❌ Las contraseñas no coinciden.";
+            msg.style.color = "var(--color-error)";
             pass.classList.add("password-mismatch");
             confirmPass.classList.add("password-mismatch");
-            return false; // Devuelve false si no coinciden
+            return false;
         } else {
-            // Coinciden
-            messageElement.textContent = "✅ Contraseñas coinciden.";
-            messageElement.style.color = "var(--color-secondary)";
-            return true; // Devuelve true si coinciden
+            msg.textContent = "✅ Contraseñas coinciden.";
+            msg.style.color = "var(--color-secondary)";
+            return true;
         }
     }
-    return true; // Si el campo de confirmación está vacío, no hay error de coincidencia aún.
+    return true;
 }
 </script>
+
 </body>
 </html>
 

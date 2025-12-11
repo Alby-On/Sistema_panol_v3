@@ -104,7 +104,7 @@ background: var(--color-card);
 padding: 20px;
 border-radius: 12px;
 box-shadow: var(--shadow-subtle);
-height: 600px; 
+height: 600px;
 display: flex;
 flex-direction: column;
 transition: transform 0.3s ease;
@@ -174,12 +174,12 @@ border-bottom: none;
 @media (max-width: 768px) {
 h2 { font-size: 2em; margin-top: 15px; }
 .dashboard-grid { 
-    grid-template-columns: 1fr; 
-    padding: 10px; 
-    gap: 15px; 
+    grid-template-columns: 1fr; 
+    padding: 10px; 
+    gap: 15px; 
 }
 .chart-container { 
-    height: 450px; 
+    height: 450px; 
 }
 .chart-container:nth-child(5) { /* Asegura que la card de comentarios se vea bien en móvil */
     height: 350px; 
@@ -206,34 +206,53 @@ display: none;
 </button>
 </div>
 <div class="dashboard-grid">
-<div class="chart-container">
-<h3>🥇 Top 10 Docentes Solicitantes</h3>
-<canvas id="docentesChart"></canvas>
+    
+<div class="chart-container" style="height: 180px;">
+    <h3>👥 Total Usuarios Registrados</h3>
+    
+    <div 
+        id="usuariosCount" 
+        style="
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            flex-grow: 1; 
+            justify-content: center; /* Centrado vertical */
+        "
+    >
+        <p style="font-size: 4em; color: var(--color-primary); font-weight: 800; margin: 0;">0</p>
+        <p style="font-size: 1.2em; color: var(--color-text); margin: 0;">Total en el Sistema</p>
+    </div>
 </div>
 
 <div class="chart-container">
-<h3>🏛️ Proporción de Solicitudes por Carrera</h3>
-<canvas id="carrerasChart"></canvas>
+    <h3>🥇 Top 10 Docentes Solicitantes</h3>
+    <canvas id="docentesChart"></canvas>
 </div>
 
 <div class="chart-container">
-<h3>🔩 Materiales Más Demandados (Unidades Totales)</h3>
-<canvas id="materialesChart"></canvas>
+    <h3>🏛️ Proporción de Solicitudes por Carrera</h3>
+    <canvas id="carrerasChart"></canvas>
 </div>
 
 <div class="chart-container">
-<h3>📚 Consumo por Asignatura</h3>
-<canvas id="asignaturasChart"></canvas>
+    <h3>🔩 Materiales Más Demandados (Unidades Totales)</h3>
+    <canvas id="materialesChart"></canvas>
 </div>
 
 <div class="chart-container">
-<h3>💬 Registro de Novedades del Pañol</h3>
-<div id="commentsList" class="comments-content">
-<p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
-</div>
-</div>
+    <h3>📚 Consumo por Asignatura</h3>
+    <canvas id="asignaturasChart"></canvas>
 </div>
 
+<div class="chart-container">
+    <h3>💬 Registro de Novedades del Pañol</h3>
+    <div id="commentsList" class="comments-content">
+        <p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
+    </div>
+</div>
+
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    
@@ -255,6 +274,7 @@ display: none;
     // --- LÓGICA DE COMENTARIOS (Novedades de Entrega) ---
 
     async function setupCommentListener() {
+        // ... (código de setupCommentListener es correcto y se mantiene) ...
         const commentsListEl = document.getElementById('commentsList');
         const loadingMessageEl = document.getElementById('loadingMessage');
         loadingMessageEl.textContent = "Cargando novedades de entrega...";
@@ -322,19 +342,29 @@ display: none;
     
     async function cargarReportesEstadisticos() {
         try {
-            // Se asume que has creado las funciones RPC en Supabase
+
+            // 1. Conteo de usuarios
+            const { data: totalUsuarios, error: errUser } = await supabase.rpc('get_total_usuarios');
+            if (errUser) throw new Error("Error en Total Usuarios: " + errUser.message);
+
+            // 2. Top Docentes
             const { data: docentes, error: errDoc } = await supabase.rpc('get_top_docentes');
             if (errDoc) throw new Error("Error en Top Docentes: " + errDoc.message);
 
+            // 3. Solicitudes por Carrera
             const { data: carreras, error: errCarr } = await supabase.rpc('get_solicitudes_por_carrera');
             if (errCarr) throw new Error("Error en Solicitudes por Carrera: " + errCarr.message);
 
-            // CORRECCIÓN APLICADA AQUÍ: Se pasa 'material_filtro: null' para resolver la ambigüedad.
+            // 4. Materiales Demandados
             const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales', { material_filtro: null });
             if (errMat) throw new Error("Error en Materiales Demandados: " + errMat.message);
 
-            // LLAMADA CORREGIDA (1): Se pasa 'asignatura_filtro: null' para resolver la ambigüedad de la función (esta corrección estaba en el ejemplo anterior)
-            const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura', { asignatura_filtro: null });
+            // 5. Consumo por Asignatura
+            // INCLUYE EL LÍMITE: 10 PARA OBTENER EL TOP 10 Y RESOLVER EL ERROR DE AMBIGÜEDAD DE LA FUNCIÓN RPC
+            const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura', { 
+                asignatura_filtro: null,
+                limite: 10 // <-- CAMBIO APLICADO
+            }); 
             if (errAsig) throw new Error("Error en Consumo por Asignatura: " + errAsig.message);
 
             return {
@@ -342,27 +372,44 @@ display: none;
                 carreras: carreras || [],
                 materiales: materiales || [],
                 asignaturas: asignaturas || [],
+                usuarios: totalUsuarios[0] || { total_usuarios: 0 }, 
             };
 
         } catch (error) {
             console.error("Error al obtener datos de Supabase:", error);
             const errorContainer = document.getElementById('docentesChart') ? document.getElementById('docentesChart').parentNode : null;
             if(errorContainer) {
+                // Solo muestra un error en una tarjeta si falla la carga general de datos
                 errorContainer.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">Error de BD: ${error.message}</p>`;
             }
-            return { docentes: [], carreras: [], materiales: [], asignaturas: [] };
+            return { 
+                docentes: [], 
+                carreras: [], 
+                materiales: [], 
+                asignaturas: [],
+                usuarios: { total_usuarios: 0 } // Devuelve un valor por defecto
+            };
         }
     }
 
     async function renderizarReportes() {
-        // Se añade una validación para Chart.js aquí también, para evitar la ejecución si no está cargado.
         if (typeof Chart === 'undefined') {
             const errorContainer = document.querySelector('.main-dashboard') || document.body;
             errorContainer.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">ERROR: La librería Chart.js no se cargó correctamente. Revisa el CDN.</p>`;
             return;
         }
 
-        const reportes = await cargarReportesEstadisticos();
+        const reportes = await cargarReportesEstadisticos(); // <-- Solo una llamada aquí
+
+        // 0. Conteo de Usuarios (Nueva Lógica)
+        const usuariosCountEl = document.getElementById('usuariosCount');
+        if (usuariosCountEl) {
+            // Asegura que el valor sea un número antes de usar toLocaleString
+            const total = reportes.usuarios.total_usuarios ? 
+                                Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES') : 
+                                '0';
+            usuariosCountEl.querySelector('p:first-child').textContent = total;
+        }
 
         // 1. Docentes (Barra Horizontal)
         if (document.getElementById('docentesChart')) {
@@ -378,28 +425,22 @@ display: none;
             crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
         }
 
-        // 3. Materiales (Barra Horizontal) - MODIFICACIÓN APLICADA AQUÍ
+        // 3. Materiales (Barra Horizontal)
         if (document.getElementById('materialesChart')) {
             const materialesLabels = reportes.materiales.map(m => m.material);
-            // *** CAMBIO: Usamos 'veces_solicitado' para reflejar la frecuencia ***
             const materialesData = reportes.materiales.map(m => m.veces_solicitado); 
-            // *** CAMBIO: Actualizamos la etiqueta del gráfico ***
             crearBarraHorizontal('materialesChart', 'Veces Solicitado', materialesLabels, materialesData, secondaryColor, ' veces');
         }
 
         // 4. Asignaturas (Barra Horizontal)
         if (document.getElementById('asignaturasChart')) {
             const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
-            // Se mantiene la corrección de la función anterior para que este gráfico también funcione
             const asignaturasData = reportes.asignaturas.map(a => a.numero_de_solicitudes);
             crearBarraHorizontal('asignaturasChart', 'Número de Solicitudes', asignaturasLabels, asignaturasData, dangerColor, ' solicitudes');
         }
     }
 
-    // ----------------------------------------------------
-    // Funciones de Dibujo de Gráficos (sin cambios)
-    // ----------------------------------------------------
-    
+    // ... (El resto de las funciones de dibujo de gráficos se mantienen sin cambios) ...
     function crearBarraHorizontal(id, label, labels, data, color, unit) {
         if (!document.getElementById(id)) return;
 
@@ -455,7 +496,7 @@ display: none;
                 
                 const total = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
                 const centerX = width / 2;
-                const centerY = (height / 2); 
+                const centerY = (height / 2);  
                 
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -491,12 +532,12 @@ display: none;
                     hoverOffset: 4
                 }]
             },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
+            options: {  
+                responsive: true,  
+                maintainAspectRatio: false,  
                 plugins: {
                     legend: { position: 'bottom' },
-                    totalDoughnut: {} 
+                    totalDoughnut: {}  
                 }
             }
         });

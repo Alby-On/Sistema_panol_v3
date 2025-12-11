@@ -445,59 +445,124 @@ async function registrar() {
 // ----------------------------------------
 // FUNCIÓN LOGIN (CON MENSAJES PREESTABLECIDOS)
 // ----------------------------------------
+// -------------------------------
+// Validar RUT (formato y DV)
+// -------------------------------
+function validarRutFormatoYDigito(rut) {
+    if (typeof rut !== "string") return false;
+
+    // 7 u 8 dígitos + guión + dígito verificador 0-9 o K
+    const re = /^\d{7,8}-[0-9kK]$/;
+    if (!re.test(rut)) return false;
+
+    const [cuerpo, dvIngresado] = rut.split("-");
+    const dv = dvIngresado.toUpperCase();
+
+    let suma = 0;
+    let multiplicador = 2;
+
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+        suma += parseInt(cuerpo[i], 10) * multiplicador;
+        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+    }
+
+    const resto = 11 - (suma % 11);
+    let dvCalculado;
+
+    if (resto === 11) dvCalculado = "0";
+    else if (resto === 10) dvCalculado = "K";
+    else dvCalculado = String(resto);
+
+    return dvCalculado === dv;
+}
+
+// -------------------------------
+// FUNCIÓN LOGIN COMPLETA
+// -------------------------------
 async function login() {
-    const email = loginEmail.value.trim();
+    const input = loginEmail.value.trim(); // Puede ser RUT o email
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
-    
-    // Función de utilidad para mostrar errores
+
     const showError = (text) => {
         msg.textContent = `❌ ${text}`;
         msg.style.color = "red";
         msg.style.backgroundColor = "#ffdddd";
     };
-    
-    // Función de utilidad para mostrar éxito
+
     const showSuccess = (text) => {
         msg.textContent = `✅ ${text}`;
         msg.style.color = "green";
         msg.style.backgroundColor = "#ddffdd";
     };
 
-    msg.style.backgroundColor = "transparent"; // Limpiar fondo
+    msg.style.backgroundColor = "transparent";
     msg.textContent = "";
 
-    if (!email || !pass) {
+    if (!input || !pass) {
         showError("Complete todos los campos.");
         return;
     }
 
+    let emailParaLogin = input;
+
+    // ------------------------------------
+    // Detectar si el usuario ingresó RUT
+    // ------------------------------------
+    const esEmail = input.includes("@");
+
+    if (!esEmail) {
+        // Validar formato del RUT
+        if (!validarRutFormatoYDigito(input)) {
+            showError("RUT inválido. Debe ser como 12345678-9 (sin puntos).");
+            return;
+        }
+
+        // Buscar email asociado al RUT con RPC
+        const { data: emailEncontrado, error: rutError } = await supabaseClient.rpc(
+            "buscar_email_por_rut",
+            { rut_input: input }
+        );
+
+        if (rutError || !emailEncontrado) {
+            showError("El RUT no está registrado en el sistema.");
+            return;
+        }
+
+        emailParaLogin = emailEncontrado;
+    }
+
+    // ------------------------------------
+    // Login con Supabase usando el email final
+    // ------------------------------------
     const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
+        email: emailParaLogin,
         password: pass
     });
 
     if (error) {
-        // Mensaje preestablecido para FALLO EN AUTENTICACIÓN
-        if (error.message.includes("Invalid login credentials") || error.message.includes("Email not confirmed")) {
-            showError("Correo o contraseña incorrectos, o el correo aún no ha sido confirmado.");
+        if (
+            error.message.includes("Invalid login credentials") ||
+            error.message.includes("Email not confirmed")
+        ) {
+            showError("Credenciales incorrectas o correo no confirmado.");
         } else {
             showError(`Error al iniciar sesión: ${error.message}`);
         }
         return;
     }
 
-    // Obtener perfil desde la tabla usuarios
+    // ------------------------------------
+    // Obtener perfil desde tabla usuarios
+    // ------------------------------------
     const { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("*")
-        .eq("email", email)
+        .eq("email", emailParaLogin)
         .single();
-        
-    // Mensaje preestablecido si el usuario se autenticó pero no tiene perfil
+
     if (!perfil) {
-        showError("Usuario autenticado, pero el perfil no fue encontrado. Contacte a soporte.");
-        // Opcional: Cerrar sesión si solo se autenticó pero no hay perfil
+        showError("Usuario autenticado pero sin perfil. Contacte a soporte.");
         await supabaseClient.auth.signOut();
         return;
     }

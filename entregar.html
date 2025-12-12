@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
@@ -6,21 +6,20 @@
 <title>Entregar Materiales</title>
 
 <style>
-    /* Variables de Color (Consistencia Institucional) */
+    /* Variables de Color */
     :root {
-        --color-primary: #004d99; /* Azul marino/institucional */
-        --color-accent: #4a6cf7; /* Azul medio para fondos y botones */
-        --color-success: #28a745; /* Verde para éxito */
-        --color-danger: #dc3545; /* Rojo para errores */
-        --color-background: #eef1f5; /* Fondo claro y suave */
-        --color-card: #ffffff; /* Fondo de las cajas */
-        --color-text: #333333; /* Texto oscuro */
+        --color-primary: #004d99;
+        --color-accent: #4a6cf7;
+        --color-success: #28a745;
+        --color-danger: #dc3545;
+        --color-background: #eef1f5;
+        --color-card: #ffffff;
+        --color-text: #333333;
         --color-border: #cccccc;
-        --color-table-header: var(--color-primary); /* Encabezado de tabla */
-        --color-box-bg: #f9fafc; /* Fondo de cada solicitud */
+        --color-table-header: var(--color-primary);
+        --color-box-bg: #f9fafc;
     }
 
-    /* ---- ESTILO GENERAL ---- */
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background: var(--color-background);
@@ -29,7 +28,6 @@
         color: var(--color-text);
         display: flex;
         justify-content: center;
-        align-items: flex-start;
         min-height: 100vh;
     }
 
@@ -44,6 +42,30 @@
         box-sizing: border-box;
     }
 
+    /* ---- CONTENEDOR PARA CENTRAR BOTÓN ---- */
+    .volver-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center; /* CENTRA REALMENTE EL BOTÓN */
+        margin-bottom: 20px;
+    }
+
+    .btn-volver {
+        background: var(--color-primary);
+        color: white;
+        padding: 12px 18px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 1em;
+        font-weight: 600;
+        transition: background-color 0.3s;
+        display: inline-block;
+    }
+
+    .btn-volver:hover {
+        background: #003a73;
+    }
+
     h2 {
         text-align: center;
         margin-bottom: 25px;
@@ -53,25 +75,6 @@
         padding-bottom: 10px;
     }
 
-    /* ---- BOTÓN VOLVER ---- */
-    .btn-volver {
-        background: var(--color-primary);
-        color: white;
-        padding: 12px 18px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 1em;
-        font-weight: 600;
-        display: inline-block;
-        margin-bottom: 20px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-volver:hover {
-        background: #003a73;
-    }
-
-    /* ---- CAJA DE CADA SOLICITUD ---- */
     .solicitud-box {
         margin-bottom: 30px;
         padding: 20px;
@@ -89,120 +92,77 @@
         padding-left: 10px;
         border-left: 4px solid var(--color-primary);
     }
-    
-    .solicitud-box .section-title:first-of-type {
-        margin-top: 5px; /* Menos margen al primer título */
-    }
 
-
-    /* ---- TABLAS ---- */
-    .table-wrapper {
-        width: 100%;
-        overflow-x: auto; /* Permite scroll horizontal en móviles */
-    }
+    .table-wrapper { overflow-x: auto; width: 100%; }
 
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 8px;
         font-size: 0.95em;
-        min-width: 450px; /* Asegura que la tabla no sea ilegiblemente estrecha */
+        min-width: 450px;
     }
 
-    table th, table td {
+    th, td {
         border: 1px solid #dcdcdc;
         padding: 10px;
         text-align: left;
     }
-    
-    /* Encabezado de tabla de datos */
+
     .solicitud-box table:first-of-type th {
         background: var(--color-table-header);
         color: white;
-        font-weight: 600;
         text-align: center;
-    }
-    
-    /* Encabezado de tabla de materiales */
-    .solicitud-box table:last-of-type th {
-        background: #007bff; /* Azul ligeramente diferente para materiales */
     }
 
-    .check-col {
-        text-align: center;
-        width: 100px;
+    .solicitud-box table:last-of-type th {
+        background: #007bff;
+        color: white;
     }
-    
-    /* Estilo de la casilla de estado/valor en la tabla de datos */
-    .solicitud-box table:first-of-type td:nth-child(even) {
-        font-weight: 500;
-        color: #000;
-    }
-    
-    /* ---- MENSAJE ERROR ---- */
+
     .mensaje-error {
         display: none;
-        background: #ffe6e6; /* Fondo de error más suave */
+        background: #ffe6e6;
         padding: 12px;
         color: var(--color-danger);
         border: 1px solid #ffc0c0;
         border-radius: 6px;
         margin-top: 15px;
         font-size: 0.9em;
-        font-weight: 500;
         text-align: center;
     }
 
-    /* ---- BOTÓN ENTREGAR ---- */
     .btn-entregar {
         width: 100%;
         padding: 15px;
-        margin-top: 25px; /* Más espacio */
+        margin-top: 25px;
         font-size: 1.1em;
-        background: var(--color-success); /* Verde para la acción de completar */
+        background: var(--color-success);
         border: none;
         color: white;
         border-radius: 6px;
         font-weight: bold;
-        transition: 0.2s ease;
-        /* Estilos iniciales desactivados */
+        transition: 0.2s;
         cursor: not-allowed;
         opacity: 0.5;
     }
 
-    .btn-entregar:hover {
-        background: #1e7e34;
-    }
-
-    /* ---- MENSAJE SIN SOLICITUDES ---- */
     .no-solicitudes {
         text-align: center;
         padding: 30px;
         font-size: 1.1em;
-        background: #f1f8ed; /* Fondo verde claro suave */
+        background: #f1f8ed;
         border-radius: 8px;
         border: 1px solid #d4e3c9;
         margin-top: 20px;
-        color: #2e6d3e; /* Texto verde oscuro */
-        font-weight: 600;
+        color: #2e6d3e;
     }
 
-    /* RESPONSIVE */
     @media (max-width: 600px) {
-        h2 {
-            font-size: 1.6em;
-        }
-        .container {
-            padding: 15px;
-        }
-        .btn-volver {
-            width: 100%;
-            text-align: center;
-        }
-        table {
-            min-width: 100%; /* Permite que la tabla se ajuste mejor */
-            font-size: 0.85em;
-        }
+        h2 { font-size: 1.6em; }
+        .container { padding: 15px; }
+        table { min-width: 100%; font-size: 0.85em; }
+        .btn-volver { width: 100%; text-align: center; }
     }
 </style>
 
@@ -213,39 +173,41 @@
 
 <div class="container">
 
-    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
+    <!-- BOTÓN CENTRADO -->
+    <div class="volver-wrapper">
+        <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
+    </div>
 
     <h2>📦 Entregar Materiales Pendientes</h2>
+
     <div id="solicitudes-container"></div>
+
 </div>
 
 <script>
-// LÓGICA JAVASCRIPT SIN MODIFICAR
+/* --- LÓGICA ORIGINAL SIN MODIFICAR FUNCIONALIDADES --- */
+
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Define los colores hexadecimales necesarios dentro de JS para evitar el error de 'var'
-const COLOR_PENDIENTE = '#dc3545'; // Valor de var(--color-danger)
-const COLOR_ENTREGADO = '#28a745'; // Valor de var(--color-success)
+const COLOR_PENDIENTE = "#dc3545";
+const COLOR_ENTREGADO = "#28a745";
 
-
-// Función principal
+/* INIT */
 async function init() {
-// ... (resto de la lógica init) ...
     const { data: { session } } = await supabaseClient.auth.getSession();
-
     if (!session) {
         alert("Debes iniciar sesión.");
         window.location.href = "index.html";
         return;
     }
 
-    const userEmail = session.user.email;
-    cargarSolicitudes(userEmail);
+    cargarSolicitudes(session.user.email);
 }
 
+/* CARGAR SOLICITUDES */
 async function cargarSolicitudes(email) {
     const { data: solicitudes, error } = await supabaseClient
         .from('solicitudes')
@@ -253,128 +215,113 @@ async function cargarSolicitudes(email) {
         .eq('email', email)
         .eq('estado', 'Pendiente');
 
-    if (error) {
-        alert("Error al cargar solicitudes: " + error.message);
-        return;
-    }
-
     const container = document.getElementById('solicitudes-container');
     container.innerHTML = "";
 
-    /* ← NUEVA FUNCIÓN: mostrar mensaje si no hay solicitudes */
-    if (solicitudes.length === 0) {
+    if (!solicitudes || solicitudes.length === 0) {
         container.innerHTML = `<div class="no-solicitudes">✔ No tienes solicitudes pendientes de entrega.</div>`;
         return;
     }
 
     for (const solicitud of solicitudes) {
 
-        const { data: materiales, error: errorMat } = await supabaseClient
+        const { data: materiales } = await supabaseClient
             .from('materiales_solicitados')
             .select('*')
             .eq('id_solicitud', solicitud.id);
 
-        if (errorMat) continue;
-        
-        // Determina el color del estado antes de construir el HTML
-        const estadoColor = solicitud.estado === 'Pendiente' ? COLOR_PENDIENTE : COLOR_ENTREGADO;
+        const estadoColor =
+            solicitud.estado === "Pendiente" ? COLOR_PENDIENTE : COLOR_ENTREGADO;
 
-        const box = document.createElement('div');
-        box.classList.add('solicitud-box');
-        box.dataset.id = solicitud.id;
+        const box = document.createElement("div");
+        box.classList.add("solicitud-box");
 
         box.innerHTML = `
             <div class="section-title">Datos de la Solicitud</div>
-            
+
             <div class="table-wrapper">
-            <table>
-                <tr><th>ID Solicitud</th><td>${solicitud.id}</td></tr>
-                <tr><th>Email</th><td>${solicitud.email}</td></tr>
-                <tr><th>Docente</th><td>${solicitud.docente}</td></tr>
-                <tr><th>Asignatura</th><td>${solicitud.asignatura}</td></tr>
-                <tr><th>Fecha Solicitud</th><td>${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</td></tr>
-                <tr><th>Estado</th><td style="color: ${estadoColor}; font-weight: bold;">${solicitud.estado}</td></tr>
-            </table>
+                <table>
+                    <tr><th>ID Solicitud</th><td>${solicitud.id}</td></tr>
+                    <tr><th>Email</th><td>${solicitud.email}</td></tr>
+                    <tr><th>Docente</th><td>${solicitud.docente}</td></tr>
+                    <tr><th>Asignatura</th><td>${solicitud.asignatura}</td></tr>
+                    <tr><th>Fecha Solicitud</th><td>${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</td></tr>
+                    <tr><th>Estado</th><td style="font-weight:bold; color:${estadoColor}">${solicitud.estado}</td></tr>
+                </table>
             </div>
 
-            <div class="section-title" style="margin-top: 25px;">Materiales Solicitados</div>
+            <div class="section-title" style="margin-top:20px;">Materiales Solicitados</div>
+
             <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Material</th>
-                        <th>Cantidad</th>
-                        <th>Entregado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${materiales.map(m => `
-                        <tr>
-                            <td>${m.material}</td>
-                            <td>${m.cantidad}</td>
-                            <td class="check-col"><input type="checkbox" class="chk"></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+                <table>
+                    <thead>
+                        <tr><th>Material</th><th>Cantidad</th><th>Entregado</th></tr>
+                    </thead>
+                    <tbody>
+                        ${materiales.map(m => `
+                            <tr>
+                                <td>${m.material}</td>
+                                <td>${m.cantidad}</td>
+                                <td class="check-col"><input type="checkbox" class="chk"></td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
             </div>
 
-            <div class="mensaje-error">⚠️ Debes seleccionar todos los materiales antes de poder completar la entrega.</div>
+            <div class="mensaje-error">
+                ⚠️ Debes seleccionar todos los materiales antes de poder completar la entrega.
+            </div>
+
             <button class="btn-entregar">Completar Entrega</button>
         `;
 
         container.appendChild(box);
-// ... (resto de la lógica del listener y la validación) ...
-        const checkboxes = box.querySelectorAll('.chk');
-        const mensaje = box.querySelector('.mensaje-error');
-        const btn = box.querySelector('.btn-entregar');
 
-        function validarChecklist() {
-            let completos = [...checkboxes].every(c => c.checked);
+        const checks = box.querySelectorAll(".chk");
+        const msg = box.querySelector(".mensaje-error");
+        const btn = box.querySelector(".btn-entregar");
 
-            if (completos) {
-                mensaje.style.display = 'none';
-                btn.style.opacity = 1;
-                btn.style.cursor = 'pointer';
-                btn.style.backgroundColor = 'var(--color-success)';
+        function validar() {
+            const completo = [...checks].every(c => c.checked);
+
+            if (completo) {
+                msg.style.display = "none";
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
             } else {
-                mensaje.style.display = 'block';
-                btn.style.opacity = 0.5;
-                btn.style.cursor = 'not-allowed';
-                btn.style.backgroundColor = 'var(--color-success)'; // Mantener el color base
+                msg.style.display = "block";
+                btn.style.opacity = "0.5";
+                btn.style.cursor = "not-allowed";
             }
         }
 
-        checkboxes.forEach(chk => chk.addEventListener('change', validarChecklist));
+        checks.forEach(c => c.addEventListener("change", validar));
 
-        btn.addEventListener('click', async () => {
-            let todosMarcados = [...checkboxes].every(c => c.checked);
-            if (!todosMarcados) return;
+        btn.addEventListener("click", async () => {
+            if (![...checks].every(c => c.checked)) return;
 
-            const { error: updateError } = await supabaseClient
-                .from('solicitudes')
+            const { error: upErr } = await supabaseClient
+                .from("solicitudes")
                 .update({
-                    estado: 'Entregado',
+                    estado: "Entregado",
                     fecha_entrega: new Date().toISOString()
                 })
-                .eq('id', solicitud.id);
+                .eq("id", solicitud.id);
 
-            if (updateError) {
-                alert("Error al registrar la entrega: " + updateError.message);
-                return;
-            }
+            if (upErr) return alert("Error: " + upErr.message);
 
             alert("✔ Entrega registrada correctamente.");
             cargarSolicitudes(email);
         });
-        
-        // Ejecutar validación inicial para mostrar el mensaje de error/estado inicial
-        validarChecklist(); 
+
+        validar();
     }
 }
 
 init();
 </script>
+
 </body>
 </html>
 

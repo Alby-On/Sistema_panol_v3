@@ -245,6 +245,11 @@ display: none;
     <canvas id="asignaturasChart"></canvas>
 </div>
 
+<div class="chart-container" style="min-height: 400px;"> 
+    <h3>📊 Detalle: Top 5 Asignaturas y sus Materiales</h3>
+    <canvas id="topAsignaturasMaterialesChart"></canvas>
+</div>
+
 <div class="chart-container">
     <h3>💬 Registro de Novedades del Pañol</h3>
     <div id="commentsList" class="comments-content">
@@ -259,14 +264,13 @@ display: none;
 <script>
     // --- IMPORTACIONES Y CONFIGURACIÓN DE SUPABASE ---
     
-    // ** ATENCIÓN: DEBES REEMPLAZAR ESTOS VALORES CON LOS TUYOS DE SUPABASE **
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
     // Inicializar Supabase Client
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Colores para los gráficos (se mantienen)
+    // Colores para los gráficos
     const primaryColor = 'rgb(0, 77, 153)';
     const secondaryColor = 'rgb(40, 167, 69)';
     const dangerColor = 'rgb(220, 53, 69)';    
@@ -274,19 +278,16 @@ display: none;
     // --- LÓGICA DE COMENTARIOS (Novedades de Entrega) ---
 
     async function setupCommentListener() {
-        // ... (código de setupCommentListener es correcto y se mantiene) ...
         const commentsListEl = document.getElementById('commentsList');
         const loadingMessageEl = document.getElementById('loadingMessage');
+        if (!commentsListEl || !loadingMessageEl) return;
+
         loadingMessageEl.textContent = "Cargando novedades de entrega...";
 
         try {
             const { data: solicitudes, error } = await supabase
                 .from('solicitudes')
-                .select(`
-                    docente,
-                    fecha_entrega,
-                    comentario_entrega
-                `)
+                .select(`docente, fecha_entrega, comentario_entrega`)
                 .not('comentario_entrega', 'is', null)
                 .order('fecha_entrega', { ascending: false })
                 .limit(5);
@@ -294,261 +295,188 @@ display: none;
             if (error) throw error;
 
             if (solicitudes.length === 0) {
-                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas en las entregas.</p>`;
+                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas.</p>`;
                 return;
             }
 
+            const escapeHTML = (str) => String(str).replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+
             const commentsHtml = solicitudes.map(data => {
                 const userDisplay = data.docente || 'Docente Desconocido';
-                const date = data.fecha_entrega ?
+                const date = data.fecha_entrega ? 
                     new Date(data.fecha_entrega).toLocaleString('es-ES', {  
                         day: '2-digit', month: '2-digit', year: 'numeric',  
                         hour: '2-digit', minute: '2-digit'  
-                    }) :
-                    'Fecha Desconocida';
-
-                // Usamos una función simple para escapar el contenido y evitar XSS
-                const escapeHTML = (str) => String(str).replace(/[&<>"']/g, (m) => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[m]));
+                    }) : 'Fecha Desconocida';
                 
-                const commentContent = data.comentario_entrega ? escapeHTML(data.comentario_entrega) : '';
-
                 return `
                     <li>
                         <strong>${userDisplay}</strong>
                         <span class="comment-date">${date}</span>
-                        <div>${commentContent}</div>
-                    </li>
-                `;
+                        <div>${escapeHTML(data.comentario_entrega)}</div>
+                    </li>`;
             }).join('');
 
             commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
             loadingMessageEl.textContent = "";
 
         } catch (error) {
-            console.error("Error al cargar novedades de Supabase:", error);
+            console.error("Error al cargar novedades:", error);
             loadingMessageEl.textContent = "";
-            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades: ${error.message || error.details}</p>`;
+            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades.</p>`;
         }
     }
 
-
-    // --- LÓGICA DE GRÁFICOS (Extrayendo datos de Supabase) ---
+    // --- LÓGICA DE DATOS (Supabase RPC) ---
     
     async function cargarReportesEstadisticos() {
         try {
-
-            // 1. Conteo de usuarios
-            const { data: totalUsuarios, error: errUser } = await supabase.rpc('get_total_usuarios');
-            if (errUser) throw new Error("Error en Total Usuarios: " + errUser.message);
-
-            // 2. Top Docentes
-            const { data: docentes, error: errDoc } = await supabase.rpc('get_top_docentes');
-            if (errDoc) throw new Error("Error en Top Docentes: " + errDoc.message);
-
-            // 3. Solicitudes por Carrera
-            const { data: carreras, error: errCarr } = await supabase.rpc('get_solicitudes_por_carrera');
-            if (errCarr) throw new Error("Error en Solicitudes por Carrera: " + errCarr.message);
-
-            // 4. Materiales Demandados
-            const { data: materiales, error: errMat } = await supabase.rpc('get_top_materiales', { material_filtro: null });
-            if (errMat) throw new Error("Error en Materiales Demandados: " + errMat.message);
-
-            // 5. Consumo por Asignatura
-            // INCLUYE EL LÍMITE: 10 PARA OBTENER EL TOP 10 Y RESOLVER EL ERROR DE AMBIGÜEDAD DE LA FUNCIÓN RPC
-            const { data: asignaturas, error: errAsig } = await supabase.rpc('get_consumo_por_asignatura', { 
+            // Ejecutar todas las llamadas necesarias
+            const { data: totalUsuarios } = await supabase.rpc('get_total_usuarios');
+            const { data: docentes } = await supabase.rpc('get_top_docentes');
+            const { data: carreras } = await supabase.rpc('get_solicitudes_por_carrera');
+            const { data: materiales } = await supabase.rpc('get_top_materiales', { material_filtro: null });
+            
+            const { data: asignaturas } = await supabase.rpc('get_consumo_por_asignatura', { 
                 asignatura_filtro: null,
-                limite: 10 // <-- CAMBIO APLICADO
-            }); 
-            if (errAsig) throw new Error("Error en Consumo por Asignatura: " + errAsig.message);
+                limite: 10 
+            });
 
+            // Nueva función para el gráfico agrupado
+            const { data: topAsigMat, error: errTopAsig } = await supabase.rpc('get_top_5_subjects_materials');
+            if (errTopAsig) console.warn("Aviso: get_top_5_subjects_materials falló o no existe.");
+
+            // UN SOLO RETURN con todos los datos consolidados
             return {
                 docentes: docentes || [],
                 carreras: carreras || [],
                 materiales: materiales || [],
                 asignaturas: asignaturas || [],
-                usuarios: totalUsuarios[0] || { total_usuarios: 0 }, 
+                topAsignaturasMateriales: topAsigMat || [],
+                usuarios: totalUsuarios ? totalUsuarios[0] : { total_usuarios: 0 }, 
             };
 
         } catch (error) {
-            console.error("Error al obtener datos de Supabase:", error);
-            const errorContainer = document.getElementById('docentesChart') ? document.getElementById('docentesChart').parentNode : null;
-            if(errorContainer) {
-                // Solo muestra un error en una tarjeta si falla la carga general de datos
-                errorContainer.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">Error de BD: ${error.message}</p>`;
-            }
-            return { 
-                docentes: [], 
-                carreras: [], 
-                materiales: [], 
-                asignaturas: [],
-                usuarios: { total_usuarios: 0 } // Devuelve un valor por defecto
-            };
+            console.error("Error general en cargarReportesEstadisticos:", error);
+            return { docentes: [], carreras: [], materiales: [], asignaturas: [], topAsignaturasMateriales: [], usuarios: { total_usuarios: 0 } };
         }
     }
+
+    // --- LÓGICA DE RENDERIZADO (Chart.js) ---
 
     async function renderizarReportes() {
-        if (typeof Chart === 'undefined') {
-            const errorContainer = document.querySelector('.main-dashboard') || document.body;
-            errorContainer.innerHTML = `<p style="color: ${dangerColor}; text-align: center;">ERROR: La librería Chart.js no se cargó correctamente. Revisa el CDN.</p>`;
-            return;
-        }
+        if (typeof Chart === 'undefined') return;
 
-        const reportes = await cargarReportesEstadisticos(); // <-- Solo una llamada aquí
+        const reportes = await cargarReportesEstadisticos();
 
-        // 0. Conteo de Usuarios (Nueva Lógica)
+        // 0. KPI Usuarios
         const usuariosCountEl = document.getElementById('usuariosCount');
         if (usuariosCountEl) {
-            // Asegura que el valor sea un número antes de usar toLocaleString
-            const total = reportes.usuarios.total_usuarios ? 
-                                Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES') : 
-                                '0';
-            usuariosCountEl.querySelector('p:first-child').textContent = total;
+            const total = reportes.usuarios.total_usuarios ? Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES') : '0';
+            const p = usuariosCountEl.querySelector('p:first-child');
+            if(p) p.textContent = total;
         }
 
-        // 1. Docentes (Barra Horizontal)
-        if (document.getElementById('docentesChart')) {
-            const docentesLabels = reportes.docentes.map(d => d.docente);
-            const docentesData = reportes.docentes.map(d => d.conteo_solicitudes);
-            crearBarraHorizontal('docentesChart', 'Solicitudes', docentesLabels, docentesData, primaryColor, ' solicitudes');
-        }
+        // 1. Docentes
+        crearBarraHorizontal('docentesChart', 'Solicitudes', reportes.docentes.map(d => d.docente), reportes.docentes.map(d => d.conteo_solicitudes), primaryColor, ' sol.');
 
-        // 2. Carreras (Dona con Total en el Centro)
-        if (document.getElementById('carrerasChart')) {
-            const carrerasLabels = reportes.carreras.map(c => c.carrera);
-            const carrerasData = reportes.carreras.map(c => c.conteo_solicitudes);
-            crearDona('carrerasChart', 'Solicitudes por Carrera', carrerasLabels, carrerasData);
-        }
+        // 2. Carreras
+        crearDona('carrerasChart', 'Solicitudes por Carrera', reportes.carreras.map(c => c.carrera), reportes.carreras.map(c => c.conteo_solicitudes));
 
-        // 3. Materiales (Barra Horizontal)
-        if (document.getElementById('materialesChart')) {
-            const materialesLabels = reportes.materiales.map(m => m.material);
-            const materialesData = reportes.materiales.map(m => m.veces_solicitado); 
-            crearBarraHorizontal('materialesChart', 'Veces Solicitado', materialesLabels, materialesData, secondaryColor, ' veces');
-        }
+        // 3. Materiales
+        crearBarraHorizontal('materialesChart', 'Veces Solicitado', reportes.materiales.map(m => m.material), reportes.materiales.map(m => m.veces_solicitado), secondaryColor, ' veces');
 
-        // 4. Asignaturas (Barra Horizontal)
-        if (document.getElementById('asignaturasChart')) {
-            const asignaturasLabels = reportes.asignaturas.map(a => a.asignatura);
-            const asignaturasData = reportes.asignaturas.map(a => a.numero_de_solicitudes);
-            crearBarraHorizontal('asignaturasChart', 'Número de Solicitudes', asignaturasLabels, asignaturasData, dangerColor, ' solicitudes');
+        // 4. Asignaturas
+        crearBarraHorizontal('asignaturasChart', 'Número de Solicitudes', reportes.asignaturas.map(a => a.asignatura), reportes.asignaturas.map(a => a.numero_de_solicitudes), dangerColor, ' sol.');
+
+        // 5. NUEVO: Gráfico Agrupado (Asignaturas + Materiales)
+        const canvasAgrupado = document.getElementById('topAsignaturasMaterialesChart');
+        if (canvasAgrupado && reportes.topAsignaturasMateriales.length > 0) {
+            const dataRaw = reportes.topAsignaturasMateriales;
+            const labelsAsignaturas = [...new Set(dataRaw.map(d => d.asignatura_nombre))];
+            const nombresMateriales = [...new Set(dataRaw.map(d => d.material_nombre))];
+            const paleta = ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'];
+
+            const datasets = nombresMateriales.map((mat, i) => ({
+                label: mat,
+                data: labelsAsignaturas.map(asig => {
+                    const reg = dataRaw.find(d => d.asignatura_nombre === asig && d.material_nombre === mat);
+                    return reg ? Number(reg.cantidad_total) : 0;
+                }),
+                backgroundColor: paleta[i % paleta.length],
+                borderRadius: 4
+            }));
+
+            crearBarraAgrupada('topAsignaturasMaterialesChart', labelsAsignaturas, datasets);
         }
     }
 
-    // ... (El resto de las funciones de dibujo de gráficos se mantienen sin cambios) ...
-    function crearBarraHorizontal(id, label, labels, data, color, unit) {
-        if (!document.getElementById(id)) return;
+    // --- FUNCIONES AUXILIARES DE CHART ---
 
+    function crearBarraHorizontal(id, label, labels, data, color, unit) {
+        if (!document.getElementById(id) || labels.length === 0) return;
         new Chart(document.getElementById(id), {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: label,
-                    data: data,
-                    backgroundColor: color,
-                    borderColor: color,
-                    borderWidth: 1,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.9,
-                }]
+                datasets: [{ label: label, data: data, backgroundColor: color }]
             },
             options: {
-                indexAxis: 'y', 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { display: false }, 
-                    tooltip: { 
-                        callbacks: { 
-                            label: (context) => `${context.label}: ${context.parsed.x.toLocaleString('es-ES')}${unit}`
-                        } 
-                    }
-                },
-                scales: { 
-                    x: { 
-                        beginAtZero: true, 
-                        ticks: {
-                            callback: function(value) { return value.toLocaleString('es-ES'); }
-                        },
-                        grid: { display: true, drawBorder: false }
-                    },
-                    y: { 
-                        ticks: { autoSkip: false },
-                        grid: { display: false }
-                    } 
-                }
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true } }
             }
         });
     }
 
+    function crearDona(id, label, labels, data) {
+        if (!document.getElementById(id) || labels.length === 0) return;
+        new Chart(document.getElementById(id), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{ data: data, backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    function crearBarraAgrupada(id, labels, datasets) {
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // Plugin para el centro de la Dona
     const totalDoughnutPlugin = {
         id: 'totalDoughnut',
         beforeDraw(chart) {
             if (chart.config.type === 'doughnut') {
                 const { ctx, data, width, height } = chart;
                 ctx.save();
-                
-                const total = data.datasets[0].data.reduce((sum, value) => sum + value, 0);
-                const centerX = width / 2;
-                const centerY = (height / 2);  
-                
+                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                
                 ctx.fillStyle = primaryColor;
-                ctx.font = 'bold 28px Inter, sans-serif';
-                ctx.fillText(total.toLocaleString('es-ES'), centerX, centerY - 15);
-                
-                ctx.fillStyle = 'var(--color-text)';
-                ctx.font = '14px Inter, sans-serif';
-                ctx.fillText('Total Solicitudes', centerX, centerY + 15);
-                
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText(total.toLocaleString('es-ES'), width / 2, height / 2 - 10);
+                ctx.font = '12px sans-serif';
+                ctx.fillText('Total', width / 2, height / 2 + 15);
                 ctx.restore();
             }
         }
     };
-    
-    if (typeof Chart !== 'undefined') {
-        Chart.register(totalDoughnutPlugin);
-    }
+    Chart.register(totalDoughnutPlugin);
 
-    function crearDona(id, label, labels, data) {
-        if (!document.getElementById(id)) return;
-        
-        new Chart(document.getElementById(id), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: label,
-                    data: data,
-                    backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {  
-                responsive: true,  
-                maintainAspectRatio: false,  
-                plugins: {
-                    legend: { position: 'bottom' },
-                    totalDoughnut: {}  
-                }
-            }
-        });
-    }
-    
-    // Ejecutar al cargar la página
     document.addEventListener("DOMContentLoaded", () => {
-        if (!window.Chart) {
-            console.error("Chart.js no se cargó");
-            return;
-        }
         renderizarReportes();
         setupCommentListener();
     });

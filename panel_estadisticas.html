@@ -263,180 +263,277 @@ display: none;
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    
 <script>
-    // --- CONFIGURACIÓN DE SUPABASE ---
-    // Usamos un bloque try/catch o verificamos existencia para evitar el error de "already declared"
-    // si el script se llega a ejecutar dos veces por error del navegador.
-    
-    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
+/* ==============================
+   CONFIGURACIÓN SUPABASE
+================================ */
 
-    // Inicializar Supabase Client (Solo si no existe ya)
-    if (typeof supabase === 'undefined') {
-        var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
+const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    // Colores para los gráficos
-    const primaryColor = 'rgb(0, 77, 153)';
-    const secondaryColor = 'rgb(40, 167, 69)';
-    const dangerColor = 'rgb(220, 53, 69)';    
+// Crear cliente Supabase UNA SOLA VEZ
+if (!window.supabaseClient) {
+    window.supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+}
 
-    // --- LÓGICA DE COMENTARIOS ---
-    async function setupCommentListener() {
-        const commentsListEl = document.getElementById('commentsList');
-        const loadingMessageEl = document.getElementById('loadingMessage');
-        if (!commentsListEl || !loadingMessageEl) return;
+// Alias local seguro
+const supabaseClient = window.supabaseClient;
 
-        loadingMessageEl.textContent = "Cargando novedades de entrega...";
+/* ==============================
+   COLORES
+================================ */
 
-        try {
-            const { data: solicitudes, error } = await supabase
-                .from('solicitudes')
-                .select(`docente, fecha_entrega, comentario_entrega`)
-                .not('comentario_entrega', 'is', null)
-                .order('fecha_entrega', { ascending: false })
-                .limit(5);
+const primaryColor = 'rgb(0, 77, 153)';
+const secondaryColor = 'rgb(40, 167, 69)';
+const dangerColor = 'rgb(220, 53, 69)';
 
-            if (error) throw error;
+/* ==============================
+   LÓGICA DE COMENTARIOS
+================================ */
 
-            if (!solicitudes || solicitudes.length === 0) {
-                commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas.</p>`;
-                return;
-            }
+async function setupCommentListener() {
+    const commentsListEl = document.getElementById('commentsList');
+    const loadingMessageEl = document.getElementById('loadingMessage');
+    if (!commentsListEl || !loadingMessageEl) return;
 
-            const escapeHTML = (str) => String(str).replace(/[&<>"']/g, (m) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    loadingMessageEl.textContent = "Cargando novedades de entrega...";
+
+    try {
+        const { data: solicitudes, error } = await supabaseClient
+            .from('solicitudes')
+            .select('docente, fecha_entrega, comentario_entrega')
+            .not('comentario_entrega', 'is', null)
+            .order('fecha_entrega', { ascending: false })
+            .limit(5);
+
+        if (error) throw error;
+
+        if (!solicitudes || solicitudes.length === 0) {
+            commentsListEl.innerHTML =
+                `<p style="text-align:center;color:#888;">Aún no hay novedades registradas.</p>`;
+            loadingMessageEl.textContent = "";
+            return;
+        }
+
+        const escapeHTML = (str) =>
+            String(str).replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
             }[m]));
 
-            const commentsHtml = solicitudes.map(data => {
-                const userDisplay = data.docente || 'Docente Desconocido';
-                const date = data.fecha_entrega ? 
-                    new Date(data.fecha_entrega).toLocaleString('es-ES', {  
-                        day: '2-digit', month: '2-digit', year: 'numeric',  
-                        hour: '2-digit', minute: '2-digit'  
-                    }) : 'Fecha Desconocida';
-                
-                return `
-                    <li>
-                        <strong>${userDisplay}</strong>
-                        <span class="comment-date">${date}</span>
-                        <div>${escapeHTML(data.comentario_entrega)}</div>
-                    </li>`;
-            }).join('');
+        const commentsHtml = solicitudes.map(item => {
+            const docente = item.docente || 'Docente Desconocido';
+            const fecha = item.fecha_entrega
+                ? new Date(item.fecha_entrega).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+                : 'Fecha Desconocida';
 
-            commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
-            loadingMessageEl.textContent = "";
+            return `
+                <li>
+                    <strong>${docente}</strong>
+                    <span class="comment-date">${fecha}</span>
+                    <div>${escapeHTML(item.comentario_entrega)}</div>
+                </li>`;
+        }).join('');
 
-        } catch (error) {
-            console.error("Error al cargar novedades:", error);
-            loadingMessageEl.textContent = "";
-            commentsListEl.innerHTML = `<p style="color: ${dangerColor};">Error al cargar novedades.</p>`;
+        commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
+        loadingMessageEl.textContent = "";
+
+    } catch (err) {
+        console.error("Error al cargar novedades:", err);
+        loadingMessageEl.textContent = "";
+        commentsListEl.innerHTML =
+            `<p style="color:${dangerColor};">Error al cargar novedades.</p>`;
+    }
+}
+
+/* ==============================
+   CARGA DE REPORTES (RPC)
+================================ */
+
+async function cargarReportesEstadisticos() {
+    try {
+        const [
+            resUsuarios,
+            resDocentes,
+            resCarreras,
+            resMateriales,
+            resAsignaturas,
+            resTopAsigMat
+        ] = await Promise.all([
+            supabaseClient.rpc('get_total_usuarios'),
+            supabaseClient.rpc('get_top_docentes'),
+            supabaseClient.rpc('get_solicitudes_por_carrera'),
+            supabaseClient.rpc('get_top_materiales', { material_filtro: null }),
+            supabaseClient.rpc('get_consumo_por_asignatura', { asignatura_filtro: null, limite: 10 }),
+            supabaseClient.rpc('get_top_5_subjects_materials')
+        ]);
+
+        return {
+            usuarios: resUsuarios.data?.[0] || { total_usuarios: 0 },
+            docentes: resDocentes.data || [],
+            carreras: resCarreras.data || [],
+            materiales: resMateriales.data || [],
+            asignaturas: resAsignaturas.data || [],
+            topAsignaturasMateriales: resTopAsigMat.data || []
+        };
+
+    } catch (err) {
+        console.error("Error en cargarReportesEstadisticos:", err);
+        return null;
+    }
+}
+
+/* ==============================
+   RENDERIZADO
+================================ */
+
+async function renderizarReportes() {
+    if (typeof Chart === 'undefined') return;
+
+    const reportes = await cargarReportesEstadisticos();
+    if (!reportes) return;
+
+    // KPI Usuarios
+    const uEl = document.getElementById('usuariosCount');
+    if (uEl) {
+        const p = uEl.querySelector('p:first-child');
+        if (p) {
+            p.textContent = Number(reportes.usuarios.total_usuarios)
+                .toLocaleString('es-ES');
         }
     }
 
-    // --- LÓGICA DE DATOS (Supabase RPC) ---
-    async function cargarReportesEstadisticos() {
-        try {
-            // Ejecución de RPCs
-            const [resUsuarios, resDocentes, resCarreras, resMateriales, resAsignaturas, resTopAsigMat] = await Promise.all([
-                supabase.rpc('get_total_usuarios'),
-                supabase.rpc('get_top_docentes'),
-                supabase.rpc('get_solicitudes_por_carrera'),
-                supabase.rpc('get_top_materiales', { material_filtro: null }),
-                supabase.rpc('get_consumo_por_asignatura', { asignatura_filtro: null, limite: 10 }),
-                supabase.rpc('get_top_5_subjects_materials')
-            ]);
+    crearBarraHorizontal(
+        'docentesChart',
+        'Solicitudes',
+        reportes.docentes.map(d => d.docente),
+        reportes.docentes.map(d => d.conteo_solicitudes),
+        primaryColor
+    );
 
-            return {
-                usuarios: resUsuarios.data ? resUsuarios.data[0] : { total_usuarios: 0 },
-                docentes: resDocentes.data || [],
-                carreras: resCarreras.data || [],
-                materiales: resMateriales.data || [],
-                asignaturas: resAsignaturas.data || [],
-                topAsignaturasMateriales: resTopAsigMat.data || []
-            };
-        } catch (error) {
-            console.error("Error general en cargarReportesEstadisticos:", error);
-            return null;
+    crearDona(
+        'carrerasChart',
+        reportes.carreras.map(c => c.carrera),
+        reportes.carreras.map(c => c.conteo_solicitudes)
+    );
+
+    crearBarraHorizontal(
+        'materialesChart',
+        'Veces Solicitado',
+        reportes.materiales.map(m => m.material),
+        reportes.materiales.map(m => m.veces_solicitado),
+        secondaryColor
+    );
+
+    crearBarraHorizontal(
+        'asignaturasChart',
+        'Solicitudes',
+        reportes.asignaturas.map(a => a.asignatura),
+        reportes.asignaturas.map(a => a.numero_de_solicitudes),
+        dangerColor
+    );
+
+    // Gráfico agrupado
+    if (reportes.topAsignaturasMateriales.length > 0) {
+        const raw = reportes.topAsignaturasMateriales;
+        const asignaturas = [...new Set(raw.map(r => r.asignatura_nombre))];
+        const materiales = [...new Set(raw.map(r => r.material_nombre))];
+        const colores = ['#004d99','#28a745','#ffc107','#17a2b8','#dc3545','#6c757d'];
+
+        const datasets = materiales.map((mat, i) => ({
+            label: mat,
+            data: asignaturas.map(asig => {
+                const reg = raw.find(r =>
+                    r.asignatura_nombre === asig &&
+                    r.material_nombre === mat
+                );
+                return reg ? Number(reg.cantidad_total) : 0;
+            }),
+            backgroundColor: colores[i % colores.length],
+            borderRadius: 4
+        }));
+
+        crearBarraAgrupada('topAsignaturasMaterialesChart', asignaturas, datasets);
+    }
+}
+
+/* ==============================
+   FUNCIONES DE GRÁFICOS
+================================ */
+
+function crearBarraHorizontal(id, label, labels, data, color) {
+    const ctx = document.getElementById(id);
+    if (!ctx || !labels.length) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label, data, backgroundColor: color }] },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
         }
-    }
-
-    // --- RENDERIZADO ---
-    async function renderizarReportes() {
-        if (typeof Chart === 'undefined') return;
-
-        const reportes = await cargarReportesEstadisticos();
-        if (!reportes) return;
-
-        // KPI Usuarios
-        const uEl = document.getElementById('usuariosCount');
-        if (uEl) {
-            const p = uEl.querySelector('p:first-child');
-            if(p) p.textContent = Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES');
-        }
-
-        // Gráficos
-        crearBarraHorizontal('docentesChart', 'Solicitudes', reportes.docentes.map(d => d.docente), reportes.docentes.map(d => d.conteo_solicitudes), primaryColor);
-        crearDona('carrerasChart', reportes.carreras.map(c => c.carrera), reportes.carreras.map(c => c.conteo_solicitudes));
-        crearBarraHorizontal('materialesChart', 'Veces Solicitado', reportes.materiales.map(m => m.material), reportes.materiales.map(m => m.veces_solicitado), secondaryColor);
-        crearBarraHorizontal('asignaturasChart', 'Solicitudes', reportes.asignaturas.map(a => a.asignatura), reportes.asignaturas.map(a => a.numero_de_solicitudes), dangerColor);
-
-        // Gráfico Agrupado
-        if (reportes.topAsignaturasMateriales.length > 0) {
-            const dataRaw = reportes.topAsignaturasMateriales;
-            const labelsAsignaturas = [...new Set(dataRaw.map(d => d.asignatura_nombre))];
-            const nombresMateriales = [...new Set(dataRaw.map(d => d.material_nombre))];
-            const paleta = ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'];
-
-            const datasets = nombresMateriales.map((mat, i) => ({
-                label: mat,
-                data: labelsAsignaturas.map(asig => {
-                    const reg = dataRaw.find(d => d.asignatura_nombre === asig && d.material_nombre === mat);
-                    return reg ? Number(reg.cantidad_total) : 0;
-                }),
-                backgroundColor: paleta[i % paleta.length],
-                borderRadius: 4
-            }));
-            crearBarraAgrupada('topAsignaturasMaterialesChart', labelsAsignaturas, datasets);
-        }
-    }
-
-    // --- FUNCIONES AUXILIARES ---
-    function crearBarraHorizontal(id, label, labels, data, color) {
-        const ctx = document.getElementById(id);
-        if (!ctx || labels.length === 0) return;
-        new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets: [{ label, data, backgroundColor: color }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
-    }
-
-    function crearDona(id, labels, data) {
-        const ctx = document.getElementById(id);
-        if (!ctx || labels.length === 0) return;
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels, datasets: [{ data, backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545'] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-    }
-
-    function crearBarraAgrupada(id, labels, datasets) {
-        const ctx = document.getElementById(id);
-        if (!ctx) return;
-        new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-    }
-
-    // Inicialización al cargar el DOM
-    document.addEventListener("DOMContentLoaded", () => {
-        renderizarReportes();
-        setupCommentListener();
     });
+}
+
+function crearDona(id, labels, data) {
+    const ctx = document.getElementById(id);
+    if (!ctx || !labels.length) return;
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: ['#004d99','#28a745','#ffc107','#17a2b8','#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function crearBarraAgrupada(id, labels, datasets) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+/* ==============================
+   INICIALIZACIÓN
+================================ */
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderizarReportes();
+    setupCommentListener();
+});
 </script>
+
     
 </body>
 </html>

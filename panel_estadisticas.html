@@ -258,25 +258,29 @@ display: none;
 </div>
 
 </div>
+    
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    
 <script>
-    // --- IMPORTACIONES Y CONFIGURACIÓN DE SUPABASE ---
+    // --- CONFIGURACIÓN DE SUPABASE ---
+    // Usamos un bloque try/catch o verificamos existencia para evitar el error de "already declared"
+    // si el script se llega a ejecutar dos veces por error del navegador.
     
     const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    // Inicializar Supabase Client
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Inicializar Supabase Client (Solo si no existe ya)
+    if (typeof supabase === 'undefined') {
+        var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
     // Colores para los gráficos
     const primaryColor = 'rgb(0, 77, 153)';
     const secondaryColor = 'rgb(40, 167, 69)';
     const dangerColor = 'rgb(220, 53, 69)';    
 
-    // --- LÓGICA DE COMENTARIOS (Novedades de Entrega) ---
-
+    // --- LÓGICA DE COMENTARIOS ---
     async function setupCommentListener() {
         const commentsListEl = document.getElementById('commentsList');
         const loadingMessageEl = document.getElementById('loadingMessage');
@@ -294,7 +298,7 @@ display: none;
 
             if (error) throw error;
 
-            if (solicitudes.length === 0) {
+            if (!solicitudes || solicitudes.length === 0) {
                 commentsListEl.innerHTML = `<p style="text-align: center; color: #888;">Aún no hay novedades registradas.</p>`;
                 return;
             }
@@ -330,70 +334,54 @@ display: none;
     }
 
     // --- LÓGICA DE DATOS (Supabase RPC) ---
-    
     async function cargarReportesEstadisticos() {
         try {
-            // Ejecutar todas las llamadas necesarias
-            const { data: totalUsuarios } = await supabase.rpc('get_total_usuarios');
-            const { data: docentes } = await supabase.rpc('get_top_docentes');
-            const { data: carreras } = await supabase.rpc('get_solicitudes_por_carrera');
-            const { data: materiales } = await supabase.rpc('get_top_materiales', { material_filtro: null });
-            
-            const { data: asignaturas } = await supabase.rpc('get_consumo_por_asignatura', { 
-                asignatura_filtro: null,
-                limite: 10 
-            });
+            // Ejecución de RPCs
+            const [resUsuarios, resDocentes, resCarreras, resMateriales, resAsignaturas, resTopAsigMat] = await Promise.all([
+                supabase.rpc('get_total_usuarios'),
+                supabase.rpc('get_top_docentes'),
+                supabase.rpc('get_solicitudes_por_carrera'),
+                supabase.rpc('get_top_materiales', { material_filtro: null }),
+                supabase.rpc('get_consumo_por_asignatura', { asignatura_filtro: null, limite: 10 }),
+                supabase.rpc('get_top_5_subjects_materials')
+            ]);
 
-            // Nueva función para el gráfico agrupado
-            const { data: topAsigMat, error: errTopAsig } = await supabase.rpc('get_top_5_subjects_materials');
-            if (errTopAsig) console.warn("Aviso: get_top_5_subjects_materials falló o no existe.");
-
-            // UN SOLO RETURN con todos los datos consolidados
             return {
-                docentes: docentes || [],
-                carreras: carreras || [],
-                materiales: materiales || [],
-                asignaturas: asignaturas || [],
-                topAsignaturasMateriales: topAsigMat || [],
-                usuarios: totalUsuarios ? totalUsuarios[0] : { total_usuarios: 0 }, 
+                usuarios: resUsuarios.data ? resUsuarios.data[0] : { total_usuarios: 0 },
+                docentes: resDocentes.data || [],
+                carreras: resCarreras.data || [],
+                materiales: resMateriales.data || [],
+                asignaturas: resAsignaturas.data || [],
+                topAsignaturasMateriales: resTopAsigMat.data || []
             };
-
         } catch (error) {
             console.error("Error general en cargarReportesEstadisticos:", error);
-            return { docentes: [], carreras: [], materiales: [], asignaturas: [], topAsignaturasMateriales: [], usuarios: { total_usuarios: 0 } };
+            return null;
         }
     }
 
-    // --- LÓGICA DE RENDERIZADO (Chart.js) ---
-
+    // --- RENDERIZADO ---
     async function renderizarReportes() {
         if (typeof Chart === 'undefined') return;
 
         const reportes = await cargarReportesEstadisticos();
+        if (!reportes) return;
 
-        // 0. KPI Usuarios
-        const usuariosCountEl = document.getElementById('usuariosCount');
-        if (usuariosCountEl) {
-            const total = reportes.usuarios.total_usuarios ? Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES') : '0';
-            const p = usuariosCountEl.querySelector('p:first-child');
-            if(p) p.textContent = total;
+        // KPI Usuarios
+        const uEl = document.getElementById('usuariosCount');
+        if (uEl) {
+            const p = uEl.querySelector('p:first-child');
+            if(p) p.textContent = Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES');
         }
 
-        // 1. Docentes
-        crearBarraHorizontal('docentesChart', 'Solicitudes', reportes.docentes.map(d => d.docente), reportes.docentes.map(d => d.conteo_solicitudes), primaryColor, ' sol.');
+        // Gráficos
+        crearBarraHorizontal('docentesChart', 'Solicitudes', reportes.docentes.map(d => d.docente), reportes.docentes.map(d => d.conteo_solicitudes), primaryColor);
+        crearDona('carrerasChart', reportes.carreras.map(c => c.carrera), reportes.carreras.map(c => c.conteo_solicitudes));
+        crearBarraHorizontal('materialesChart', 'Veces Solicitado', reportes.materiales.map(m => m.material), reportes.materiales.map(m => m.veces_solicitado), secondaryColor);
+        crearBarraHorizontal('asignaturasChart', 'Solicitudes', reportes.asignaturas.map(a => a.asignatura), reportes.asignaturas.map(a => a.numero_de_solicitudes), dangerColor);
 
-        // 2. Carreras
-        crearDona('carrerasChart', 'Solicitudes por Carrera', reportes.carreras.map(c => c.carrera), reportes.carreras.map(c => c.conteo_solicitudes));
-
-        // 3. Materiales
-        crearBarraHorizontal('materialesChart', 'Veces Solicitado', reportes.materiales.map(m => m.material), reportes.materiales.map(m => m.veces_solicitado), secondaryColor, ' veces');
-
-        // 4. Asignaturas
-        crearBarraHorizontal('asignaturasChart', 'Número de Solicitudes', reportes.asignaturas.map(a => a.asignatura), reportes.asignaturas.map(a => a.numero_de_solicitudes), dangerColor, ' sol.');
-
-        // 5. NUEVO: Gráfico Agrupado (Asignaturas + Materiales)
-        const canvasAgrupado = document.getElementById('topAsignaturasMaterialesChart');
-        if (canvasAgrupado && reportes.topAsignaturasMateriales.length > 0) {
+        // Gráfico Agrupado
+        if (reportes.topAsignaturasMateriales.length > 0) {
             const dataRaw = reportes.topAsignaturasMateriales;
             const labelsAsignaturas = [...new Set(dataRaw.map(d => d.asignatura_nombre))];
             const nombresMateriales = [...new Set(dataRaw.map(d => d.material_nombre))];
@@ -408,74 +396,42 @@ display: none;
                 backgroundColor: paleta[i % paleta.length],
                 borderRadius: 4
             }));
-
             crearBarraAgrupada('topAsignaturasMaterialesChart', labelsAsignaturas, datasets);
         }
     }
 
-    // --- FUNCIONES AUXILIARES DE CHART ---
-
-    function crearBarraHorizontal(id, label, labels, data, color, unit) {
-        if (!document.getElementById(id) || labels.length === 0) return;
-        new Chart(document.getElementById(id), {
+    // --- FUNCIONES AUXILIARES ---
+    function crearBarraHorizontal(id, label, labels, data, color) {
+        const ctx = document.getElementById(id);
+        if (!ctx || labels.length === 0) return;
+        new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{ label: label, data: data, backgroundColor: color }]
-            },
-            options: {
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true } }
-            }
+            data: { labels, datasets: [{ label, data, backgroundColor: color }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
-    function crearDona(id, label, labels, data) {
-        if (!document.getElementById(id) || labels.length === 0) return;
-        new Chart(document.getElementById(id), {
+    function crearDona(id, labels, data) {
+        const ctx = document.getElementById(id);
+        if (!ctx || labels.length === 0) return;
+        new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{ data: data, backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545'] }]
-            },
+            data: { labels, datasets: [{ data, backgroundColor: ['#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545'] }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
     }
 
     function crearBarraAgrupada(id, labels, datasets) {
-        new Chart(document.getElementById(id), {
+        const ctx = document.getElementById(id);
+        if (!ctx) return;
+        new Chart(ctx, {
             type: 'bar',
-            data: { labels: labels, datasets: datasets },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
-                scales: { y: { beginAtZero: true } }
-            }
+            data: { labels, datasets },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
     }
 
-    // Plugin para el centro de la Dona
-    const totalDoughnutPlugin = {
-        id: 'totalDoughnut',
-        beforeDraw(chart) {
-            if (chart.config.type === 'doughnut') {
-                const { ctx, data, width, height } = chart;
-                ctx.save();
-                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = primaryColor;
-                ctx.font = 'bold 24px sans-serif';
-                ctx.fillText(total.toLocaleString('es-ES'), width / 2, height / 2 - 10);
-                ctx.font = '12px sans-serif';
-                ctx.fillText('Total', width / 2, height / 2 + 15);
-                ctx.restore();
-            }
-        }
-    };
-    Chart.register(totalDoughnutPlugin);
-
+    // Inicialización al cargar el DOM
     document.addEventListener("DOMContentLoaded", () => {
         renderizarReportes();
         setupCommentListener();

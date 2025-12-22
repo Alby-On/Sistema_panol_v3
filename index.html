@@ -403,6 +403,7 @@ async function registrar() {
         email, 
         password: pass,
         options: {
+            emailRedirectTo: "https://alby-on.github.io/Sistema_panol_v3/index.html",
             data: { 
                 full_name: nombre,
                 rut_val: rut,
@@ -411,6 +412,7 @@ async function registrar() {
             }
         }
     });
+
 
     if (e1) {
         showError(e1.message.includes("already registered") ? "El correo ya está registrado." : `Error: ${e1.message}`);

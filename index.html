@@ -363,6 +363,8 @@ function validarRutCompleto(rutCompleto){
 // FUNCIÓN REGISTRAR (Modificada para usar Metadatos)
 // ----------------------------------------
 async function registrar() {
+    bloquearBotonRegistro(); // ⛔ evita spam
+
     const mensaje = document.getElementById("mensaje");
     const rutError = document.getElementById("rutError");
 
@@ -375,9 +377,10 @@ async function registrar() {
     const confirmPass = regConfirmPass.value.trim();
 
     const showError = (text) => {
-        mensaje.textContent = `❌ ${text}`;
-        mensaje.style.color = "red";
-        mensaje.style.backgroundColor = "#ffdddd";
+    mensaje.textContent = `❌ ${text}`;
+    mensaje.style.color = "red";
+    mensaje.style.backgroundColor = "#ffdddd";
+    desbloquearBotonRegistro(); // ✅ liberar botón
     };
 
     const showSuccess = (text) => {
@@ -402,8 +405,9 @@ async function registrar() {
 
     const rutVal = validarRutCompleto(rut);
     if (!rutVal.ok) {
-        rutError.textContent = rutVal.msg;
-        return;
+    rutError.textContent = rutVal.msg;
+    desbloquearBotonRegistro();
+    return;
     }
 
     if (!/^\+569\d{8}$/.test(telefono)) {

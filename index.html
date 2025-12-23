@@ -301,7 +301,8 @@
 </div>
 <p id="password-match-message"></p>
 
-    <button class="btn-success" onclick="registrar()">Crear Cuenta</button>
+    <button class="btn-success" id="btnRegister" onclick="registrar()"> Crear Cuenta </button>
+    
     <p id="mensaje"></p>
     <p style="text-align:center;"><a onclick="showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
     <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
@@ -474,7 +475,22 @@ function desbloquearBotonLogin() {
     btn.style.opacity = "1";
     btn.style.cursor = "pointer";
 }
+function bloquearBotonRegistro(texto = "Registrando...") {
+    const btn = document.getElementById("btnRegister");
+    btn.disabled = true;
+    btn.dataset.textoOriginal = btn.textContent;
+    btn.textContent = texto;
+    btn.style.opacity = "0.7";
+    btn.style.cursor = "not-allowed";
+}
 
+function desbloquearBotonRegistro() {
+    const btn = document.getElementById("btnRegister");
+    btn.disabled = false;
+    btn.textContent = btn.dataset.textoOriginal || "Crear Cuenta";
+    btn.style.opacity = "1";
+    btn.style.cursor = "pointer";
+}
 async function login() {
     bloquearBotonLogin(); // ⛔ evita spam
 

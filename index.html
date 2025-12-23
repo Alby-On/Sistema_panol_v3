@@ -239,7 +239,7 @@
     <input type="password" placeholder="🔒 Contraseña" id="loginPass">
     <span class="toggle-password" onclick="toggleVisibility('loginPass', this)">👁️</span>
 </div>
-    <button class="btn-primary" onclick="login()">Ingresar</button>
+    <button class="btn-primary" id="btnLogin" onclick="login()">Ingresar</button>
     
     <p id="loginMsg"></p>
     
@@ -439,8 +439,27 @@ function validarRutFormatoYDigito(rut) {
     const dvCalculado = resto === 11 ? "0" : resto === 10 ? "K" : String(resto);
     return dvCalculado === dv;
 }
+    
+function bloquearBotonLogin(texto = "Ingresando...") {
+    const btn = document.getElementById("btnLogin");
+    btn.disabled = true;
+    btn.dataset.textoOriginal = btn.textContent;
+    btn.textContent = texto;
+    btn.style.opacity = "0.7";
+    btn.style.cursor = "not-allowed";
+}
+
+function desbloquearBotonLogin() {
+    const btn = document.getElementById("btnLogin");
+    btn.disabled = false;
+    btn.textContent = btn.dataset.textoOriginal || "Ingresar";
+    btn.style.opacity = "1";
+    btn.style.cursor = "pointer";
+}
 
 async function login() {
+    bloquearBotonLogin(); // ⛔ evita spam
+
     const input = loginEmail.value.trim();
     const pass = loginPass.value.trim();
     const msg = document.getElementById("loginMsg");
@@ -449,6 +468,7 @@ async function login() {
         msg.textContent = `❌ ${text}`;
         msg.style.color = "red";
         msg.style.backgroundColor = "#ffdddd";
+        desbloquearBotonLogin(); // ✅ liberar botón
     };
 
     const showSuccess = (text) => {
@@ -472,49 +492,57 @@ async function login() {
             showError("RUT inválido.");
             return;
         }
-        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", { rut_input: input });
+
+        const { data, error } = await supabaseClient.rpc(
+            "buscar_email_por_rut",
+            { rut_input: input }
+        );
+
         if (error || !data) {
             showError("El RUT no está registrado.");
             return;
         }
+
         emailParaLogin = data;
     }
 
-    // AUTENTICAR
-    const { data: authData, error } = await supabaseClient.auth.signInWithPassword({
-        email: emailParaLogin,
-        password: pass
-    });
+    const { data: authData, error } =
+        await supabaseClient.auth.signInWithPassword({
+            email: emailParaLogin,
+            password: pass
+        });
 
     if (error) {
-        showError(error.message.includes("Email not confirmed") ? "Debes confirmar tu correo antes de entrar." : "Credenciales incorrectas.");
+        showError(
+            error.message.includes("Email not confirmed")
+                ? "Debes confirmar tu correo antes de entrar."
+                : "Credenciales incorrectas."
+        );
         return;
     }
 
-    // BUSCAR PERFIL EN TABLA USUARIOS
     let { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("*")
         .eq("email", emailParaLogin)
         .single();
 
-    // SI NO EXISTE PERFIL EN TABLA, CREARLO USANDO METADATOS
     if (!perfil) {
         const meta = authData.user.user_metadata;
-        const { data: nuevoPerfil, error: e2 } = await supabaseClient
-            .from("usuarios")
-            .insert([{ 
-                nombre: meta.full_name, 
-                rut: meta.rut_val, 
-                carrera: meta.carrera_val, 
-                telefono: meta.telefono_val, 
-                email: emailParaLogin 
-            }])
-            .select()
-            .single();
+        const { data: nuevoPerfil, error: e2 } =
+            await supabaseClient.from("usuarios")
+                .insert([{
+                    nombre: meta.full_name,
+                    rut: meta.rut_val,
+                    carrera: meta.carrera_val,
+                    telefono: meta.telefono_val,
+                    email: emailParaLogin
+                }])
+                .select()
+                .single();
 
         if (e2) {
-            showError("Error al activar perfil: " + e2.message);
+            showError("Error al activar perfil.");
             return;
         }
         perfil = nuevoPerfil;
@@ -522,8 +550,11 @@ async function login() {
 
     localStorage.setItem("currentUser", JSON.stringify(perfil));
     showSuccess(`Bienvenido, ${perfil.nombre}`);
+
+    // ⏳ NO desbloqueamos: redirigimos
     setTimeout(() => window.location.href = "menu.html", 1200);
 }
+
 
 showWelcome();
 

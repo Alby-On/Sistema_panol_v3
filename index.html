@@ -216,6 +216,17 @@
     border-color: var(--color-error) !important;
     box-shadow: 0 0 5px rgba(220, 53, 69, 0.4) !important;
 }
+.login-info {
+    background-color: #e8f0fe;
+    border-left: 5px solid var(--color-primary);
+    color: #003366;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    text-align: left;
+}
     </style>
 </head>
 <body>
@@ -234,6 +245,13 @@
 
 <div class="box hidden" id="loginBox">
     <h2>🔑 Iniciar Sesión</h2>
+    <div class="login-info">
+    ℹ️ <b>Importante:</b><br>
+    Si es tu <b>primer inicio de sesión</b>, debes ingresar primero tu 
+    <b>correo electrónico</b>. <br>
+    Una vez iniciado sesión, podrás ingresar utilizando tu <b>RUT</b>.
+</div>
+
     <input type="email" placeholder="📧 Correo o RUT" id="loginEmail">
 <div class="password-container">
     <input type="password" placeholder="🔒 Contraseña" id="loginPass">

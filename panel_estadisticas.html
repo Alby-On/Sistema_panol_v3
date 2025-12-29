@@ -1,263 +1,219 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Panel de Estadisticas de Uso del Pañol</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-/* Variables de Color */
-:root {
---color-primary: #004d99; /* Azul institucional */
---color-secondary: #28a745; /* Verde */
---color-menu: #6c757d; /* Gris para el botón de menú */
---color-danger: #dc3545; /* Rojo para acentuar */
---color-background: #f4f6f9; /* Fondo muy claro */
---color-card: #ffffff;
---color-text: #333333;
---shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra más suave */
-}
+    <meta charset="UTF-8">
+    <title>Estadísticas de Uso del Pañol</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --color-primary: #173753; /* Azul oscuro institucional */
+            --color-secondary: #28a745; /* Verde para imprimir */
+            --color-background: #f4f6f9;
+            --color-card: #ffffff;
+            --color-text: #333333;
+            --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
 
-/* Estilos Generales y Contenedor */
-body {
-font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-background: var(--color-background);
-color: var(--color-text);
-margin: 0;
-padding: 0;
-}
-/* Título Principal */
-h2 {
-text-align: center;
-color: var(--color-primary);
-margin: 20px 0 10px;
-font-size: 2.5em;
-font-weight: 800;
-}
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--color-background);
+            margin: 0;
+            padding: 0;
+        }
 
-/* CONTENEDOR DEL ENCABEZADO (BOTÓN Y ALINEACIÓN) */
-.dashboard-header {
-max-width: 1200px;
-margin: 0 auto;
-padding: 0 20px 25px 20px;
-display: flex;
-justify-content: space-between;
-align-items: center; /* Asegura alineación vertical */
-}
-/* Estilos del botón Imprimir */
-.print-button {
-background-color: var(--color-secondary);
-color: white;
-border: none;
-padding: 12px 25px;
-border-radius: 8px;
-cursor: pointer;
-font-size: 1.05em;
-font-weight: 700;
-box-shadow: 0 3px 8px rgba(40, 167, 69, 0.4);
-transition: all 0.2s ease;
-}
+        /* Banner Superior Corporativo */
+        header {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.print-button:hover {
-background-color: #1e7e34;
-transform: translateY(-1px);
-box-shadow: 0 5px 10px rgba(40, 167, 69, 0.5);
-}
+        .header-title h1 { font-size: 1.8em; margin: 0; font-weight: 700; }
+        .header-info { text-align: right; }
+        .header-info h2 { font-size: 1.4em; margin: 0; font-weight: 600; color: white; }
+        .header-info p { font-size: 0.9em; margin: 5px 0 0; color: #b0c4de; }
 
-/* Botón Volver al Menú */
-.menu-button {
-background-color: var(--color-menu);
-color: white;
-border: none;
-padding: 12px 25px;
-border-radius: 8px;
-cursor: pointer;
-font-size: 1.05em;
-font-weight: 700;
-box-shadow: 0 3px 8px rgba(108, 117, 125, 0.4);
-transition: all 0.2s ease;
-text-decoration: none;
-display: flex;
-align-items: center;
-gap: 5px;
-}
+        /* Contenedor de Botones */
+        .dashboard-header {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.menu-button:hover {
-background-color: #5a6268;
-transform: translateY(-1px);
-box-shadow: 0 5px 10px rgba(108, 117, 125, 0.5);
-}
+        /* BOTÓN VOLVER (ESTILO EXACTO AL SOLICITADO) */
+        .btn-menu {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
 
-/* Grid del Dashboard: Layout vertical (una card por fila) */
-.dashboard-grid {
-display: grid;
-grid-template-columns: 1fr;
-gap: 25px;
-padding: 0 20px 20px 20px;
-max-width: 1200px;
-margin: 0 auto;
-}
-/* Contenedor de cada Card/Gráfico */
-.chart-container {
-background: var(--color-card);
-padding: 20px;
-border-radius: 12px;
-box-shadow: var(--shadow-subtle);
-height: 600px;
-display: flex;
-flex-direction: column;
-transition: transform 0.3s ease;
-}
+        .btn-menu:hover {
+            background-color: #0056b3;
+        }
 
-/* Reducimos un poco la altura de la tarjeta de comentarios, ya que no tiene el área de entrada */
-.chart-container:nth-child(5) { 
-    height: 450px; 
-}
+        .btn-menu span {
+            margin-right: 8px;
+        }
 
+        /* Botón Imprimir */
+        .print-button {
+            background-color: var(--color-secondary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
 
-.chart-container:hover {
-transform: translateY(-3px);
-box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-/* Ajustes de Canvas y Altura */
-.chart-container canvas {
-flex-grow: 1;
-max-height: 100%;
-min-height: 0;
-}
+        .print-button:hover { background-color: #1e7e34; }
 
-/* Títulos de las Tarjetas */
-h3 {
-color: var(--color-primary);
-font-size: 1.3em;
-border-bottom: 2px solid #e0e0e0;
-padding-bottom: 10px;
-margin-bottom: 15px;
-font-weight: 700;
-}
+        /* Grid de Contenido */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            padding: 0 40px 40px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-/* ESTILOS PARA LA CARD DE COMENTARIOS DINÁMICA */
-.comments-content {
-flex-grow: 1;
-overflow-y: auto;
-padding-right: 10px;
-}
-.comments-list {
-list-style: none;
-padding: 0;
-margin: 0;
-}
-.comments-list li {
-padding: 12px 0;
-border-bottom: 1px dashed #e0e0e0;
-font-size: 0.95em;
-line-height: 1.5;
-}
-.comments-list li strong {
-color: var(--color-primary);
-font-weight: 600;
-display: block;
-margin-bottom: 4px;
-}
-.comments-list li .comment-date {
-font-size: 0.8em;
-color: #888;
-float: right;
-}
-.comments-list li:last-child {
-border-bottom: none;
-}
-/* Estilos de la zona de ingreso de comentario (ELIMINADOS) */
+        .chart-container {
+            background: var(--color-card);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-subtle);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-/* Ajustes para móviles */
-@media (max-width: 768px) {
-h2 { font-size: 2em; margin-top: 15px; }
-.dashboard-grid { 
-    grid-template-columns: 1fr; 
-    padding: 10px; 
-    gap: 15px; 
-}
-.chart-container { 
-    height: 450px; 
-}
-.chart-container:nth-child(5) { /* Asegura que la card de comentarios se vea bien en móvil */
-    height: 350px; 
-}
-.dashboard-header { justify-content: space-around; padding-bottom: 15px; }
-}
+        .chart-container.stats-mini { min-height: 180px; }
 
-/* Oculta el botón de impresión al imprimir el documento */
-@media print {
-.dashboard-header {
-display: none;
-}
-}
-</style>
+        h3 {
+            color: var(--color-primary);
+            font-size: 1.3em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin: 0 0 20px 0;
+            font-weight: 700;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .comments-content { flex-grow: 1; overflow-y: auto; }
+
+        @media (max-width: 768px) {
+            header, .dashboard-header { padding: 20px; flex-direction: column; text-align: center; gap: 15px; }
+            .dashboard-grid { padding: 15px; }
+        }
+
+        @media print {
+            header, .dashboard-header { display: none; }
+            .dashboard-grid { padding: 0; }
+        }
+    </style>
 </head>
 <body>
-<h2>📈 Panel de Estadisticas de Uso del Pañol</h2>
-<div class="dashboard-header">
-<a href="menu.html" class="menu-button">
-⬅️ Volver al Menú
-</a>
-<button class="print-button" onclick="window.print()">
-🖨️ Imprimir reporte
-</button>
-</div>
-<div class="dashboard-grid">
-    
-<div class="chart-container" style="height: 180px;">
-    <h3>👥 Usuarios Registrados</h3>
-    
-    <div 
-        id="usuariosCount" 
-        style="
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            flex-grow: 1; 
-            justify-content: center; /* Centrado vertical */
-        "
-    >
-        <p style="font-size: 4em; color: var(--color-primary); font-weight: 800; margin: 0;">0</p>
-        <p style="font-size: 1.2em; color: var(--color-text); margin: 0;">Total en el Sistema</p>
+
+    <header>
+        <div class="header-title"><h1>Estadísticas de Uso del Pañol</h1></div>
+        <div class="header-info">
+            <h2>INACAP</h2>
+            <p>Área Energía y Área Automatización, Electrónica y Robótica</p>
+        </div>
+    </header>
+
+    <div class="dashboard-header">
+        <a href="menu.html" class="btn-menu">
+            <span>&#x2190;</span> Volver al Menú
+        </a>
+        <button class="print-button" onclick="window.print()">
+            <span>🖨️</span> Imprimir reporte
+        </button>
     </div>
-</div>
 
-<div class="chart-container">
-    <h3>🥇 Top 10 Docentes Solicitantes</h3>
-    <canvas id="docentesChart"></canvas>
-</div>
+    <div class="dashboard-grid">
+        
+        <div class="chart-container stats-mini">
+            <h3>👥 Usuarios Registrados</h3>
+            <div id="usuariosCount" style="text-align: center; display: flex; flex-direction: column; justify-content: center; flex-grow: 1;">
+                <p style="font-size: 4em; color: #173753; font-weight: 800; margin: 0;">0</p>
+                <p style="font-size: 1.2em; color: var(--color-text); margin: 0;">Total en el Sistema</p>
+            </div>
+        </div>
+        <div class="chart-container stats-mini">
+    <h3>📝 Total Solicitudes Realizadas</h3>
+    <div id="solicitudesTotalCount" style="text-align: center; display: flex; flex-direction: column; justify-content: center; flex-grow: 1;">
+        <p style="font-size: 4em; color: #28a745; font-weight: 800; margin: 0;">0</p>
+        <p style="font-size: 1.2em; color: var(--color-text); margin: 0;">Registros en Base de Datos</p>
+    </div>
+    </div>
+        <div class="chart-container">
+            <h3>🥇 Top 10 Docentes Solicitantes</h3>
+            <div class="canvas-wrapper">
+                <canvas id="docentesChart"></canvas>
+            </div>
+        </div>
 
-<div class="chart-container">
-    <h3>🏛️ Solicitudes por carrera</h3>
-    <canvas id="carrerasChart"></canvas>
-</div>
+        <div class="chart-container">
+            <h3>🏛️ Solicitudes por Carrera</h3>
+            <div class="canvas-wrapper">
+                <canvas id="carrerasChart"></canvas>
+            </div>
+        </div>
 
-<div class="chart-container">
-    <h3>🔩 Materiales mas solicitados</h3>
-    <canvas id="materialesChart"></canvas>
-</div>
+        <div class="chart-container">
+            <h3>🔩 Materiales más Solicitados</h3>
+            <div class="canvas-wrapper">
+                <canvas id="materialesChart"></canvas>
+            </div>
+        </div>
 
-<div class="chart-container">
-    <h3>📚 Solicitudes por asignatura</h3>
-    <canvas id="asignaturasChart"></canvas>
-</div>
+        <div class="chart-container">
+            <h3>📚 Solicitudes por Asignatura</h3>
+            <div class="canvas-wrapper">
+                <canvas id="asignaturasChart"></canvas>
+            </div>
+        </div>
 
-<div class="chart-container" style="min-height: 400px;"> 
-    <h3>📊 Top 5 Asignaturas y materiales mas solicitados</h3>
-    <canvas id="topAsignaturasMaterialesChart"></canvas>
-</div>
+        <div class="chart-container">
+            <h3>💬 Registro de Novedades</h3>
+            <div id="commentsList" class="comments-content">
+                <p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
+            </div>
+        </div>
 
-<div class="chart-container">
-    <h3>💬 Registro de Novedades</h3>
-    <div id="commentsList" class="comments-content">
-        <p id="loadingMessage" style="text-align: center; color: #888;">Cargando novedades...</p>
-    </div>
-</div>
+    </div>
 
-</div>
+</body>
+</html>
     
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -270,15 +226,9 @@ display: none;
 const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-// Crear cliente Supabase UNA SOLA VEZ
 if (!window.supabaseClient) {
-    window.supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
+    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
-
-// Alias local seguro
 const supabaseClient = window.supabaseClient;
 
 /* ==============================
@@ -289,10 +239,16 @@ const primaryColor = 'rgb(0, 77, 153)';
 const secondaryColor = 'rgb(40, 167, 69)';
 const dangerColor = 'rgb(220, 53, 69)';
 
-/* ==============================
-   LÓGICA DE COMENTARIOS
-================================ */
+// NUEVA PALETA: Colores para las carreras (puedes añadir más si deseas)
+const paletaCarreras = [
+    '#004d99', '#28a745', '#ffc107', '#17a2b8', '#dc3545', 
+    '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#6c757d',
+    '#5a2d81', '#4bbf73', '#f0ad4e', '#5bc0de', '#d9534f'
+];
 
+/* ==============================
+   LÓGICA DE COMENTARIOS (Sin cambios)
+================================ */
 async function setupCommentListener() {
     const commentsListEl = document.getElementById('commentsList');
     const loadingMessageEl = document.getElementById('loadingMessage');
@@ -311,39 +267,20 @@ async function setupCommentListener() {
         if (error) throw error;
 
         if (!solicitudes || solicitudes.length === 0) {
-            commentsListEl.innerHTML =
-                `<p style="text-align:center;color:#888;">Aún no hay novedades registradas.</p>`;
+            commentsListEl.innerHTML = `<p style="text-align:center;color:#888;">Aún no hay novedades registradas.</p>`;
             loadingMessageEl.textContent = "";
             return;
         }
 
         const escapeHTML = (str) =>
             String(str).replace(/[&<>"']/g, (m) => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
 
         const commentsHtml = solicitudes.map(item => {
             const usuario = item.usuarios?.nombre || 'Usuario Desconocido';
-            const fecha = item.fecha_entrega
-                ? new Date(item.fecha_entrega).toLocaleString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-                : 'Fecha Desconocida';
-
-            return `
-                <li>
-                   <strong>${usuario}</strong>
-                    <span class="comment-date">${fecha}</span>
-                    <div>${escapeHTML(item.comentario_entrega)}</div>
-                </li>`;
+            const fecha = item.fecha_entrega ? new Date(item.fecha_entrega).toLocaleString('es-ES') : 'Fecha Desconocida';
+            return `<li><strong>${usuario}</strong> <span class="comment-date">${fecha}</span><div>${escapeHTML(item.comentario_entrega)}</div></li>`;
         }).join('');
 
         commentsListEl.innerHTML = `<ul class="comments-list">${commentsHtml}</ul>`;
@@ -352,31 +289,23 @@ async function setupCommentListener() {
     } catch (err) {
         console.error("Error al cargar novedades:", err);
         loadingMessageEl.textContent = "";
-        commentsListEl.innerHTML =
-            `<p style="color:${dangerColor};">Error al cargar novedades.</p>`;
+        commentsListEl.innerHTML = `<p style="color:${dangerColor};">Error al cargar novedades.</p>`;
     }
 }
 
 /* ==============================
    CARGA DE REPORTES (RPC)
 ================================ */
-
 async function cargarReportesEstadisticos() {
     try {
-        const [
-            resUsuarios,
-            resDocentes,
-            resCarreras,
-            resMateriales,
-            resAsignaturas,
-            resTopAsigMat
-        ] = await Promise.all([
+        const [resUsuarios, resDocentes, resCarreras, resMateriales, resAsignaturas, resTotalSol] = await Promise.all([
             supabaseClient.rpc('get_total_usuarios'),
             supabaseClient.rpc('get_top_docentes'),
             supabaseClient.rpc('get_solicitudes_por_carrera'),
             supabaseClient.rpc('get_top_materiales', { material_filtro: null }),
             supabaseClient.rpc('get_consumo_por_asignatura', { asignatura_filtro: null, limite: 10 }),
-            supabaseClient.rpc('get_top_5_subjects_materials')
+            // CONSULTA DIRECTA A LA TABLA (Sin necesidad de RPC):
+            supabaseClient.from('solicitudes').select('*', { count: 'exact', head: true })
         ]);
 
         return {
@@ -385,9 +314,9 @@ async function cargarReportesEstadisticos() {
             carreras: resCarreras.data || [],
             materiales: resMateriales.data || [],
             asignaturas: resAsignaturas.data || [],
-            topAsignaturasMateriales: resTopAsigMat.data || []
+            // Guardamos el total obtenido por la consulta directa
+            totalSolicitudes: resTotalSol.count || 0 
         };
-
     } catch (err) {
         console.error("Error en cargarReportesEstadisticos:", err);
         return null;
@@ -397,85 +326,73 @@ async function cargarReportesEstadisticos() {
 /* ==============================
    RENDERIZADO
 ================================ */
-
 async function renderizarReportes() {
     if (typeof Chart === 'undefined') return;
 
     const reportes = await cargarReportesEstadisticos();
     if (!reportes) return;
 
-    // KPI Usuarios
+    // KPI Usuarios (Ya lo tienes)
     const uEl = document.getElementById('usuariosCount');
     if (uEl) {
         const p = uEl.querySelector('p:first-child');
-        if (p) {
-            p.textContent = Number(reportes.usuarios.total_usuarios)
-                .toLocaleString('es-ES');
-        }
+        if (p) p.textContent = Number(reportes.usuarios.total_usuarios).toLocaleString('es-ES');
     }
 
-    crearBarraHorizontal(
-        'docentesChart',
-        'Solicitudes',
-        reportes.docentes.map(d => d.docente),
-        reportes.docentes.map(d => d.conteo_solicitudes),
-        primaryColor
-    );
-
-    crearDona(
-        'carrerasChart',
-        reportes.carreras.map(c => c.carrera),
-        reportes.carreras.map(c => c.conteo_solicitudes)
-    );
-
-    crearBarraHorizontal(
-        'materialesChart',
-        'Veces Solicitado',
-        reportes.materiales.map(m => m.material),
-        reportes.materiales.map(m => m.veces_solicitado),
-        secondaryColor
-    );
-
-    crearBarraHorizontal(
-        'asignaturasChart',
-        'Solicitudes',
-        reportes.asignaturas.map(a => a.asignatura),
-        reportes.asignaturas.map(a => a.numero_de_solicitudes),
-        dangerColor
-    );
-
-    // Gráfico agrupado
-    if (reportes.topAsignaturasMateriales.length > 0) {
-        const raw = reportes.topAsignaturasMateriales;
-        const asignaturas = [...new Set(raw.map(r => r.asignatura_nombre))];
-        const materiales = [...new Set(raw.map(r => r.material_nombre))];
-        const colores = ['#004d99','#28a745','#ffc107','#17a2b8','#dc3545','#6c757d'];
-
-        const datasets = materiales.map((mat, i) => ({
-            label: mat,
-            data: asignaturas.map(asig => {
-                const reg = raw.find(r =>
-                    r.asignatura_nombre === asig &&
-                    r.material_nombre === mat
-                );
-                return reg ? Number(reg.cantidad_total) : 0;
-            }),
-            backgroundColor: colores[i % colores.length],
-            borderRadius: 4
-        }));
-
-        crearBarraAgrupada('topAsignaturasMaterialesChart', asignaturas, datasets);
+    // --- NUEVO: KPI Total Solicitudes ---
+    const sEl = document.getElementById('solicitudesTotalCount');
+    if (sEl) {
+        const p = sEl.querySelector('p:first-child');
+        if (p) p.textContent = Number(reportes.totalSolicitudes).toLocaleString('es-ES');
     }
+    // ------------------------------------
+
+    // El resto de tus gráficas se mantienen igual...
+    crearBarraHorizontal('docentesChart', 'Solicitudes', reportes.docentes.map(d => d.docente), reportes.docentes.map(d => d.conteo_solicitudes), primaryColor);
+    crearDona('carrerasChart', reportes.carreras.map(c => c.carrera), reportes.carreras.map(c => c.conteo_solicitudes));
+    crearBarraHorizontal('materialesChart', 'Veces Solicitado', reportes.materiales.map(m => m.material), reportes.materiales.map(m => m.veces_solicitado), secondaryColor);
+    crearBarraHorizontal('asignaturasChart', 'Solicitudes', reportes.asignaturas.map(a => a.asignatura), reportes.asignaturas.map(a => a.numero_de_solicitudes), dangerColor);
 }
 
 /* ==============================
-   FUNCIONES DE GRÁFICOS
+   FUNCIONES DE GRÁFICOS (Modificadas)
 ================================ */
+
+function crearDona(id, labels, data) {
+    const ctx = document.getElementById(id);
+    if (!ctx || !labels.length) return;
+
+    // ASIGNACIÓN DINÁMICA DE COLORES:
+    // Creamos un array de colores del mismo largo que los datos recibidos
+    const coloresAsignados = labels.map((_, i) => paletaCarreras[i % paletaCarreras.length]);
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: coloresAsignados, // Se usa la paleta dinámica
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { 
+                    position: 'bottom',
+                    labels: { padding: 20 }
+                } 
+            }
+        }
+    });
+}
 
 function crearBarraHorizontal(id, label, labels, data, color) {
     const ctx = document.getElementById(id);
     if (!ctx || !labels.length) return;
-
     new Chart(ctx, {
         type: 'bar',
         data: { labels, datasets: [{ label, data, backgroundColor: color }] },
@@ -488,52 +405,14 @@ function crearBarraHorizontal(id, label, labels, data, color) {
     });
 }
 
-function crearDona(id, labels, data) {
-    const ctx = document.getElementById(id);
-    if (!ctx || !labels.length) return;
-
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels,
-            datasets: [{
-                data,
-                backgroundColor: ['#004d99','#28a745','#ffc107','#17a2b8','#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
-}
-
-function crearBarraAgrupada(id, labels, datasets) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
-}
-
 /* ==============================
    INICIALIZACIÓN
 ================================ */
-
 document.addEventListener("DOMContentLoaded", () => {
     renderizarReportes();
     setupCommentListener();
 });
 </script>
-
     
 </body>
 </html>

@@ -226,17 +226,17 @@ display: none;
 </div>
 
 <div class="chart-container">
-    <h3>🥇 Top 10 Docentes solicitantes </h3>
+    <h3>🥇 Top 10 Docentes Solicitantes</h3>
     <canvas id="docentesChart"></canvas>
 </div>
 
 <div class="chart-container">
-    <h3>🏛️ Solicitudes por Carrera</h3>
+    <h3>🏛️ Solicitudes por carrera</h3>
     <canvas id="carrerasChart"></canvas>
 </div>
 
 <div class="chart-container">
-    <h3>🔩 Materiales mas solicitados </h3>
+    <h3>🔩 Materiales mas solicitados</h3>
     <canvas id="materialesChart"></canvas>
 </div>
 
@@ -303,7 +303,7 @@ async function setupCommentListener() {
     try {
         const { data: solicitudes, error } = await supabaseClient
             .from('solicitudes')
-            .select('docente, fecha_entrega, comentario_entrega')
+            .select(` fecha_entrega, comentario_entrega, usuarios ( nombre ) `)
             .not('comentario_entrega', 'is', null)
             .order('fecha_entrega', { ascending: false })
             .limit(5);
@@ -327,7 +327,7 @@ async function setupCommentListener() {
             }[m]));
 
         const commentsHtml = solicitudes.map(item => {
-            const docente = item.docente || 'Docente Desconocido';
+            const usuario = item.usuarios?.nombre || 'Usuario Desconocido';
             const fecha = item.fecha_entrega
                 ? new Date(item.fecha_entrega).toLocaleString('es-ES', {
                     day: '2-digit',
@@ -340,7 +340,7 @@ async function setupCommentListener() {
 
             return `
                 <li>
-                    <strong>${docente}</strong>
+                   <strong>${usuario}</strong>
                     <span class="comment-date">${fecha}</span>
                     <div>${escapeHTML(item.comentario_entrega)}</div>
                 </li>`;

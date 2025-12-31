@@ -351,12 +351,26 @@ function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
 function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
 function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:'K'; }
 function validarRutCompleto(rutCompleto){
-    if(!rutCompleto) return {ok:false,msg:"Debe ingresar un RUT."};
+    if (!rutCompleto)
+        return { ok:false, msg:"Debe ingresar un RUT." };
+
     const r = limpiarRut(rutCompleto);
-    if(!r.includes('-')) return {ok:false,msg:"El RUT debe contener guion."};
-    const [num,dv] = r.split('-');
-    if(!/^\d+$/.test(num)) return {ok:false,msg:"La parte numérica debe ser solo números."};
-    return {ok: dvT(parseInt(num,10)).toString() === dv.toUpperCase()};
+
+    if (!r.includes('-'))
+        return { ok:false, msg:"El RUT debe contener guion (Ej: 12345678-5)." };
+
+    const [num, dv] = r.split('-');
+
+    if (!/^\d+$/.test(num))
+        return { ok:false, msg:"La parte numérica del RUT debe contener solo números." };
+
+    const dvCorrecto = dvT(parseInt(num,10)).toString().toUpperCase();
+    const dvIngresado = dv.toUpperCase();
+
+    if (dvCorrecto !== dvIngresado)
+        return { ok:false, msg:"El RUT ingresado no es válido (dígito verificador incorrecto)." };
+
+    return { ok:true };
 }
 
 // ----------------------------------------
@@ -405,8 +419,9 @@ async function registrar() {
 
     const rutVal = validarRutCompleto(rut);
     if (!rutVal.ok) {
-    rutError.textContent = rutVal.msg;
-    desbloquearBotonRegistro();
+        mensaje.textContent = `❌ ${rutVal.msg}`;
+        mensaje.style.color = "red";
+        mensaje.style.backgroundColor = "#ffdddd";
     return;
     }
 

@@ -372,7 +372,13 @@ function validarRutCompleto(rutCompleto){
 
     return { ok:true };
 }
+function bloquearBotonRegistro() {
+    document.getElementById("btnRegister").disabled = true;
+}
 
+function desbloquearBotonRegistro() {
+    document.getElementById("btnRegister").disabled = false;
+}
 // ----------------------------------------
 // FUNCIÓN REGISTRAR (Modificada para usar Metadatos)
 // ----------------------------------------
@@ -422,6 +428,7 @@ async function registrar() {
         mensaje.textContent = `❌ ${rutVal.msg}`;
         mensaje.style.color = "red";
         mensaje.style.backgroundColor = "#ffdddd";
+        desbloquearBotonRegistro();   // <-- importante
     return;
     }
 

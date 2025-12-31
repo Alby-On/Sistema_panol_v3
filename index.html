@@ -464,18 +464,7 @@ async function registrar() {
 // FUNCIÓN LOGIN (Modificada para insertar perfil tras Auth)
 // ----------------------------------------
 function validarRutFormatoYDigito(rut) {
-    const re = /^\d{7,8}-[0-9kK]$/;
-    if (!re.test(rut)) return false;
-    const [cuerpo, dvIngresado] = rut.split("-");
-    const dv = dvIngresado.toUpperCase();
-    let suma = 0, multiplicador = 2;
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-        suma += parseInt(cuerpo[i], 10) * multiplicador;
-        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
-    }
-    const resto = 11 - (suma % 11);
-    const dvCalculado = resto === 11 ? "0" : resto === 10 ? "K" : String(resto);
-    return dvCalculado === dv;
+    return validarRutCompleto(rut).ok;
 }
     
 function bloquearBotonLogin(texto = "Ingresando...") {

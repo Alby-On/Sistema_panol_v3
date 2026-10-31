@@ -1,269 +1,67 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Historico de Solicitudes</title>
-
-<style>
-    /* Variables de Color (Consistencia Institucional) */
-    :root {
-        --color-primary: #173753; 
-        --color-secondary: #28a745; 
-        --color-info: #2196F3; 
-        --color-warning: #ff9800;
-        --color-muted: #6c757d;
-        --color-background: #f0f2f5;
-        --color-card: #ffffff;
-        --color-text: #333333;
-        --color-border: #cccccc;
-    }
-
-    body {
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background: var(--color-background);
-        margin: 0;
-        padding: 0;
-        color: var(--color-text);
-    }
-
-    /* Banner Superior */
-    header {
-        background-color: var(--color-primary);
-        color: white;
-        padding: 20px 40px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title h1 { font-size: 1.8em; margin: 0; font-weight: 700; }
-    .header-info { text-align: right; }
-    .header-info h2 { font-size: 1.4em; margin: 0; font-weight: 600; color: white; }
-    .header-info p { font-size: 0.9em; margin: 5px 0 0; color: #b0c4de; }
-
-    .main-content {
-        max-width: 1200px;
-        margin: 20px auto;
-        padding: 0 20px;
-    }
-
-    /* Botón Volver */
-    .back-button-container { margin-bottom: 20px; }
-    .btn-menu {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: background-color 0.2s;
-        display: inline-flex;
-        align-items: center;
-    }
-    .btn-menu:hover { background-color: #0056b3; }
-    .btn-menu span { margin-right: 8px; }
-
-    /* Contenedor Principal */
-    .container {
-        background: var(--color-card);
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        box-sizing: border-box;
-    }
-
-    /* Filtros */
-    .filter-box {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 25px;
-        flex-wrap: wrap;
-    }
-    .filter-box input, .filter-box button {
-        padding: 12px;
-        font-size: 1em;
-        border-radius: 6px;
-        border: 1px solid var(--color-border);
-    }
-    .filter-box input[type="text"] { flex-grow: 2; min-width: 150px; }
-    .filter-box input[type="date"] { flex-grow: 1; min-width: 120px; }
-    .filter-box button {
-        background: var(--color-secondary);
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .filter-box button:hover { background: #1e7e34; }
-
-    /* Tabla Principal */
-    .tabla-wrapper { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95em; min-width: 950px; }
-    table th { background: var(--color-primary); color: white; padding: 12px 10px; text-align: left; text-transform: uppercase; }
-    table td { border: 1px solid #e0e0e0; padding: 12px 10px; }
-    #tabla-historial tr:nth-child(even) { background-color: #f8f8f8; }
-
-    .btn-materiales {
-        padding: 8px 10px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        background: var(--color-info);
-        color: white;
-        width: 100%;
-        text-align: center;
-        display: block;
-    }
-
-    /* ---- AJUSTES DEL MODAL (CUADRO "VER") ---- */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        inset: 0;
-        background: rgba(0,0,0,0.6); /* Fondo más oscuro para enfoque */
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-        backdrop-filter: blur(2px); /* Efecto desenfoque al fondo */
-    }
-    .modal-content {
-        background: var(--color-card);
-        width: 100%;
-        max-width: 500px;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        overflow: hidden; /* Para que el header respete los bordes redondeados */
-        animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .modal-header {
-        background: #f8f9fa;
-        padding: 15px 25px;
-        border-bottom: 2px solid var(--color-primary);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .modal-header span.title {
-        font-size: 1.2em;
-        font-weight: 700;
-        color: var(--color-primary);
-    }
-    .close-btn {
-        cursor: pointer;
-        font-size: 28px;
-        color: #dc3545;
-        line-height: 1;
-        transition: transform 0.2s;
-    }
-    .close-btn:hover { transform: scale(1.2); }
-    
-    .modal-body {
-        padding: 20px 25px;
-    }
-    .modal-body table {
-        min-width: 100%;
-        margin-top: 0;
-    }
-    .modal-body table th {
-        background: #e9ecef;
-        color: var(--color-primary);
-        font-size: 0.85em;
-    }
-
-    @media (max-width: 768px) {
-        header { flex-direction: column; text-align: center; gap: 10px; }
-        .header-info { text-align: center; }
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Histórico de solicitudes | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
 </head>
-<body>
-
-<header>
-    <div class="header-title">
-        <h1>Histórico de Solicitudes</h1>
-    </div>
-    <div class="header-info">
-        <h2>INACAP</h2>
-        <p>Área Energía y Área Automatización, Electrónica y Robótica</p>
+<body data-modulo="historico">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Histórico de solicitudes</h1><p>Pañol Electricidad y Automatización</p></div>
+        
     </div>
 </header>
-
-<div class="main-content">
-    <div class="back-button-container">
-        <a href="menu.html" class="btn-menu">
-            <span>&#x2190;</span> Volver al Menú
-        </a>
+<main class="page page-wide main-content">
+    <div class="filter-box has-3">
+        <div class="filter-field"><label for="filtro-rut">RUT del solicitante</label><input type="text" id="filtro-rut" placeholder="12345678-5"></div>
+        <div class="filter-field"><label for="desde">Desde</label><input type="date" id="desde"></div>
+        <div class="filter-field"><label for="hasta">Hasta</label><input type="date" id="hasta"></div>
+        <button id="btn-buscar">Buscar</button>
     </div>
-
-    <div class="container">
-        <div class="filter-box">
-            <input type="text" id="filtro-rut" placeholder="Buscar por RUT del Solicitante">
-            <input type="date" id="desde">
-            <input type="date" id="hasta">
-            <button id="btn-buscar">Buscar / Filtrar</button>
-        </div>
-
-        <div class="tabla-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">ID</th>
-                        <th style="width: 15%;">RUT Solicitante</th>
-                        <th style="width: 20%;">Nombre Solicitante</th>
-                        <th style="width: 25%;">Asignatura/Área</th>
-                        <th style="width: 15%;">Email Solicitante</th>
-                        <th style="width: 10%;">F. Entrega</th>
-                        <th style="width: 10%;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-historial"></tbody>
-            </table>
-        </div>
-        <div id="sin-datos" style="display:none; text-align:center; padding:20px; color:var(--color-muted);">
-            ⚠️ No se encontraron resultados.
-        </div>
+    <div class="tabla-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>RUT</th>
+                    <th>Docente</th>
+                    <th>Asignatura</th>
+                    <th>Correo</th>
+                    <th>Entrega</th>
+                    <th>Materiales</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-historial"></tbody>
+        </table>
     </div>
-</div>
+    <div id="sin-datos" class="empty-state" style="display:none; margin-top:16px;">No se encontraron solicitudes con esos filtros.</div>
+</main>
 
 <div class="modal" id="modal-materiales">
     <div class="modal-content">
-        <div class="modal-header">
-            <span class="title">📋 Materiales Solicitados</span>
-            <span class="close-btn" onclick="cerrarModal()">×</span>
-        </div>
+        <div class="modal-header"><span class="title">Materiales solicitados</span><span class="close-btn" onclick="cerrarModal()" role="button" aria-label="Cerrar">×</span></div>
         <div class="modal-body">
             <div class="tabla-wrapper">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Material</th>
-                            <th style="width: 30%;">Cantidad</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Material</th><th style="width: 30%;">Cantidad</th></tr></thead>
                     <tbody id="modal-body-materiales"></tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
-    
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 /* ---------------------- CLIENTE SUPABASE ---------------------- */
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.addEventListener("DOMContentLoaded", async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -357,14 +155,14 @@ async function cargarHistorial(filtros = {}) {
         
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${s.id}</td>
-            <td>${s.solicitanteRut}</td> 
+            <td class="num">${s.id}</td>
+            <td class="num">${s.solicitanteRut}</td> 
             <td>${s.docente}</td> 
             <td>${s.asignatura}</td>
             <td>${s.email}</td>
-            <td>${new Date(s.fecha_entrega).toLocaleDateString()}</td>
+            <td>${fechaSupabase(s.fecha_entrega).toLocaleDateString()}</td>
             <td>
-                <button class="btn btn-materiales" onclick='verMateriales(${materialesJson})'>👁️ Ver</button>
+                <button class="btn-sm btn-secondary btn-materiales" onclick='verMateriales(${materialesJson})'>Ver</button>
             </td>
         `;
         tbody.appendChild(tr);

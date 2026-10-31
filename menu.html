@@ -2,159 +2,60 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Menú Principal - Sistema de Pañol</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <style>
-        /* Variables de Color (Mismas que en el login/registro) */
-        :root {
-            --color-primary: #004d99; /* Azul marino/institucional */
-            --color-secondary: #28a745; /* Verde para acciones principales */
-            --color-danger: #dc3545; /* Rojo para cerrar sesión */
-            --color-background: #eef1f5; /* Fondo claro y suave */
-            --color-card: #ffffff; /* Fondo de las cajas */
-            --color-text: #333333; /* Texto oscuro */
-            --color-accent-bg: #f0f8ff; /* Fondo sutil para el perfil */
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Menú | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
 
-        /* Estilos Generales */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--color-background);
-            margin: 0;
-            padding: 0;
-            color: var(--color-text);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-
-        /* Caja Principal (Card) */
-        .box {
-            background: var(--color-card);
-            padding: 30px;
-            width: 100%;
-            max-width: 420px;
-            margin: 20px 15px; /* Margen para evitar tocar los bordes del móvil */
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        /* Encabezado */
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--color-primary);
-            font-size: 1.8em;
-            border-bottom: 2px solid var(--color-primary);
-            padding-bottom: 10px;
-        }
-
-        /* Mensaje de Bienvenida */
-        .welcome {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: var(--color-primary);
-            margin-bottom: 20px;
-            padding: 10px;
-            background: var(--color-accent-bg);
-            border-radius: 6px;
-        }
-
-        /* Sección de Perfil */
-        .perfil {
-            background: var(--color-accent-bg);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: left;
-            font-size: 1em;
-            border: 1px solid #d0e8ff; /* Borde sutil */
-        }
-
-        .perfil p {
-            margin: 5px 0;
-            line-height: 1.4;
-        }
-
-        .perfil b {
-            color: var(--color-primary);
-            display: inline-block;
-            min-width: 80px; /* Alineación de etiquetas */
-        }
-
-        /* Botones de Acción (Menú) */
-        button {
-            width: 100%;
-            background: var(--color-secondary); /* Botón principal verde */
-            color: white;
-            padding: 14px; /* Mayor padding para móvil */
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        
-        button:hover {
-            background: #1e8734;
-            transform: translateY(-1px);
-        }
-
-        /* Botón de Cerrar Sesión (Color de Peligro) */
-        .logout {
-            background: var(--color-danger) !important; 
-            margin-top: 25px; /* Separación visual de las acciones */
-        }
-        
-        .logout:hover {
-            background: #a82736 !important;
-        }
-
-        /* Ajustes para Móviles */
-        @media (max-width: 600px) {
-            .box {
-                margin: 10px;
-                padding: 20px;
-            }
-            h2 {
-                font-size: 1.6em;
-            }
-            button {
-                padding: 12px;
-                font-size: 1em;
-            }
-        }
-    </style>
 </head>
-<body>
-
-<div class="box">
-    <h2>Menú del Pañol ⚙️</h2>
-
-    <div id="welcomeMsg" class="welcome"></div>
-
-    <h3>Su Perfil de Acceso</h3>
-    <div class="perfil">
-        <p><b>👤 Nombre:</b> <span id="pNombre"></span></p>
-        <p><b>💳 RUT:</b> <span id="pRut"></span></p>
-        <p><b>🏫 Carrera:</b> <span id="pCarrera"></span></p>
-        <p><b>📱 Teléfono:</b> <span id="pTelefono"></span></p>
-        <p><b>📧 Correo:</b> <span id="pCorreo"></span></p>
+<body data-modulo="inicio">
+<header class="appbar">
+    <div class="appbar-inner">
+        
+        <div class="appbar-title"><h1>Sistema de Pañol</h1><p>Pañol Electricidad y Automatización</p></div>
+        <button class="btn-sm btn-text logout appbar-logout" onclick="logout()">Cerrar sesión</button>
     </div>
-    
-    <button onclick="location.href='solicitar.html'">📝 Solicitar Materiales</button>
-    <button onclick="location.href='entregar.html'">📦 Entregar Materiales</button>
-    <button onclick="location.href='historial.html'">📜 Historial de Entregas</button>
-    <button id="admin_panel_Button" style="display:none;" onclick="location.href='panel_admin.html'">🛠️ Gestor Solicitudes</button>
-    <button id="admin_estadisticas_Button" style="display:none;" onclick="location.href='panel_estadisticas.html'">📈 Panel de Estadisticas</button>
-    <button id="admin_historial_Button" style="display:none;" onclick="location.href='historial_admin.html'">📜 Historico Solicitudes</button>
-    <button class="logout" onclick="logout()">Cerrar Sesión</button>
-</div>
+</header>
+<main class="page">
+    <div class="page-intro">
+        <h2 id="welcomeMsg" class="welcome"></h2>
+        <p>¿Qué necesitas hacer hoy?</p>
+    </div>
 
+    <div class="menu-list">
+        <button id="btnSolicitar" onclick="location.href='solicitar.html'" data-color="azul"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11v6M9 14h6"/></svg></span><span class="item-title">Solicitar materiales</span><span class="item-desc">Pide herramientas e insumos para tu clase</span></button>
+        <button id="btnEntregar" onclick="location.href='entregar.html'" data-color="verde"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="item-title">Entregar materiales</span><span class="item-desc">Completa la entrega de tus solicitudes pendientes</span></button>
+        <button onclick="location.href='historial.html'" data-color="violeta"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></span><span class="item-title">Mi historial</span><span class="item-desc">Revisa y repite solicitudes anteriores</span></button>
+    </div>
+
+    <div class="menu-group" id="adminGroup" hidden>
+        <h3>Administración</h3>
+        <div class="menu-list">
+            <button id="admin_panel_Button" onclick="location.href='panel_admin.html'" data-color="ambar"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><span class="item-title">Gestor de solicitudes</span><span class="item-desc">Entregas pendientes y comentarios</span></button>
+            <button id="admin_estadisticas_Button" onclick="location.href='panel_estadisticas.html'" data-color="teal"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="11" width="3" height="7" rx="1"/><rect x="10.5" y="5" width="3" height="13" rx="1"/><rect x="16" y="14" width="3" height="4" rx="1"/></svg></span><span class="item-title">Estadísticas</span><span class="item-desc">Uso del pañol por docente, carrera y material</span></button>
+            <button id="admin_docentes_Button" onclick="location.href='panel_docentes.html'" data-color="indigo"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg></span><span class="item-title">Docentes</span><span class="item-desc">Solicitudes y equipos más pedidos por docente</span></button>
+            <button id="admin_historial_Button" onclick="location.href='historial_admin.html'" data-color="coral"><span class="item-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span><span class="item-title">Histórico de solicitudes</span><span class="item-desc">Busca solicitudes entregadas por RUT o fecha</span></button>
+        </div>
+    </div>
+
+    <div class="menu-group">
+        <h3>Mi perfil</h3>
+        <div class="panel">
+            <dl class="profile">
+                <dt>Nombre</dt><dd id="pNombre"></dd>
+                <dt>RUT</dt><dd id="pRut" class="num"></dd>
+                <dt>Carrera</dt><dd id="pCarrera"></dd>
+                <dt>Teléfono</dt><dd id="pTelefono" class="num"></dd>
+                <dt>Correo</dt><dd id="pCorreo"></dd>
+            </dl>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
 <script type="module">
 /* ---------------------- SESIÓN ACTIVA ---------------------- */
 const user = JSON.parse(localStorage.getItem("currentUser"));
@@ -164,7 +65,7 @@ if (!user) {
 }
 
 /* ---------------------- DATOS EN PANTALLA ---------------------- */
-document.getElementById("welcomeMsg").textContent = `👋 Bienvenido(a), ${user.nombre.split(' ')[0]}`; // Mostrar solo el primer nombre
+document.getElementById("welcomeMsg").textContent = `Hola, ${user.nombre.split(' ')[0]}`; // Mostrar solo el primer nombre
 document.getElementById("pNombre").textContent   = user.nombre;
 document.getElementById("pRut").textContent      = user.rut;
 document.getElementById("pCarrera").textContent  = user.carrera;
@@ -180,21 +81,39 @@ function logout() {
 /* ---- Necesario para que el botón funcione ---- */
 window.logout = logout;
 
-// Mostrar botón Admin solo si el usuario es Admin
-if (user.rol === "admin") {
-    document.getElementById("admin_panel_Button").style.display = "block";
+// Si el alumno tiene una solicitud pendiente, el menú lo indica:
+// solo podrá agregar materiales a esa solicitud hasta entregarla.
+async function revisarPendiente() {
+    if (user.rol === "admin" || typeof supabaseClient === "undefined") return;
+    const { data } = await supabaseClient
+        .from("solicitudes")
+        .select("id, fecha_solicitud")
+        .eq("email", user.email)
+        .eq("estado", "Pendiente")
+        .order("fecha_solicitud", { ascending: false })
+        .limit(1);
+    const pendiente = data && data[0];
+    if (!pendiente) return;
+    const sol = document.getElementById("btnSolicitar");
+    const limite = fechaSupabase(pendiente.fecha_solicitud).getTime() + 2 * 36e5;   // 2 horas para agregar
+    if (Date.now() < limite) {
+        const hora = new Date(limite).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+        sol.querySelector(".item-title").textContent = `Agregar a mi solicitud #${pendiente.id}`;
+        sol.querySelector(".item-desc").textContent = `Puedes agregar lo que te falte hasta las ${hora}`;
+    } else {
+        sol.classList.add("is-locked");
+        sol.querySelector(".item-desc").textContent = "Bloqueado hasta que entregues tu solicitud pendiente";
+    }
+    const ent = document.getElementById("btnEntregar");
+    ent.classList.add("is-pending");
+    ent.querySelector(".item-desc").textContent = `Entrega la solicitud #${pendiente.id} para poder hacer una nueva`;
 }
+revisarPendiente();
 
-// Mostrar botón Admin solo si el usuario es Admin
+// Mostrar la sección de administración solo a administradores
 if (user.rol === "admin") {
-    document.getElementById("admin_estadisticas_Button").style.display = "block";
-}
-// Mostrar botón Admin solo si el usuario es Admin
-if (user.rol === "admin") {
-    document.getElementById("admin_historial_Button").style.display = "block";
+    document.getElementById("adminGroup").hidden = false;
 }
 </script>
-
 </body>
 </html>
-

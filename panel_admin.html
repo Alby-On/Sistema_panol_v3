@@ -3,352 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración INACAP</title>
-
-    <style>
-        /* Tipografía y Base */
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background-color: #f0f2f5;
-            color: #333;
-        }
-
-        /* Banner Superior (INACAP) */
-        header {
-            background-color: #173753; /* Azul Oscuro Corporativo */
-            color: white;
-            padding: 20px 40px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-title h1 {
-            font-size: 1.8em;
-            margin: 0;
-            font-weight: 700;
-        }
-
-        .header-info {
-            text-align: right;
-        }
-
-        .header-info h2 {
-            font-size: 1.4em;
-            margin: 0;
-            font-weight: 600;
-            color: white;
-        }
-
-        .header-info p {
-            font-size: 0.9em;
-            margin: 5px 0 0;
-            color: #b0c4de;
-        }
-
-        /* Contenedor Principal */
-        .main-content {
-            max-width: 1400px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        /* Botón Volver al Menú */
-        .back-button-container {
-            margin-bottom: 20px;
-        }
-
-        .btn-menu {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background-color 0.2s;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .btn-menu:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-menu span {
-            margin-right: 8px;
-        }
-
-        /* Estructura de Columnas */
-        .dashboard-container {
-            display: flex;
-            gap: 25px;
-        }
-
-        .column {
-            flex: 1;
-        }
-
-        .column h2 {
-            font-size: 1.5em;
-            color: #173753;
-            margin-bottom: 20px;
-            padding-left: 5px;
-            border-bottom: 2px solid #e1e4e8;
-            padding-bottom: 5px;
-        }
-
-        /* Estilos de Tarjetas */
-        .request-card {
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.2s ease-in-out;
-            border: 1px solid #f0f2f5;
-        }
-
-        .request-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Diferenciación visual de tarjetas */
-        .pending-requests .request-card {
-            border-left: 5px solid #ff9800; /* Naranja para Pendientes */
-        }
-        .delivered-requests .request-card {
-            border-left: 5px solid #4caf50; /* Verde para Entregadas */
-        }
-
-        /* Contenido y Etiquetas */
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #eee;
-        }
-
-        .card-header strong {
-            font-size: 1.2em;
-            color: #007bff;
-        }
-
-        .card-detail {
-            margin-bottom: 6px;
-            font-size: 0.95em;
-        }
-
-        .card-detail label {
-            font-weight: 600;
-            color: #555;
-            display: inline-block;
-            width: 85px;
-            vertical-align: top;
-        }
-
-        /* BLOQUE PARA MATERIALES */
-        .material-block {
-            display: flex;
-            align-items: flex-start;
-            margin-top: 5px;
-            padding-top: 5px;
-            border-top: 1px dotted #f0f0f0;
-        }
-
-        .material-block label {
-            flex-shrink: 0;
-            width: 85px;
-        }
-
-        .material-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-grow: 1;
-        }
-
-        .material-list li {
-            margin-bottom: 2px;
-            font-size: 0.9em;
-        }
-
-        .material-list li:before {
-            content: "•";
-            color: #888;
-            display: inline-block;
-            width: 1em;
-            margin-right: 0.2em;
-        }
-
-        .card-status-pending {
-            color: #ff9800;
-            font-weight: 700;
-        }
-
-        .card-status-delivered {
-            color: #4caf50;
-            font-weight: 700;
-        }
-
-        /* Estilos de Acciones (Botones) */
-        .actions {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .actions button {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        .actions button:active {
-            transform: scale(0.98);
-        }
-
-        .btn-comment {
-            background-color: #007bff;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
-        }
-
-        .btn-comment:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-no-comment {
-            background-color: #e9ecef;
-            color: #495057;
-            border: 1px solid #ced4da;
-        }
-
-        .btn-no-comment:hover {
-            background-color: #ced4da;
-        }
-
-        /* Estilos para el Modal y sus elementos */
-        #commentModal textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            resize: vertical;
-            font-size: 1em;
-        }
-
-        #btnEnviarComentario {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            background-color: #4caf50;
-            color: white;
-        }
-
-        #commentModal button[onclick="cerrarFormulario()"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-    </style>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="theme-color" content="#12304B">
+    <title>Gestor de solicitudes | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
 </head>
-<body>
-
-    <header>
-        <div class="header-title">
-            <h1>Gestor de solicitudes </h1>
+<body data-modulo="gestor">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Gestor de solicitudes</h1><p>Pañol Electricidad y Automatización</p></div>
+        
+    </div>
+</header>
+<main class="page page-wide main-content gestor">
+    <div class="gestor-toolbar">
+        <div class="gestor-search">
+            <input type="search" id="buscador" placeholder="Buscar por ID, alumno, docente, asignatura o material" oninput="renderizar()" autocomplete="off" aria-label="Buscar solicitudes">
+            <kbd class="atajo" title="Atajo de teclado">/</kbd>
         </div>
-        <div class="header-info">
-            <h2>INACAP</h2>
-            <p>Área Energía y Área Automatización, Electrónica y Robótica</p>
+        <div class="gestor-acciones">
+            <button type="button" class="btn-sm btn-secondary" id="btnPreparacion" onclick="abrirPreparacion()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+                Lista de preparación
+            </button>
+            <button type="button" class="btn-sm btn-secondary btn-avisos" id="btnAvisos" onclick="alternarAvisos()" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                <span>Activar avisos</span>
+            </button>
+            <p class="gestor-sync" id="estadoSync" aria-live="polite">Cargando…</p>
         </div>
-    </header>
-
-    <div class="main-content">
-        <div class="back-button-container">
-            <a href="menu.html" class="btn-menu">
-                <span>&#x2190;</span> Volver al Menú
-            </a>
-        </div>
-
-        <div class="dashboard-container">
-
-            <div class="column pending-requests">
-                <h2>⏳ Solicitudes Pendientes</h2>
-                <div id="pending-container">
-                    <p>Cargando solicitudes...</p>
-                </div>
-            </div>
-
-            <div class="column delivered-requests">
-                <h2>✅ Solicitudes Entregadas</h2>
-                <div id="delivered-container">
-                    <p>Cargando solicitudes...</p>
-                </div>
-            </div>
-
+        <div class="segmented gestor-tabs" role="tablist" aria-label="Lista">
+            <button type="button" class="is-active" data-tab="pendientes" onclick="cambiarPestana('pendientes')">Por entregar <span class="tab-count" id="countPendTab">–</span></button>
+            <button type="button" data-tab="entregadas" onclick="cambiarPestana('entregadas')">Sin comentario <span class="tab-count" id="countEntTab">–</span></button>
         </div>
     </div>
 
-<div id="commentModal" style="
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); z-index: 1000;
-    display: none;
-    justify-content: center; align-items: center;">
+    <div class="columns dashboard-container" data-tab-activa="pendientes">
+        <section class="column pending-requests" data-tab="pendientes">
+            <h2>Por entregar <span class="chip chip-pending num" id="countPend">–</span></h2>
+            <div class="column-scroll">
+                <div id="pending-container"><p class="muted">Cargando solicitudes…</p></div>
+                <button type="button" class="btn-secondary btn-mas" id="masPend" hidden onclick="mostrarMas('pendientes')"></button>
+            </div>
+        </section>
+        <section class="column delivered-requests" data-tab="entregadas">
+            <h2>Entregadas sin comentario <span class="chip chip-done num" id="countEnt">–</span></h2>
+            <div class="column-scroll">
+                <div id="delivered-container"><p class="muted">Cargando solicitudes…</p></div>
+                <button type="button" class="btn-secondary btn-mas" id="masEnt" hidden onclick="mostrarMas('entregadas')"></button>
+            </div>
+        </section>
+    </div>
+</main>
 
-    <div style="background-color: #ffffff; padding: 30px; border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%;">
+<div id="modalPreparacion" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloPreparacion">
+    <div class="modal-content prep-content">
+        <div class="modal-header">
+            <span id="tituloPreparacion">Lista de preparación</span>
+            <span class="close-btn" onclick="cerrarPreparacion()" role="button" aria-label="Cerrar">×</span>
+        </div>
+        <p class="muted prep-resumen" id="prepResumen">Cargando…</p>
+        <div id="prepCuerpo"></div>
+        <div class="btn-row prep-botones">
+            <button type="button" class="btn-secondary" onclick="cerrarPreparacion()">Cerrar</button>
+            <button type="button" onclick="imprimirPreparacion()">Imprimir</button>
+        </div>
+    </div>
+</div>
 
-        <h3 style="margin-top: 0; color: #173753;">Agregar Comentario de Entrega</h3>
-        <p>Solicitud ID: <strong id="modalSolicitudId"></strong></p>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-        <textarea id="modalComentario" rows="5" placeholder="Escriba el comentario de la entrega (ej: equipo completo, faltó calibrar, etc.)"></textarea>
-
-        <button id="btnEnviarComentario">
-            Enviar y Guardar
-        </button>
-
-        <button onclick="cerrarFormulario()">
-            Cancelar
-        </button>
-
-        <p id="modalMsg" style="margin-top: 15px; text-align: center; font-weight: 600;"></p>
-
+<div id="commentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">Comentario de entrega <span class="close-btn" onclick="cerrarFormulario()" role="button" aria-label="Cerrar">×</span></div>
+        <p class="muted">Solicitud <strong id="modalSolicitudId" class="num"></strong></p>
+        <label for="modalComentario">Comentario</label>
+        <textarea id="modalComentario" rows="5" placeholder="Ej: equipo completo, faltó calibrar, etc."></textarea>
+        <div class="btn-row">
+            <button class="btn-secondary" onclick="cerrarFormulario()">Cancelar</button>
+            <button id="btnEnviarComentario">Guardar</button>
+        </div>
+        <p id="modalMsg" style="margin-top: 12px; text-align: center; font-weight: 600;"></p>
     </div>
 </div>
 <script>
     // CONFIGURACIÓN DE SUPABASE (SIN CAMBIOS)
-    const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-    // Crear cliente de Supabase (SIN CAMBIOS)
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Contenedores DOM (SIN CAMBIOS)
     const pendingContainer = document.getElementById('pending-container');
@@ -361,7 +106,7 @@
     // Función auxiliar para formatear fechas (SIN CAMBIOS)
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        const date = new Date(dateString);
+        const date = fechaSupabase(dateString);
         return date.toLocaleDateString('es-ES');
     };
 
@@ -403,7 +148,7 @@
         const msgElement = isModalUpdate ? document.getElementById('modalMsg') : null;
 
         if (msgElement) {
-            msgElement.style.color = '#333';
+            msgElement.style.color = 'var(--ink)';
             msgElement.textContent = 'Guardando...';
         }
 
@@ -419,7 +164,7 @@
         if (error) {
             console.error('Error al guardar comentario:', error);
             if (msgElement) {
-                msgElement.style.color = '#dc3545';
+                msgElement.style.color = 'var(--danger)';
                 msgElement.textContent = '❌ Error al guardar: ' + error.message.substring(0, 50) + '...';
             } else {
                 alert('Error al guardar: ' + error.message);
@@ -431,7 +176,7 @@
         }
 
         if (msgElement) {
-            msgElement.style.color = '#4caf50';
+            msgElement.style.color = 'var(--done)';
             msgElement.textContent = '✅ Solicitud actualizada con éxito.';
             setTimeout(cerrarFormulario, 1000); // Cerrar modal después de un segundo
         }
@@ -479,12 +224,12 @@
     document.getElementById('btnEnviarComentario').onclick = () => {
         const comentario = document.getElementById('modalComentario').value.trim();
         if (!currentSolicitudId) {
-            document.getElementById('modalMsg').style.color = '#dc3545';
+            document.getElementById('modalMsg').style.color = 'var(--danger)';
             document.getElementById('modalMsg').textContent = '⚠️ Error: ID de solicitud no encontrado.';
             return;
         }
         if (!comentario) {
-            document.getElementById('modalMsg').style.color = '#ff9800';
+            document.getElementById('modalMsg').style.color = 'var(--pending)';
             document.getElementById('modalMsg').textContent = '⚠️ El comentario no puede estar vacío.';
             return;
         }
@@ -501,162 +246,398 @@
     };
     
 
-    // Función para crear el HTML de una tarjeta (Card)
-    const createRequestCard = (solicitud) => {
-        const isDelivered = solicitud.estado === 'Entregado';
-        const statusClass = isDelivered ? 'card-status-delivered' : 'card-status-pending';
-        
-        const materiales = solicitud.materiales_solicitados || [];
-        const usuarioNombre = solicitud.usuarios?.nombre || 'Desconocido';
-
-        const materialListItems = materiales.map(m => `<li>${m.material} (Cantidad: ${m.cantidad})</li>`).join('');
-
-        let html = `<div class="request-card" data-solicitud-id="${solicitud.id}">
-                <div class="card-header">
-                    <strong>ID: S-${solicitud.id}</strong>
-                    <span>Fecha Solicitud: ${formatDate(solicitud.fecha_solicitud)}</span>
-                </div>
-                <div class="card-detail"><label>Usuario:</label> ${usuarioNombre}</div>
-                <div class="card-detail"><label>Docente:</label> ${solicitud.docente}</div>
-                <div class="card-detail"><label>Asignatura:</label> ${solicitud.asignatura}</div>
-
-                <div class="card-detail material-block">
-                    <label>Materiales:</label>
-                    <ul class="material-list">
-                        ${materialListItems.length > 0 ? materialListItems : '<li>Sin materiales registrados.</li>'}
-                    </ul>
-                </div>
-
-                <div class="card-detail"><label>Estado:</label> <span class="${statusClass}">${solicitud.estado ? solicitud.estado.toUpperCase() : 'N/A'}</span></div>`;
-
-        if (isDelivered) {
-            html += `<div class="card-detail"><label>Entrega:</label> ${formatDate(solicitud.fecha_entrega)}</div>
-                    <div class="card-detail"><label>Comentario:</label> ${solicitud.comentario_entrega || 'N/A'}</div>`;
-
-            // Lógica de botones para tarjetas Entregadas
-            // Si la tarjeta está siendo mostrada aquí, es porque ya pasó el filtro de loadDashboardData,
-            // lo que implica que el comentario está pendiente (null, "", o "N/A").
-            const needsCommentAction = !solicitud.comentario_entrega || solicitud.comentario_entrega === 'Sin Comentarios' || solicitud.comentario_entrega === 'N/A';
-            
-            // Puesto que el filtro en loadDashboardData elimina los que dicen "Sin Comentarios", 
-            // este bloque solo se ejecutará para tarjetas que requieren acción.
-            if (needsCommentAction) {
-                html += `<div class="actions">
-                            <button class="btn-comment" onclick="abrirFormulario(${solicitud.id})">Agregar/Editar Comentario</button>
-                            <button class="btn-no-comment" onclick="guardarSinComentario(${solicitud.id})">Sin Comentario</button>
-                        </div>`;
-            } 
-            // La cláusula 'else' anterior (que mostraba "Comentario registrado") ya no es necesaria 
-            // porque si tiene un comentario, ya fue filtrada y no llega hasta aquí.
-
-        } else {
-            // Lógica de botones para tarjetas Pendientes (SOLO 1 botón)
-            html += `<div class="actions">
-                        <button class="btn-comment" style="background-color: #4caf50;" onclick="marcarEntregaSimple(${solicitud.id})">Marcar como Entregado</button>
-                    </div>`; 
-        }
-
-        html += '</div>';
-        return html;
+    /* ==========================================================
+       LISTAS DEL GESTOR
+       - Se piden a Supabase solo las solicitudes que se muestran,
+         no toda la tabla (antes se traía todo cada 5 segundos).
+       - Cada lista muestra 10 tarjetas y crece con "Mostrar más".
+       - En computador cada columna tiene su propio desplazamiento;
+         en teléfono se cambia de lista con las pestañas.
+       - Solo se vuelve a dibujar si los datos cambiaron, así no se
+         cierran los detalles abiertos ni salta la pantalla.
+    ========================================================== */
+    const POR_PAGINA = 10;
+    const HORAS_ATRASO = 48;
+    const estado = {
+        pendientes: { datos: [], total: 0, visibles: POR_PAGINA },
+        entregadas: { datos: [], total: 0, visibles: POR_PAGINA }
     };
+    const abiertas = new Set();          // tarjetas con materiales desplegados
+    let firmaAnterior = '';
 
-    // Función: Actualiza el contenedor agregando/quitando/reemplazando tarjetas de forma eficiente. (SIN CAMBIOS)
-    function updateContainerDynamically(container, newSolicitudes, emptyMessage) {
-        const newIds = newSolicitudes.map(s => String(s.id));
+    const escapar = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-        // 1. ELIMINAR tarjetas viejas
-        Array.from(container.children).forEach(card => {
-            const cardId = card.dataset.solicitudId;
-            if (cardId && !newIds.includes(cardId)) {
-                card.remove();
-            }
-        });
+    function hace(fecha) {
+        const d = fechaSupabase(fecha);
+        if (!d) return '';
+        const min = Math.max(0, Math.round((Date.now() - d) / 60000));
+        if (min < 60) return `hace ${min} min`;
+        const h = Math.floor(min / 60);
+        if (h < 24) return `hace ${h} h`;
+        return `hace ${Math.floor(h / 24)} d`;
+    }
 
-        // 2. AGREGAR/REEMPLAZAR tarjetas
-        newSolicitudes.forEach(solicitud => {
-            const solicitudIdStr = String(solicitud.id);
-            let cardElement = container.querySelector(`[data-solicitud-id="${solicitudIdStr}"]`);
+    const SELECT = `id, estado, docente, asignatura, fecha_solicitud, fecha_entrega, comentario_entrega,
+                    materiales_solicitados (material, cantidad), usuarios (nombre, email)`;
 
-            // Generar el nuevo HTML de la tarjeta
-            const cardHtml = createRequestCard(solicitud);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = cardHtml.trim();
-            const newCardElement = tempDiv.firstChild;
-            newCardElement.dataset.solicitudId = solicitudIdStr;
+    async function cargarPendientes() {
+        const { data, error, count } = await supabaseClient
+            .from('solicitudes')
+            .select(SELECT, { count: 'exact' })
+            .neq('estado', 'Entregado')
+            .order('fecha_solicitud', { ascending: false })
+            .range(0, Math.max(estado.pendientes.visibles, POR_PAGINA) - 1);
+        if (error) throw error;
+        estado.pendientes.datos = data || [];
+        estado.pendientes.total = count ?? (data || []).length;
+    }
 
-            if (cardElement) {
-                // Reemplazar el elemento completo (asegura la actualización de los botones)
-                cardElement.replaceWith(newCardElement);
-            } else {
-                // Si no existe, añadir la nueva tarjeta al inicio
-                container.prepend(newCardElement);
-            }
-        });
-
-        // 3. MENSAJE DE VACÍO
-        const hasCards = container.querySelector('[data-solicitud-id]') !== null;
-
-        if (newSolicitudes.length === 0 && !hasCards) {
-             container.innerHTML = `<p>${emptyMessage}</p>`;
-        } else if (hasCards) {
-            // Eliminar el mensaje de vacío si existen tarjetas
-            const emptyP = container.querySelector('p');
-            if (emptyP && !emptyP.dataset.solicitudId) {
-                emptyP.remove();
-            }
-        }
+    async function cargarEntregadas() {
+        const { data, error, count } = await supabaseClient
+            .from('solicitudes')
+            .select(SELECT, { count: 'exact' })
+            .eq('estado', 'Entregado')
+            .or('comentario_entrega.is.null,comentario_entrega.eq.,comentario_entrega.eq.N/A')
+            .order('fecha_entrega', { ascending: false, nullsFirst: false })
+            .range(0, Math.max(estado.entregadas.visibles, POR_PAGINA) - 1);
+        if (error) throw error;
+        estado.entregadas.datos = data || [];
+        estado.entregadas.total = count ?? (data || []).length;
     }
 
     async function loadDashboardData() {
-        // La consulta clave: pide todos los datos de las solicitudes, más los materiales y el nombre del usuario relacionado (SIN CAMBIOS)
-        const { data: solicitudesData, error } = await supabaseClient
-            .from('solicitudes')
-            .select(`
-                *,
-                materiales_solicitados (material, cantidad),
-                usuarios (nombre, email) 
-            `)
-            .order('fecha_solicitud', { ascending: false });
+        try {
+            await Promise.all([cargarPendientes(), cargarEntregadas()]);
+        } catch (error) {
+            console.error('Error al cargar datos:', error);
+            const sync = document.getElementById('estadoSync');
+            sync.textContent = 'Sin conexión, reintentando…';
+            sync.classList.add('is-error');
+            if (!firmaAnterior) {
+                pendingContainer.innerHTML = '<p class="empty-state">No se pudieron cargar las solicitudes.</p>';
+                deliveredContainer.innerHTML = '<p class="empty-state">No se pudieron cargar las solicitudes.</p>';
+            }
+            return;
+        }
+        document.getElementById('estadoSync').textContent =
+            'Actualizado ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+        document.getElementById('estadoSync').classList.remove('is-error');
+        revisarNovedades();
+        const firma = JSON.stringify([estado.pendientes, estado.entregadas]);
+        if (firma === firmaAnterior) { actualizarTiempos(); return; }
+        firmaAnterior = firma;
+        renderizar();
+        if (document.getElementById('modalPreparacion').style.display === 'flex') cargarPreparacion();
+    }
 
-        if (error) {
-            console.error("Error al cargar datos:", error);
-            pendingContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
-            deliveredContainer.innerHTML = "<p>Error cargando solicitudes.</p>";
+    function coincide(s, q) {
+        if (!q) return true;
+        const texto = [s.id, 'S-' + s.id, s.usuarios?.nombre, s.usuarios?.email, s.docente, s.asignatura,
+            ...(s.materiales_solicitados || []).map(m => m.material)].join(' ').toLowerCase();
+        return q.split(/\s+/).every(p => texto.includes(p));
+    }
+
+    function tarjeta(s, tipo) {
+        const materiales = s.materiales_solicitados || [];
+        const nombre = escapar(s.usuarios?.nombre || s.usuarios?.email || 'Desconocido');
+        const pendiente = tipo === 'pendientes';
+        const fechaRef = pendiente ? s.fecha_solicitud : s.fecha_entrega;
+        const horas = (Date.now() - fechaSupabase(s.fecha_solicitud)) / 36e5;
+        const atrasada = pendiente && horas > HORAS_ATRASO;
+        const abierta = pendiente || abiertas.has(s.id);
+        const lista = materiales.length
+            ? materiales.map(m => `<li><span>${escapar(m.material)}</span><span class="num">× ${escapar(m.cantidad)}</span></li>`).join('')
+            : '<li class="muted">Sin materiales registrados.</li>';
+        return `
+        <article class="request-card${atrasada ? ' is-late' : ''}${resaltadas.has(s.id) ? ' is-new' : ''}" data-solicitud-id="${s.id}">
+            <div class="rc-top">
+                <strong class="num">S-${s.id}</strong>
+                <span class="rc-time" data-fecha="${escapar(fechaRef || '')}">${pendiente ? '' : 'entregada '}${hace(fechaRef)}</span>
+                ${atrasada ? '<span class="chip chip-pending">Atrasada</span>' : ''}
+            </div>
+            <p class="rc-user">${nombre}</p>
+            <p class="rc-meta">${escapar(s.docente)}<br>${escapar(s.asignatura)}</p>
+            <details class="rc-materiales" ${abierta ? 'open' : ''} ontoggle="recordarAbierta(${s.id}, this.open)">
+                <summary>${materiales.length} ${materiales.length === 1 ? 'material' : 'materiales'}</summary>
+                <ul>${lista}</ul>
+            </details>
+            <div class="actions">
+                ${pendiente
+                    ? `<button class="btn-success" onclick="marcarEntregaSimple(${s.id})">Marcar como entregado</button>`
+                    : `<button class="btn-comment" onclick="abrirFormulario(${s.id})">Comentar</button>
+                       <button class="btn-no-comment btn-secondary" onclick="guardarSinComentario(${s.id})">Sin comentario</button>`}
+            </div>
+        </article>`;
+    }
+
+    function renderLista(tipo, contenedor, botonMas, vacio) {
+        const q = document.getElementById('buscador').value.trim().toLowerCase();
+        const st = estado[tipo];
+        const filtradas = st.datos.filter(s => coincide(s, q));
+        contenedor.innerHTML = filtradas.length
+            ? filtradas.map(s => tarjeta(s, tipo)).join('')
+            : `<p class="empty-state">${q ? 'Ninguna solicitud coincide con la búsqueda.' : vacio}</p>`;
+        const faltan = st.total - st.datos.length;
+        botonMas.hidden = faltan <= 0;
+        botonMas.textContent = `Mostrar ${Math.min(POR_PAGINA, faltan)} más (quedan ${faltan.toLocaleString('es-CL')})`;
+    }
+
+    function renderizar() {
+        renderLista('pendientes', pendingContainer, document.getElementById('masPend'), 'No hay solicitudes por entregar.');
+        renderLista('entregadas', deliveredContainer, document.getElementById('masEnt'), 'No hay entregas pendientes de comentario.');
+        const fmt = n => Number(n).toLocaleString('es-CL');
+        ['countPend', 'countPendTab'].forEach(id => document.getElementById(id).textContent = fmt(estado.pendientes.total));
+        ['countEnt', 'countEntTab'].forEach(id => document.getElementById(id).textContent = fmt(estado.entregadas.total));
+    }
+
+    // Actualiza los "hace X min" sin volver a dibujar las tarjetas
+    function actualizarTiempos() {
+        document.querySelectorAll('.rc-time[data-fecha]').forEach(el => {
+            const prefijo = el.closest('.delivered-requests') ? 'entregada ' : '';
+            el.textContent = prefijo + hace(el.dataset.fecha);
+        });
+    }
+
+    window.recordarAbierta = (id, abierta) => { abierta ? abiertas.add(id) : abiertas.delete(id); };
+
+    window.mostrarMas = async (tipo) => {
+        estado[tipo].visibles += POR_PAGINA;
+        const boton = document.getElementById(tipo === 'pendientes' ? 'masPend' : 'masEnt');
+        boton.disabled = true;
+        try { await (tipo === 'pendientes' ? cargarPendientes() : cargarEntregadas()); }
+        catch (e) { console.error(e); }
+        boton.disabled = false;
+        firmaAnterior = JSON.stringify([estado.pendientes, estado.entregadas]);
+        renderizar();
+    };
+
+    window.cambiarPestana = (tab) => {
+        document.querySelector('.dashboard-container').dataset.tabActiva = tab;
+        document.querySelectorAll('.gestor-tabs [data-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.tab === tab));
+    };
+    window.renderizar = renderizar;
+
+    /* ==========================================================
+       1) AVISO DE SOLICITUDES NUEVAS
+       - Compara cada actualización con la anterior.
+       - Avisa por solicitudes nuevas y por materiales agregados
+         a una solicitud pendiente.
+       - Sonido + notificación del navegador + aviso en pantalla
+         + número en la pestaña + tarjeta resaltada.
+    ========================================================== */
+    const inicioPagina = Date.now();
+    const conocidas = new Map();          // id -> cantidad de materiales
+    const resaltadas = new Set();
+    let primeraRevision = true;
+    let avisosActivos = false;
+    let pendientesSinVer = 0;
+    let audioCtx = null;
+    const tituloOriginal = document.title;
+
+    try { avisosActivos = localStorage.getItem('gestorAvisos') === '1'; } catch (e) {}
+    actualizarBotonAvisos();
+
+    function revisarNovedades() {
+        const nuevas = [], ampliadas = [];
+        estado.pendientes.datos.forEach(s => {
+            const n = (s.materiales_solicitados || []).length;
+            if (!conocidas.has(s.id)) {
+                // Solo cuenta como nueva si se creó después de abrir el gestor
+                const f = fechaSupabase(s.fecha_solicitud);
+                if (!primeraRevision && f && f.getTime() > inicioPagina - 60000) nuevas.push(s);
+            } else if (n > conocidas.get(s.id)) {
+                ampliadas.push(s);
+            }
+            conocidas.set(s.id, n);
+        });
+        primeraRevision = false;
+        if (!nuevas.length && !ampliadas.length) return;
+
+        [...nuevas, ...ampliadas].forEach(s => {
+            resaltadas.add(s.id);
+            setTimeout(() => { resaltadas.delete(s.id); document.querySelector(`[data-solicitud-id="${s.id}"]`)?.classList.remove('is-new'); }, 60000);
+        });
+        firmaAnterior = '';   // obliga a redibujar con el resaltado
+
+        const nombre = s => s.usuarios?.nombre || 'un alumno';
+        let mensaje;
+        if (nuevas.length === 1 && !ampliadas.length) mensaje = `Nueva solicitud S-${nuevas[0].id} de ${nombre(nuevas[0])}`;
+        else if (!nuevas.length && ampliadas.length === 1) mensaje = `S-${ampliadas[0].id}: ${nombre(ampliadas[0])} agregó materiales`;
+        else mensaje = [nuevas.length && `${nuevas.length} ${nuevas.length === 1 ? 'solicitud nueva' : 'solicitudes nuevas'}`, ampliadas.length && `${ampliadas.length} con materiales agregados`].filter(Boolean).join(' y ');
+
+        mostrarToast(mensaje);
+        if (!document.hasFocus()) {
+            pendientesSinVer += nuevas.length + ampliadas.length;
+            document.title = `(${pendientesSinVer}) ${tituloOriginal}`;
+        }
+        if (avisosActivos) {
+            sonar();
+            if ('Notification' in window && Notification.permission === 'granted' && !document.hasFocus()) {
+                try { new Notification('Pañol — Gestor de solicitudes', { body: mensaje, tag: 'panol-gestor' }); } catch (e) {}
+            }
+        }
+    }
+
+    window.addEventListener('focus', () => { pendientesSinVer = 0; document.title = tituloOriginal; });
+
+    // Dos tonos cortos generados por el navegador (no necesita archivos de audio)
+    function sonar() {
+        try {
+            audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            [[880, 0], [1320, 0.18]].forEach(([frecuencia, inicio]) => {
+                const osc = audioCtx.createOscillator(), gan = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.value = frecuencia;
+                const t = audioCtx.currentTime + inicio;
+                gan.gain.setValueAtTime(0.0001, t);
+                gan.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+                gan.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+                osc.connect(gan).connect(audioCtx.destination);
+                osc.start(t); osc.stop(t + 0.18);
+            });
+        } catch (e) {}
+    }
+    // Los navegadores bloquean el sonido hasta que la persona toca la página
+    document.addEventListener('pointerdown', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); });
+
+    window.alternarAvisos = async () => {
+        avisosActivos = !avisosActivos;
+        try { localStorage.setItem('gestorAvisos', avisosActivos ? '1' : '0'); } catch (e) {}
+        if (avisosActivos) {
+            sonar();   // tono de prueba y desbloqueo del sonido
+            if ('Notification' in window && Notification.permission === 'default') {
+                try { await Notification.requestPermission(); } catch (e) {}
+            }
+            mostrarToast('Avisos activados: sonará al llegar una solicitud nueva');
+        } else {
+            mostrarToast('Avisos desactivados');
+        }
+        actualizarBotonAvisos();
+    };
+
+    function actualizarBotonAvisos() {
+        const b = document.getElementById('btnAvisos');
+        b.classList.toggle('is-on', avisosActivos);
+        b.setAttribute('aria-pressed', String(avisosActivos));
+        b.querySelector('span').textContent = avisosActivos ? 'Avisos activados' : 'Activar avisos';
+    }
+
+    let toastTimer = null;
+    function mostrarToast(texto) {
+        const t = document.getElementById('toast');
+        t.textContent = texto;
+        t.hidden = false;
+        t.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.classList.remove('is-visible'); setTimeout(() => { t.hidden = true; }, 250); }, 6000);
+    }
+
+    /* ==========================================================
+       2) LISTA DE PREPARACIÓN
+       Junta los materiales de TODAS las solicitudes pendientes
+       para sacarlos del pañol de una vez. Se puede imprimir.
+    ========================================================== */
+    const normalizarMat = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const marcados = new Set();   // materiales ya preparados (solo en esta pantalla)
+
+    window.abrirPreparacion = () => {
+        document.getElementById('modalPreparacion').style.display = 'flex';
+        cargarPreparacion();
+    };
+    window.cerrarPreparacion = () => { document.getElementById('modalPreparacion').style.display = 'none'; };
+    window.imprimirPreparacion = () => {
+        const detalle = document.querySelector('.prep-detalle');
+        const estabaAbierto = detalle ? detalle.open : false;
+        if (detalle) detalle.open = true;   // en papel se incluye el detalle por solicitud
+        document.body.classList.add('imprimiendo-lista');
+        window.print();
+        setTimeout(() => {
+            document.body.classList.remove('imprimiendo-lista');
+            if (detalle) detalle.open = estabaAbierto;
+        }, 500);
+    };
+
+    async function cargarPreparacion() {
+        const resumen = document.getElementById('prepResumen');
+        const cuerpo = document.getElementById('prepCuerpo');
+        let pendientes = [];
+        try {
+            for (let desde = 0; ; desde += 1000) {
+                const { data, error } = await supabaseClient
+                    .from('solicitudes')
+                    .select('id, fecha_solicitud, materiales_solicitados (material, cantidad), usuarios (nombre)')
+                    .neq('estado', 'Entregado')
+                    .order('fecha_solicitud', { ascending: true })
+                    .range(desde, desde + 999);
+                if (error) throw error;
+                pendientes.push(...(data || []));
+                if (!data || data.length < 1000) break;
+            }
+        } catch (e) {
+            console.error(e);
+            resumen.textContent = 'No se pudo cargar la lista. Intenta de nuevo.';
             return;
         }
 
-        // 1. Separar las pendientes (las que no están 'Entregado')
-        const pendientes = solicitudesData.filter(s => s.estado !== "Entregado");
+        const grupos = {};
+        pendientes.forEach(s => (s.materiales_solicitados || []).forEach(m => {
+            const clave = normalizarMat(m.material);
+            if (!clave) return;
+            const g = grupos[clave] ||= { clave, nombres: {}, total: 0, solicitudes: [] };
+            const cant = Number(m.cantidad) || 0;
+            g.total += cant;
+            g.nombres[m.material.trim()] = (g.nombres[m.material.trim()] || 0) + 1;
+            g.solicitudes.push({ id: s.id, cant });
+        }));
+        const lista = Object.values(grupos)
+            .map(g => ({ ...g, nombre: Object.entries(g.nombres).sort((a, b) => b[1] - a[1])[0][0] }))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
-        // 2. Separar las entregadas Y que AÚN requieren acción de comentario.
-        // 🎯 MODIFICACIÓN CLAVE: Solo muestra si el campo de comentario está vacío o es nulo.
-        const entregadas = solicitudesData.filter(s => {
-            const isDelivered = s.estado === "Entregado";
-            
-            // Solo se muestra si el comentario está null, vacío (""), o "N/A".
-            const isCommentMissing = !s.comentario_entrega || 
-                                     s.comentario_entrega.trim() === '' || 
-                                     s.comentario_entrega === 'N/A';
-            
-            // Si el comentario es "Sin Comentarios", se considera completado y se excluye (ya que !s.comentario_entrega es false)
-            return isDelivered && isCommentMissing; 
-        });
+        const unidades = lista.reduce((t, g) => t + g.total, 0);
+        const ahora = new Date().toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+        resumen.textContent = pendientes.length
+            ? `${pendientes.length} ${pendientes.length === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'} · ${lista.length} materiales distintos · ${unidades.toLocaleString('es-CL')} unidades · ${ahora}`
+            : 'No hay solicitudes pendientes.';
+        if (!lista.length) { cuerpo.innerHTML = '<p class="empty-state">Nada que preparar por ahora.</p>'; return; }
 
-        // Actualizar dinámicamente el DOM
-        updateContainerDynamically(
-            pendingContainer,
-            pendientes,
-            "No hay solicitudes pendientes."
-        );
-
-        updateContainerDynamically(
-            deliveredContainer,
-            entregadas,
-            "No hay solicitudes entregadas pendientes de comentario/revisión."
-        );
+        cuerpo.innerHTML = `
+            <table class="prep-tabla">
+                <thead><tr><th class="prep-check"><span class="sr-only">Listo</span></th><th>Material</th><th class="prep-num">Cant.</th><th class="prep-refs">Solicitudes</th></tr></thead>
+                <tbody>${lista.map(g => `
+                    <tr class="${marcados.has(g.clave) ? 'is-done' : ''}">
+                        <td class="prep-check"><input type="checkbox" aria-label="Preparado: ${escapar(g.nombre)}" data-clave="${escapar(g.clave)}" ${marcados.has(g.clave) ? 'checked' : ''}></td>
+                        <td>${escapar(g.nombre)}</td>
+                        <td class="prep-num num">${g.total}</td>
+                        <td class="prep-refs num">${g.solicitudes.map(x => `S-${x.id}${x.cant > 1 ? ` (${x.cant})` : ''}`).join(', ')}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+            <details class="prep-detalle">
+                <summary>Ver por solicitud</summary>
+                <ul>${pendientes.map(s => `
+                    <li><b class="num">S-${s.id}</b> · ${escapar(s.usuarios?.nombre || 'Desconocido')}:
+                        ${(s.materiales_solicitados || []).map(m => `${escapar(m.material)} × ${escapar(m.cantidad)}`).join(', ') || 'sin materiales'}</li>`).join('')}
+                </ul>
+            </details>`;
+        cuerpo.querySelectorAll('input[type=checkbox][data-clave]').forEach(c => c.addEventListener('change', () => {
+            c.checked ? marcados.add(c.dataset.clave) : marcados.delete(c.dataset.clave);
+            c.closest('tr').classList.toggle('is-done', c.checked);
+        }));
     }
 
-    // 🚀 Ejecutar carga inicial y comenzar el refresco (SIN CAMBIOS)
+    // Atajos de teclado (computador): "/" busca, "Esc" limpia la búsqueda o cierra el comentario
+    document.addEventListener('keydown', (e) => {
+        const buscador = document.getElementById('buscador');
+        const escribiendo = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+        if (e.key === '/' && !escribiendo) { e.preventDefault(); buscador.focus(); buscador.select(); }
+        if (e.key === 'Escape') {
+            if (document.getElementById('modalPreparacion').style.display === 'flex') cerrarPreparacion();
+            else if (document.getElementById('commentModal').style.display === 'flex') cerrarFormulario();
+            else if (document.activeElement === buscador && buscador.value) { buscador.value = ''; renderizar(); }
+        }
+    });
+
+    // 🚀 Carga inicial y refresco automático cada 5 segundos
     loadDashboardData();
     startAutoRefresh();
 </script>

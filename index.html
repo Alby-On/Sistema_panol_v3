@@ -2,320 +2,101 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Solicitud de Materiales - Inicio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
-        /* Variables de Color (Para un look formal y fácil de modificar) */
-        :root {
-            --color-primary: #004d99; /* Azul marino/institucional más oscuro */
-            --color-secondary: #28a745; /* Verde para éxito */
-            --color-background: #eef1f5; /* Fondo más claro y suave */
-            --color-card: #ffffff; /* Fondo de las cajas */
-            --color-text: #333333; /* Texto oscuro */
-            --color-border: #cccccc; /* Borde de inputs */
-            --color-error: #dc3545; /* Rojo para errores */
-        }
-
-        /* Estilos Generales */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente más moderna */
-            background: var(--color-background);
-            margin: 0;
-            padding: 0;
-            color: var(--color-text);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Alineación superior para mejor visibilidad en móvil */
-            min-height: 100vh;
-        }
-
-        /* Caja Principal (Card) */
-        .box {
-            background: var(--color-card);
-            padding: 30px; /* Más espacio interior */
-            width: 100%; /* Ocupa todo el ancho disponible en móviles */
-            max-width: 420px; /* Límite para pantallas grandes */
-            margin: 20px 15px; /* Margen para evitar tocar los bordes del móvil */
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra más suave y profunda */
-            box-sizing: border-box; /* Asegura que el padding no añada ancho extra */
-            transition: transform 0.3s ease; /* Pequeña transición al cargar */
-        }
-
-        /* Encabezados */
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--color-primary);
-            font-size: 1.8em;
-            border-bottom: 2px solid var(--color-primary); /* Línea de separación formal */
-            padding-bottom: 10px;
-        }
-
-        h3 {
-            text-align: center;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            color: var(--color-text);
-            font-size: 1.2em;
-        }
-
-        /* Inputs y Selects */
-        input, select {
-            width: 100%;
-            padding: 14px; /* Más padding para facilitar el toque en móvil */
-            margin: 10px 0 18px;
-            border-radius: 6px;
-            border: 1px solid var(--color-border);
-            font-size: 1em;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-            background-color: #f9f9f9;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--color-primary);
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
-        }
-
-        /* Botones */
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s, opacity 0.3s;
-            text-transform: uppercase; /* Formaliza el texto del botón */
-        }
-
-        button:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: var(--color-primary);
-            color: var(--color-card);
-        }
-
-        .btn-success {
-            background: var(--color-secondary);
-            color: var(--color-card);
-        }
-
-        /* Elementos de Estado y Mensajes */
-        .hidden {
-            display: none !important; /* Uso de !important para asegurar ocultación */
-        }
-
-        a {
-            color: var(--color-primary);
-            cursor: pointer;
-            text-decoration: none; /* Quitamos el subrayado por defecto */
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 5px;
-            transition: color 0.3s;
-        }
-        
-        a:hover {
-            color: #0066cc;
-            text-decoration: underline; /* Lo añadimos al pasar el ratón */
-        }
-
-        .error {
-            color: var(--color-error);
-            font-size: 0.9em;
-            margin-bottom: 15px;
-            padding: 5px;
-            border: 1px dashed var(--color-error);
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        /* Listas (Consideraciones) */
-        ul {
-            padding-left: 20px;
-            margin-top: 0;
-            list-style-type: '👉 '; /* Viñeta más visual */
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        #mensaje, #loginMsg {
-            font-weight: 600;
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        /* Ajustes Específicos para Móviles (Aunque .box ya es responsive, esto afina) */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px 0; /* Menos padding en los bordes del cuerpo */
-            }
-            .box {
-                margin: 10px 10px;
-                padding: 20px;
-            }
-            h2 {
-                font-size: 1.6em;
-            }
-            input, select, button {
-                padding: 12px;
-            }
-        }
-        /* Nuevos estilos para los campos de contraseña */
-.password-container {
-    position: relative; /* Contenedor para posicionar el ojo */
-    margin-bottom: 18px; /* Espacio para separar del siguiente elemento */
-}
-
-/* El input dentro del contenedor */
-.password-container input {
-    margin: 0; /* Remover el margen por defecto para que el contenedor lo maneje */
-}
-
-/* Estilos para el icono de mostrar/ocultar */
-.toggle-password {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
-    cursor: pointer;
-    user-select: none; /* Evita que se seleccione el texto del icono */
-    color: var(--color-border);
-    font-size: 1.2em;
-    transition: color 0.3s;
-}
-
-.toggle-password:hover {
-    color: var(--color-primary);
-}
-
-/* Estilo para el mensaje de coincidencia de contraseña */
-#password-match-message {
-    font-size: 0.9em;
-    font-weight: 600;
-    margin-top: -10px; /* Acercarlo al input */
-    margin-bottom: 15px;
-    padding-left: 5px;
-}
-
-/* Resaltar inputs cuando no coinciden */
-.password-mismatch {
-    border-color: var(--color-error) !important;
-    box-shadow: 0 0 5px rgba(220, 53, 69, 0.4) !important;
-}
-.login-info {
-    background-color: #e8f0fe;
-    border-left: 5px solid var(--color-primary);
-    color: #003366;
-    padding: 12px 14px;
-    margin-bottom: 18px;
-    border-radius: 6px;
-    font-size: 0.95em;
-    line-height: 1.4;
-    text-align: left;
-}
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Inicio | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
 </head>
-<body>
+<body data-modulo="acceso">
+<main class="page">
+    <div class="auth-brand">
+        <span class="auth-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span>
+        <h1>Sistema de Pañol</h1>
+        <p>Área Electricidad, Automatización y Robótica</p>
+    </div>
 
-<div class="box" id="welcomeBox">
-    <h2>Bienvenido(a) 🛠️</h2>
-    <p style="text-align:center;">Esta es la plataforma de <b>solicitud de materiales e insumos</b> habilitada por <b>pañol del área de Electricidad, Automatización y Robótica</b>.</p>
-    <h3>📝 Consideraciones Importantes:</h3>
-    <ul>
-        <li>Todo material facilitado debe **regresar en las mismas condiciones**.</li>
-        <li>Ante dudas, consulte al Director o Coordinador de carrera.</li>
-    </ul>
-    <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
-    <button class="btn-success" onclick="showRegister()">Registrarse</button>
-</div>
+    <section class="panel" id="welcomeBox">
+        <h2>Bienvenido(a)</h2>
+        <p>Desde aquí puedes solicitar materiales, herramientas e insumos al pañol del área y llevar el registro de tus entregas.</p>
+        <div class="notice">
+            <p><b>Antes de solicitar</b></p>
+            <ul>
+                <li>Todo material debe devolverse en las mismas condiciones en que se entregó.</li>
+                <li>Si tienes dudas, consulta al Director o Coordinador de tu carrera.</li>
+            </ul>
+        </div>
+        <button class="btn-primary" onclick="showLogin()">Iniciar sesión</button>
+        <button class="btn-secondary" onclick="showRegister()">Crear una cuenta</button>
+    </section>
 
-<div class="box hidden" id="loginBox">
-    <h2>🔑 Iniciar Sesión</h2>
-    <div class="login-info">
-    ℹ️ <b>Importante:</b><br>
-    Si es tu <b>primer inicio de sesión</b>, debes ingresar primero tu 
-    <b>correo electrónico</b>. <br>
-    Una vez iniciado sesión, podrás ingresar utilizando tu <b>RUT</b>.
-</div>
+    <section class="panel hidden" id="loginBox">
+        <h2>Iniciar sesión</h2>
+        <div class="notice login-info">
+            <p>La <b>primera vez</b> ingresa con tu correo. Después podrás entrar también con tu <b>RUT</b>.</p>
+        </div>
+        <label for="loginEmail">Correo o RUT</label>
+        <input type="email" placeholder="nombre@inacapmail.cl o 12345678-5" id="loginEmail" autocomplete="username">
+        <label for="loginPass">Contraseña</label>
+        <div class="password-container">
+            <input type="password" placeholder="Tu contraseña" id="loginPass" autocomplete="current-password">
+            <span class="toggle-password" onclick="toggleVisibility('loginPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
+        </div>
+        <button class="btn-primary" id="btnLogin" onclick="login()">Ingresar</button>
+        <p id="loginMsg"></p>
+        <p class="link-row"><a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a></p>
+        <p class="link-row register-link"><a onclick="showRegister()">¿No tienes cuenta? Regístrate</a></p>
+        <p class="link-row"><a onclick="showWelcome()">Volver al inicio</a></p>
+    </section>
 
-    <input type="email" placeholder="📧 Correo o RUT" id="loginEmail">
-<div class="password-container">
-    <input type="password" placeholder="🔒 Contraseña" id="loginPass">
-    <span class="toggle-password" onclick="toggleVisibility('loginPass', this)">👁️</span>
-</div>
-    <button class="btn-primary" id="btnLogin" onclick="login()">Ingresar</button>
-    
-    <p id="loginMsg"></p>
-    
-    <a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
-    
-    <p class="register-link">
-        <a onclick="showRegister()">¿No tienes cuenta? Regístrate aquí</a>
-    </p>
-    
-    <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
-</div>
-
-<div class="box hidden" id="registerBox">
-    <h2>📝 Registro de Usuario</h2>
-    <input type="text" id="regNombre" placeholder="👤 Nombre Completo">
-    <input type="text" id="regRut" placeholder="💳 RUT (Ej: 12345678-5)">
-    <p id="rutError" class="error"></p>
-
-    <select id="regCarrera">
-        <option value="">🏫 Seleccione una carrera</option>
-        <option>Ingeniería Eléctrica</option>
-        <option>Técnico de nivel superior en Electricidad Industrial</option>
-        <option>Ingeniería en Automatización y Robótica</option>
-        <option>Técnico de nivel superior en Automatización y Robótica</option>
-        <option>Ingeniería en Mecatrónica</option>
-        <option>Técnico de nivel superior en Mecatrónica</option>
-        <option>Área Mecánica</option>
-        <option>Otras Áreas</option>
-    </select>
-
-    <input type="tel" id="regTelefono" placeholder="📱 Teléfono (Ej: +56911111111)">
-    <input type="email" id="regEmail" placeholder="📧 Correo Electrónico">
-<div class="password-container">
-    <input type="password" id="regPass" placeholder="🔒 Crea tu Contraseña" onkeyup="checkPasswordMatch()">
-    <span class="toggle-password" onclick="toggleVisibility('regPass', this)">👁️</span>
-</div>
-
-<div class="password-container">
-    <input type="password" id="regConfirmPass" placeholder="✅ Confirma tu Contraseña" onkeyup="checkPasswordMatch()">
-    <span class="toggle-password" onclick="toggleVisibility('regConfirmPass', this)">👁️</span>
-</div>
-<p id="password-match-message"></p>
-
-    <button class="btn-success" id="btnRegister" onclick="registrar()"> Crear Cuenta </button>
-    
-    <p id="mensaje"></p>
-    <p style="text-align:center;"><a onclick="showLogin()">Ya tengo cuenta, Iniciar Sesión</a></p>
-    <p style="text-align:center;"><a onclick="showWelcome()">Volver a la Bienvenida</a></p>
-</div>
-    
+    <section class="panel hidden" id="registerBox">
+        <h2>Crear cuenta</h2>
+        <label for="regNombre">Nombre completo</label>
+        <input type="text" id="regNombre" placeholder="Nombre y apellidos" autocomplete="name">
+        <label for="regRut">RUT</label>
+        <input type="text" id="regRut" placeholder="12345678-5">
+        <p id="rutError" class="error"></p>
+        <label for="regCarrera">Carrera</label>
+        <select id="regCarrera">
+            <option value="">Selecciona tu carrera</option>
+            <option>Ingeniería Eléctrica</option>
+            <option>Técnico de nivel superior en Electricidad Industrial</option>
+            <option>Ingeniería en Automatización y Robótica</option>
+            <option>Técnico de nivel superior en Automatización y Robótica</option>
+            <option>Ingeniería en Mecatrónica</option>
+            <option>Técnico de nivel superior en Mecatrónica</option>
+            <option>Área Mecánica</option>
+            <option>Otras Áreas</option>
+        </select>
+        <label for="regTelefono">Teléfono</label>
+        <input type="tel" id="regTelefono" placeholder="+56911111111" autocomplete="tel">
+        <label for="regEmail">Correo electrónico</label>
+        <input type="email" id="regEmail" placeholder="nombre@inacapmail.cl" autocomplete="email">
+        <label for="regPass">Contraseña</label>
+        <div class="password-container">
+            <input type="password" id="regPass" placeholder="Crea una contraseña" onkeyup="checkPasswordMatch()" autocomplete="new-password">
+            <span class="toggle-password" onclick="toggleVisibility('regPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
+        </div>
+        <label for="regConfirmPass">Confirma la contraseña</label>
+        <div class="password-container">
+            <input type="password" id="regConfirmPass" placeholder="Repite la contraseña" onkeyup="checkPasswordMatch()" autocomplete="new-password">
+            <span class="toggle-password" onclick="toggleVisibility('regConfirmPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
+        </div>
+        <p id="password-match-message"></p>
+        <button class="btn-primary" id="btnRegister" onclick="registrar()">Crear cuenta</button>
+        <p id="mensaje"></p>
+        <p class="link-row"><a onclick="showLogin()">Ya tengo cuenta, iniciar sesión</a></p>
+        <p class="link-row"><a onclick="showWelcome()">Volver al inicio</a></p>
+    </section>
+</main>
 <script>
 // ----------------------------------------
 // CONFIGURAR SUPABASE
 // ----------------------------------------
-const supabaseClient = supabase.createClient(
-    "https://jwcgiuhdugjunndfpdjr.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY"
-);
 
 // ----------------------------------------
 // REDIRECCIÓN DESPUÉS DE CONFIRMAR EMAIL
@@ -391,19 +172,17 @@ async function registrar() {
 
     const showError = (text) => {
     mensaje.textContent = `❌ ${text}`;
-    mensaje.style.color = "red";
-    mensaje.style.backgroundColor = "#ffdddd";
+    mensaje.className = "msg msg-error";
     desbloquearBotonRegistro(); // ✅ liberar botón
     };
 
     const showSuccess = (text) => {
         mensaje.textContent = `✅ ${text}`;
-        mensaje.style.color = "green";
-        mensaje.style.backgroundColor = "#ddffdd";
+        mensaje.className = "msg msg-success";
     };
 
     mensaje.textContent = "";
-    mensaje.style.backgroundColor = "transparent";
+    mensaje.className = "msg";
     rutError.textContent = "";
 
     if (!nombre || !rut || !carrera || !telefono || !email || !pass || !confirmPass) {
@@ -418,11 +197,8 @@ async function registrar() {
 
     const rutVal = validarRutCompleto(rut);
     if (!rutVal.ok) {
-        mensaje.textContent = `❌ ${rutVal.msg}`;
-        mensaje.style.color = "red";
-        mensaje.style.backgroundColor = "#ffdddd";
-        desbloquearBotonRegistro();   // <-- importante
-    return;
+        showError(rutVal.msg);
+        return;
     }
 
     if (!/^\+569\d{8}$/.test(telefono)) {
@@ -441,7 +217,7 @@ async function registrar() {
         email, 
         password: pass,
         options: {
-            emailRedirectTo: "https://alby-on.github.io/Sistema_panol_v3/index.html",
+            emailRedirectTo: new URL("index.html", window.location.href).href, // misma carpeta donde está publicada esta versión
             data: { 
                 full_name: nombre,
                 rut_val: rut,
@@ -463,12 +239,8 @@ async function registrar() {
 // ----------------------------------------
 // FUNCIÓN LOGIN (Modificada para insertar perfil tras Auth)
 // ----------------------------------------
-function validarRutFormatoYDigito(rut) {
-    return validarRutCompleto(rut).ok;
-}
-    
-function bloquearBotonLogin(texto = "Ingresando...") {
-    const btn = document.getElementById("btnLogin");
+function bloquearBoton(id, texto) {
+    const btn = document.getElementById(id);
     btn.disabled = true;
     btn.dataset.textoOriginal = btn.textContent;
     btn.textContent = texto;
@@ -476,29 +248,18 @@ function bloquearBotonLogin(texto = "Ingresando...") {
     btn.style.cursor = "not-allowed";
 }
 
-function desbloquearBotonLogin() {
-    const btn = document.getElementById("btnLogin");
+function desbloquearBoton(id, textoPorDefecto) {
+    const btn = document.getElementById(id);
     btn.disabled = false;
-    btn.textContent = btn.dataset.textoOriginal || "Ingresar";
+    btn.textContent = btn.dataset.textoOriginal || textoPorDefecto;
     btn.style.opacity = "1";
     btn.style.cursor = "pointer";
 }
-function bloquearBotonRegistro(texto = "Registrando...") {
-    const btn = document.getElementById("btnRegister");
-    btn.disabled = true;
-    btn.dataset.textoOriginal = btn.textContent;
-    btn.textContent = texto;
-    btn.style.opacity = "0.7";
-    btn.style.cursor = "not-allowed";
-}
+const bloquearBotonLogin = () => bloquearBoton("btnLogin", "Ingresando...");
+const desbloquearBotonLogin = () => desbloquearBoton("btnLogin", "Ingresar");
+const bloquearBotonRegistro = () => bloquearBoton("btnRegister", "Registrando...");
+const desbloquearBotonRegistro = () => desbloquearBoton("btnRegister", "Crear cuenta");
 
-function desbloquearBotonRegistro() {
-    const btn = document.getElementById("btnRegister");
-    btn.disabled = false;
-    btn.textContent = btn.dataset.textoOriginal || "Crear Cuenta";
-    btn.style.opacity = "1";
-    btn.style.cursor = "pointer";
-}
 async function login() {
     bloquearBotonLogin(); // ⛔ evita spam
 
@@ -508,19 +269,17 @@ async function login() {
 
     const showError = (text) => {
         msg.textContent = `❌ ${text}`;
-        msg.style.color = "red";
-        msg.style.backgroundColor = "#ffdddd";
+        msg.className = "msg msg-error";
         desbloquearBotonLogin(); // ✅ liberar botón
     };
 
     const showSuccess = (text) => {
         msg.textContent = `✅ ${text}`;
-        msg.style.color = "green";
-        msg.style.backgroundColor = "#ddffdd";
+        msg.className = "msg msg-success";
     };
 
     msg.textContent = "";
-    msg.style.backgroundColor = "transparent";
+    msg.className = "msg";
 
     if (!input || !pass) {
         showError("Complete todos los campos.");
@@ -530,7 +289,7 @@ async function login() {
     let emailParaLogin = input;
 
     if (!input.includes("@")) {
-        if (!validarRutFormatoYDigito(input)) {
+        if (!validarRutCompleto(input).ok) {
             showError("RUT inválido.");
             return;
         }
@@ -634,7 +393,5 @@ function checkPasswordMatch() {
     return true;
 }
 </script>
-
 </body>
 </html>
-

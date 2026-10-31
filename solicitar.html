@@ -1,235 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Solicitud de Materiales</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-    /* Variables de Color (Mismas que en las vistas anteriores) */
-    :root {
-        --color-primary: #004d99; /* Azul marino/institucional */
-        --color-secondary: #28a745; /* Verde para enviar/éxito */
-        --color-info: #17a2b8; /* Turquesa para añadir */
-        --color-danger: #dc3545; /* Rojo para eliminar */
-        --color-muted: #6c757d; /* Gris para volver */
-        --color-background: #eef1f5; /* Fondo claro y suave */
-        --color-card: #ffffff; /* Fondo de las cajas */
-        --color-text: #333333; /* Texto oscuro */
-        --color-border: #cccccc;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Solicitar materiales | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
 
-    /* Estilos Generales */
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--color-background);
-        margin: 0;
-        padding: 0;
-        color: var(--color-text);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-    }
-
-    /* Caja Principal (Card) */
-    .box {
-        background: var(--color-card);
-        padding: 25px;
-        width: 100%;
-        max-width: 780px; /* Ancho un poco mayor para la tabla */
-        margin: 20px 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        box-sizing: border-box;
-    }
-
-    /* Encabezados */
-    h2 {
-        text-align: center;
-        margin-bottom: 25px;
-        color: var(--color-primary);
-        font-size: 1.8em;
-        border-bottom: 2px solid var(--color-primary);
-        padding-bottom: 10px;
-    }
-    h3 { 
-        text-align: center; 
-        margin-top: 30px;
-        margin-bottom: 15px;
-        color: var(--color-primary);
-        font-size: 1.3em;
-    }
-
-    /* Labels e Inputs de Formulario */
-    label { 
-        font-weight: 600; 
-        display: block; 
-        margin-top: 15px; 
-        color: var(--color-text);
-    }
-    input, select {
-        width: 100%;
-        padding: 12px;
-        font-size: 1em;
-        margin-top: 8px;
-        margin-bottom: 20px;
-        border-radius: 6px;
-        border: 1px solid var(--color-border);
-        box-sizing: border-box;
-        transition: border-color 0.3s;
-    }
-    input:focus, select:focus {
-        border-color: var(--color-primary);
-        outline: none;
-        box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
-    }
-    /* Estilo específico para los inputs envueltos por el autocompletado */
-    .autocomplete-wrapper input {
-        margin-bottom: 0 !important; /* Eliminar el margen inferior para pegarlo a la lista */
-    }
-    /* Añadir algo de margen después del wrapper si es necesario */
-    .autocomplete-wrapper + label {
-        margin-top: 25px;
-    }
-
-
-    /* Tabla de Materiales */
-    table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-top: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra sutil a la tabla */
-    }
-    th, td { 
-        border: 1px solid #e0e0e0; /* Borde más claro */
-        padding: 12px; 
-        text-align: left; /* Alineación a la izquierda para el material */
-    }
-    th { 
-        background: var(--color-primary); 
-        color: var(--color-card); 
-        text-align: center;
-        text-transform: uppercase;
-        font-size: 0.9em;
-    }
-    #tabla tbody tr:nth-child(even) {
-        background-color: #f8f8f8; /* Cebra para mejor lectura */
-    }
-    td input { 
-        padding: 8px; 
-        font-size: 1em; 
-        border: 1px solid #d0d0d0;
-        margin: 0;
-    }
-    #tabla td:nth-child(2) { /* Columna de Cantidad */
-        width: 25%;
-        text-align: center;
-    }
-
-    /* Botones de Acción */
-    .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 6px;
-        font-size: 1.1em;
-        font-weight: bold;
-        cursor: pointer;
-        margin-top: 12px;
-        transition: background-color 0.3s, opacity 0.3s;
-    }
-
-    .btnAdd { 
-        background: var(--color-info); 
-        color: white; 
-    }
-    .btnAdd:hover { background: #138496; }
-
-    .btnRemove { 
-        background: var(--color-danger); 
-        color: white; 
-    }
-    .btnRemove:hover { background: #c82333; }
-
-    .btnEnviar { 
-        background: var(--color-secondary); 
-        color: white; 
-        margin-top: 25px; /* Separación de los botones de la tabla */
-    }
-    .btnEnviar:hover { background: #1e7e34; }
-
-    .btnVolver { 
-        background: var(--color-muted); 
-        color: white; 
-    }
-    .btnVolver:hover { background: #5a6268; }
-
-    /* Estilos para Móviles */
-    @media (max-width: 600px) {
-        .box {
-            margin: 10px;
-            padding: 15px;
-        }
-        h2 {
-            font-size: 1.6em;
-        }
-        th, td {
-            padding: 8px;
-            font-size: 0.9em;
-        }
-        td input {
-            padding: 6px;
-        }
-        .btnAdd, .btnRemove, .btnEnviar, .btnVolver {
-            font-size: 1em;
-            padding: 12px;
-        }
-    }
-    /* Ajustes del autocompletado */
-    .autocomplete-wrapper { 
-        position: relative;
-    }
-    .autocomplete-list {
-        position: absolute;
-        border: 1px solid var(--color-border); 
-        background: var(--color-card); 
-        list-style: none;
-        padding: 0;
-        margin: 0; /* Asegurar que no haya margen */
-        max-height: 150px;
-        overflow-y: auto;
-        width: 100%; 
-        z-index: 10;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        border-radius: 0 0 6px 6px; 
-        border-top: none; /* Eliminar el borde superior para pegarlo al input */
-    }
-    .autocomplete-list li {
-        padding: 8px 12px;
-        cursor: pointer;
-        border-bottom: 1px solid #f0f0f0; /* Borde de separación */
-    }
-    .autocomplete-list li:last-child {
-        border-bottom: none; /* ELIMINA LA LÍNEA SOMBREADA/DE SEPARACIÓN AL FINAL */
-    }
-    .autocomplete-list li:hover {
-        background-color: #f0f0f0;
-    }
-</style>
 </head>
-<body>
-
-<div class="box">
-    <h2>Solicitud de Materiales 📋</h2>
-
-    <label for="docente">👨‍🏫 Docente a cargo:</label>
-    <select id="docente">
-        <option value="">Seleccione un docente</option>
+<body data-modulo="solicitar">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Solicitar materiales</h1><p>Pañol Electricidad y Automatización</p></div>
+        
+    </div>
+</header>
+<main class="page">
+    <section class="panel box">
+        <div id="avisoPendiente" class="notice notice-pending" hidden></div>
+        <label for="docente" style="margin-top:0">Docente a cargo</label>
+        <select id="docente">
+        <option value="">Selecciona un docente</option>
         <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
         <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
         <option>BRAYAN PATRICIO DEL VALLE AEDO</option>
-        <option>DANIELA FERNANDA MARTÍNEZ MARTÍNEZ</option>
-        <option>EDUARDO ARTURO BASTÍAS GARCÍA</option>
+        <option>DANIELA ANDREA COSSIO YAJURE</option>
         <option>ELÍAS ANDRÉS POBLETE AVILA</option>
         <option>GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ</option>
         <option>GIOVANNI ANDRÉS JARA TORRES</option>
@@ -248,48 +47,50 @@
         <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
         <option>OTROS DOCENTES</option>
     </select>
+        <label for="asignatura">Asignatura</label>
+        <div class="autocomplete-wrapper">
+            <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas en Baja Tensión" autocomplete="off">
+        </div>
 
-<label for="asignatura">📚 Asignatura:</label>
-<div class="autocomplete-wrapper">
-    <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas II">
-</div>
-    
-    <h3>Materiales Solicitados</h3>
-
-    <table id="tabla">
-        <thead>
-            <tr>
-                <th>Material / Equipo</th>
-                <th style="width: 25%;">Cantidad</th>
-            </tr>
-        </thead>
-        <tbody id="tbody">
-            <tr>
-                <td>
-                    <div class="autocomplete-wrapper">
-                        <input type="text" placeholder="Ej: Multímetro UT33C">
-                    </div>
-                </td>
-                <td><input type="number" min="1" value="1"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <button class="btnAdd" onclick="addRow()">➕ Agregar Material</button>
-    <button class="btnRemove" onclick="removeRow()">➖ Eliminar Último</button>
-    
-    <button class="btnEnviar" onclick="enviar()">📤 Enviar Solicitud</button>
-    <button class="btnVolver" onclick="location.href='menu.html'">↩️ Volver al Menú</button>
-</div>
-
+        <div id="yaSolicitados" hidden>
+            <h3 class="section-title">Ya solicitados</h3>
+            <p class="muted ya-nota">Estos materiales ya están en tu solicitud. Puedes sumar más, pero no quitarlos ni cambiarlos.</p>
+            <ul id="listaYaSolicitados" class="ya-solicitados"></ul>
+        </div>
+        <div id="formMateriales">
+        <h3 class="section-title" id="tituloMateriales">Materiales</h3>
+        <div class="table-wrap table-open">
+            <table id="tabla">
+                <thead>
+                    <tr>
+                        <th>Material o equipo</th>
+                        <th style="width: 96px;">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    <tr>
+                        <td>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" placeholder="Ej: Multímetro digital" autocomplete="off">
+                            </div>
+                        </td>
+                        <td><input type="number" min="1" value="1" inputmode="numeric"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="btn-row">
+            <button class="btnAdd btn-secondary" onclick="addRow()">Agregar fila</button>
+            <button class="btnRemove btn-danger-text" onclick="removeRow()">Quitar última</button>
+        </div>
+        <button class="btnEnviar" onclick="enviar()">Enviar solicitud</button>
+        </div>
+    </section>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="supabase.js?v=2026-10-30d"></script>
 <script>
 /* 🔗 Conexión a Supabase */
-// NOTA: Estas claves son de ejemplo o están ofuscadas. Asegúrate de que las tuyas sean correctas si las cambiaste.
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user) window.location.href = "index.html";
@@ -449,6 +250,8 @@ function enableAutocomplete(input, listaOpciones) {
         });
 
         lista.style.display = coincidencias.length > 0 ? 'block' : 'none';
+        // En el teléfono, mover la página lo justo para que la lista se vea completa
+        if (coincidencias.length > 0) lista.scrollIntoView({ block: 'nearest' });
     });
 
     input.addEventListener("blur", () => {
@@ -483,6 +286,87 @@ function removeRow() {
 }
 
 /* 📤 Enviar Solicitud (CORREGIDA) */
+/* -------------------------------------------------------------------
+    SOLICITUD PENDIENTE
+    Un alumno con una solicitud sin entregar no puede crear otra,
+    pero sí agregarle materiales. Los administradores no tienen esta restricción.
+------------------------------------------------------------------- */
+let solicitudPendiente = null;
+const HORAS_PARA_AGREGAR = 2;   // plazo para agregar materiales a una solicitud pendiente
+
+function limiteParaAgregar(sol) {
+    return fechaSupabase(sol.fecha_solicitud).getTime() + HORAS_PARA_AGREGAR * 36e5;
+}
+function plazoVencido(sol) {
+    return Date.now() >= limiteParaAgregar(sol);
+}
+function horaCorta(ms) {
+    return new Date(ms).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+}
+
+function textoBotonEnviar() {
+    return solicitudPendiente ? `Agregar a la solicitud #${solicitudPendiente.id}` : "Enviar solicitud";
+}
+
+async function buscarPendiente() {
+    if (!user || user.rol === "admin") return null;
+    const { data, error } = await supabaseClient
+        .from("solicitudes")
+        .select("id, docente, asignatura, fecha_solicitud")
+        .eq("email", user.email)
+        .eq("estado", "Pendiente")
+        .order("fecha_solicitud", { ascending: false })
+        .limit(1);
+    if (error) { console.error("Error al revisar solicitudes pendientes:", error); return null; }
+    return (data && data[0]) || null;
+}
+
+async function activarModoAgregar() {
+    solicitudPendiente = await buscarPendiente();
+    if (!solicitudPendiente) return;
+    const s = solicitudPendiente;
+
+    // Docente y asignatura quedan fijos: son los de la solicitud pendiente
+    const selDocente = document.getElementById("docente");
+    if (![...selDocente.options].some(o => o.value === s.docente)) selDocente.add(new Option(s.docente, s.docente));
+    selDocente.value = s.docente;
+    selDocente.disabled = true;
+    const inpAsignatura = document.getElementById("asignatura");
+    inpAsignatura.value = s.asignatura;
+    inpAsignatura.disabled = true;
+
+    const aviso = document.getElementById("avisoPendiente");
+    aviso.hidden = false;
+    const vencido = plazoVencido(s);
+    aviso.innerHTML = vencido
+        ? `<p><b>Tienes la solicitud #${s.id} pendiente de entrega.</b></p>
+           <p>Pasaron más de ${HORAS_PARA_AGREGAR} horas desde que la hiciste, así que ya no puedes agregarle materiales.
+              Debes entregarla para volver a solicitar.</p>
+           <a href="entregar.html" class="btn">Ir a entregar materiales</a>`
+        : `<p><b>Tienes la solicitud #${s.id} pendiente de entrega.</b></p>
+           <p>No puedes hacer una solicitud nueva hasta entregarla, pero puedes agregarle lo que te falte
+              <b>hasta las ${horaCorta(limiteParaAgregar(s))}</b>.</p>
+           <p><a href="entregar.html">Ir a entregar materiales</a></p>`;
+    if (vencido) {
+        // Plazo vencido: solo se muestra lo pedido y el acceso a entregar
+        document.getElementById("formMateriales").hidden = true;
+    }
+
+    const { data: existentes } = await supabaseClient
+        .from("materiales_solicitados")
+        .select("material, cantidad")
+        .eq("id_solicitud", s.id);
+    if (existentes && existentes.length) {
+        document.getElementById("listaYaSolicitados").innerHTML = existentes
+            .map(m => `<li><span>${m.material}</span><span class="num muted">× ${m.cantidad}</span></li>`).join("");
+        document.getElementById("yaSolicitados").hidden = false;
+    }
+
+    document.getElementById("tituloMateriales").textContent = "Materiales a agregar";
+    document.querySelector(".btnRemove").textContent = "Quitar fila";
+    document.querySelector(".btnEnviar").innerText = textoBotonEnviar();
+}
+
 async function enviar() {
     const btn = document.querySelector(".btnEnviar");
     btn.disabled = true;
@@ -513,6 +397,40 @@ async function enviar() {
     });
 
     if (materiales.length === 0) return finishError("Debe ingresar al menos un material válido.");
+
+    // Revisar de nuevo justo antes de guardar, por si la solicitud pendiente
+    // se entregó o se creó otra desde otro dispositivo mientras la página estaba abierta.
+    const pendienteActual = await buscarPendiente();
+    if ((pendienteActual?.id ?? null) !== (solicitudPendiente?.id ?? null)) {
+        alert(pendienteActual
+            ? `Tienes la solicitud #${pendienteActual.id} pendiente. La página se actualizará para que agregues los materiales a esa solicitud.`
+            : "Tu solicitud pendiente ya fue entregada. La página se actualizará para que hagas una solicitud nueva.");
+        window.location.reload();
+        return;
+    }
+
+    if (solicitudPendiente && plazoVencido(solicitudPendiente)) {
+        alert(`Pasaron más de ${HORAS_PARA_AGREGAR} horas desde la solicitud #${solicitudPendiente.id}. Debes entregarla para volver a solicitar.`);
+        window.location.reload();
+        return;
+    }
+
+    if (solicitudPendiente) {
+        try {
+            for (const m of materiales) {
+                const { error: materialError } = await supabaseClient
+                    .from("materiales_solicitados")
+                    .insert([{ id_solicitud: solicitudPendiente.id, material: m.material, cantidad: m.cantidad }]);
+                if (materialError) throw materialError;
+            }
+            alert(`✅ Materiales agregados a la solicitud #${solicitudPendiente.id}.`);
+            window.location.href = "menu.html";
+        } catch (err) {
+            console.error(err);
+            finishError("Error al agregar: " + err.message);
+        }
+        return;
+    }
 
     try {
         /* 1️⃣ Insertar solicitud */
@@ -554,7 +472,7 @@ function finishError(msg) {
     alert("❌ " + msg);
     const btn = document.querySelector(".btnEnviar");
     btn.disabled = false;
-    btn.innerText = "Enviar Solicitud";
+    btn.innerText = textoBotonEnviar();
 }
 
 /* -------------------------------------------------------------------
@@ -602,11 +520,9 @@ document.addEventListener("DOMContentLoaded", () => {
             enableAutocomplete(inputMaterial, materialesLista);
         }
     }
+
+    activarModoAgregar();
 });
 </script>
-
-</body>
-</html>
-
 </body>
 </html>

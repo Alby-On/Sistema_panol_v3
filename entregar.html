@@ -1,199 +1,41 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Entregar Materiales</title>
-
-<style>
-    /* Variables de Color */
-    :root {
-        --color-primary: #004d99;
-        --color-accent: #4a6cf7;
-        --color-success: #28a745;
-        --color-danger: #dc3545;
-        --color-background: #eef1f5;
-        --color-card: #ffffff;
-        --color-text: #333333;
-        --color-border: #cccccc;
-        --color-table-header: var(--color-primary);
-        --color-box-bg: #f9fafc;
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--color-background);
-        margin: 0;
-        padding: 0;
-        color: var(--color-text);
-        display: flex;
-        justify-content: center;
-        min-height: 100vh;
-    }
-
-    .container {
-        max-width: 900px;
-        width: 100%;
-        margin: 20px 15px;
-        background: var(--color-card);
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        box-sizing: border-box;
-    }
-
-    /* ---- CONTENEDOR PARA CENTRAR BOTÓN ---- */
-    .volver-wrapper {
-        width: 100%;
-        display: flex;
-        justify-content: center; /* CENTRA REALMENTE EL BOTÓN */
-        margin-bottom: 20px;
-    }
-
-    .btn-volver {
-        background: var(--color-primary);
-        color: white;
-        padding: 12px 18px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 1em;
-        font-weight: 600;
-        transition: background-color 0.3s;
-        display: inline-block;
-    }
-
-    .btn-volver:hover {
-        background: #003a73;
-    }
-
-    h2 {
-        text-align: center;
-        margin-bottom: 25px;
-        color: var(--color-primary);
-        font-size: 1.8em;
-        border-bottom: 2px solid var(--color-primary);
-        padding-bottom: 10px;
-    }
-
-    .solicitud-box {
-        margin-bottom: 30px;
-        padding: 20px;
-        background: var(--color-box-bg);
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .section-title {
-        font-weight: 700;
-        margin: 15px 0 10px 0;
-        font-size: 1.1em;
-        color: var(--color-primary);
-        padding-left: 10px;
-        border-left: 4px solid var(--color-primary);
-    }
-
-    .table-wrapper { overflow-x: auto; width: 100%; }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-        font-size: 0.95em;
-        min-width: 450px;
-    }
-
-    th, td {
-        border: 1px solid #dcdcdc;
-        padding: 10px;
-        text-align: left;
-    }
-
-    .solicitud-box table:first-of-type th {
-        background: var(--color-table-header);
-        color: white;
-        text-align: center;
-    }
-
-    .solicitud-box table:last-of-type th {
-        background: #007bff;
-        color: white;
-    }
-
-    .mensaje-error {
-        display: none;
-        background: #ffe6e6;
-        padding: 12px;
-        color: var(--color-danger);
-        border: 1px solid #ffc0c0;
-        border-radius: 6px;
-        margin-top: 15px;
-        font-size: 0.9em;
-        text-align: center;
-    }
-
-    .btn-entregar {
-        width: 100%;
-        padding: 15px;
-        margin-top: 25px;
-        font-size: 1.1em;
-        background: var(--color-success);
-        border: none;
-        color: white;
-        border-radius: 6px;
-        font-weight: bold;
-        transition: 0.2s;
-        cursor: not-allowed;
-        opacity: 0.5;
-    }
-
-    .no-solicitudes {
-        text-align: center;
-        padding: 30px;
-        font-size: 1.1em;
-        background: #f1f8ed;
-        border-radius: 8px;
-        border: 1px solid #d4e3c9;
-        margin-top: 20px;
-        color: #2e6d3e;
-    }
-
-    @media (max-width: 600px) {
-        h2 { font-size: 1.6em; }
-        .container { padding: 15px; }
-        table { min-width: 100%; font-size: 0.85em; }
-        .btn-volver { width: 100%; text-align: center; }
-    }
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Entregar materiales | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
 </head>
-
-<body>
-
-<div class="container">
-
-    <!-- BOTÓN CENTRADO -->
-    <div class="volver-wrapper">
-        <a href="menu.html" class="btn-volver">⬅ Volver al Menú</a>
+<body data-modulo="entregar">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Entregar materiales</h1><p>Pañol Electricidad y Automatización</p></div>
+        
     </div>
-
-    <h2>📦 Entregar Materiales Pendientes</h2>
-
-    <div id="solicitudes-container"></div>
-
-</div>
-
+</header>
+<main class="page container">
+    <div class="page-intro">
+        <h2>Solicitudes pendientes</h2>
+        <p>Marca cada material para completar la entrega.</p>
+    </div>
+    <div id="solicitudes-container"><p class="muted">Cargando…</p></div>
+</main>
 <script>
 /* --- LÓGICA ORIGINAL SIN MODIFICAR FUNCIONALIDADES --- */
 
-const SUPABASE_URL = "https://jwcgiuhdugjunndfpdjr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3Y2dpdWhkdWdqdW5uZGZwZGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTA2NTQsImV4cCI6MjA3ODUyNjY1NH0.llknOTpK1hFMDOjdyDUKUFuiyr0NwwJzNv6YdJbBsRY";
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const COLOR_PENDIENTE = "#dc3545";
-const COLOR_ENTREGADO = "#28a745";
+
+/* Tiempo mínimo entre la solicitud y la entrega */
+const MINUTOS_ESPERA = 5;
+let temporizadores = [];
 
 /* INIT */
 async function init() {
@@ -219,9 +61,12 @@ async function cargarSolicitudes(email) {
     container.innerHTML = "";
 
     if (!solicitudes || solicitudes.length === 0) {
-        container.innerHTML = `<div class="no-solicitudes">✔ No tienes solicitudes pendientes de entrega.</div>`;
+        container.innerHTML = `<div class="empty-state">No tienes solicitudes pendientes de entrega.</div>`;
         return;
     }
+
+    temporizadores.forEach(clearInterval);
+    temporizadores = [];
 
     for (const solicitud of solicitudes) {
 
@@ -230,27 +75,19 @@ async function cargarSolicitudes(email) {
             .select('*')
             .eq('id_solicitud', solicitud.id);
 
-        const estadoColor =
-            solicitud.estado === "Pendiente" ? COLOR_PENDIENTE : COLOR_ENTREGADO;
-
+        
         const box = document.createElement("div");
         box.classList.add("solicitud-box");
 
         box.innerHTML = `
-            <div class="section-title">Datos de la Solicitud</div>
+            <div class="card-header"><strong>Solicitud #${solicitud.id}</strong><span class="chip ${solicitud.estado === "Pendiente" ? "chip-pending" : "chip-done"}">${solicitud.estado}</span></div>
+            <dl class="profile">
+                <dt>Docente</dt><dd>${solicitud.docente}</dd>
+                <dt>Asignatura</dt><dd>${solicitud.asignatura}</dd>
+                <dt>Fecha</dt><dd class="num">${fechaSupabase(solicitud.fecha_solicitud).toLocaleDateString()}</dd>
+            </dl>
 
-            <div class="table-wrapper">
-                <table>
-                    <tr><th>ID Solicitud</th><td>${solicitud.id}</td></tr>
-                    <tr><th>Email</th><td>${solicitud.email}</td></tr>
-                    <tr><th>Docente</th><td>${solicitud.docente}</td></tr>
-                    <tr><th>Asignatura</th><td>${solicitud.asignatura}</td></tr>
-                    <tr><th>Fecha Solicitud</th><td>${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</td></tr>
-                    <tr><th>Estado</th><td style="font-weight:bold; color:${estadoColor}">${solicitud.estado}</td></tr>
-                </table>
-            </div>
-
-            <div class="section-title" style="margin-top:20px;">Materiales Solicitados</div>
+            <div class="section-title">Materiales solicitados</div>
 
             <div class="table-wrapper">
                 <table>
@@ -269,11 +106,13 @@ async function cargarSolicitudes(email) {
                 </table>
             </div>
 
+            <div class="espera-entrega" hidden></div>
+
             <div class="mensaje-error">
-                ⚠️ Debes seleccionar todos los materiales antes de poder completar la entrega.
+                Marca todos los materiales para completar la entrega.
             </div>
 
-            <button class="btn-entregar">Completar Entrega</button>
+            <button class="btn-entregar btn-success">Completar entrega</button>
         `;
 
         container.appendChild(box);
@@ -281,8 +120,28 @@ async function cargarSolicitudes(email) {
         const checks = box.querySelectorAll(".chk");
         const msg = box.querySelector(".mensaje-error");
         const btn = box.querySelector(".btn-entregar");
+        const espera = box.querySelector(".espera-entrega");
+        const disponibleDesde = fechaSupabase(solicitud.fecha_solicitud).getTime() + MINUTOS_ESPERA * 60000;
+        const enEspera = () => Date.now() < disponibleDesde;
 
         function validar() {
+            // Durante los primeros minutos no se puede marcar ni completar la entrega
+            if (enEspera()) {
+                const seg = Math.ceil((disponibleDesde - Date.now()) / 1000);
+                const mmss = `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, "0")}`;
+                espera.hidden = false;
+                espera.innerHTML = `Podrás completar la entrega en <strong class="num">${mmss}</strong>. La solicitud se hizo hace menos de ${MINUTOS_ESPERA} minutos.`;
+                checks.forEach(c => { c.disabled = true; c.checked = false; });
+                msg.style.display = "none";
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+                btn.style.cursor = "not-allowed";
+                return;
+            }
+            espera.hidden = true;
+            checks.forEach(c => { c.disabled = false; });
+            btn.disabled = false;
+
             const completo = [...checks].every(c => c.checked);
 
             if (completo) {
@@ -299,7 +158,7 @@ async function cargarSolicitudes(email) {
         checks.forEach(c => c.addEventListener("change", validar));
 
         btn.addEventListener("click", async () => {
-            if (![...checks].every(c => c.checked)) return;
+            if (enEspera() || ![...checks].every(c => c.checked)) return;
 
             const { error: upErr } = await supabaseClient
                 .from("solicitudes")
@@ -316,13 +175,19 @@ async function cargarSolicitudes(email) {
         });
 
         validar();
+
+        // Actualiza la cuenta regresiva cada segundo hasta que se habilite la entrega
+        if (enEspera()) {
+            const t = setInterval(() => {
+                validar();
+                if (!enEspera()) clearInterval(t);
+            }, 1000);
+            temporizadores.push(t);
+        }
     }
 }
 
 init();
 </script>
-
 </body>
 </html>
-
-

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Docentes | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-10-30d"></script>
+</head>
+<body data-modulo="docentes">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Docentes</h1><p>Pañol Electricidad y Automatización</p></div>
+    </div>
+</header>
+
+<main class="page page-wide docentes">
+    <div class="kpi-grid doc-kpis">
+        <section class="kpi-card" id="kDocentes">
+            <h3>Docentes</h3>
+            <p class="kpi-value num">–</p>
+            <p class="kpi-label">Calculando…</p>
+        </section>
+        <section class="kpi-card" id="kACargo">
+            <h3>Solicitudes de sus clases</h3>
+            <p class="kpi-value num">–</p>
+            <p class="kpi-label">Calculando…</p>
+        </section>
+        <section class="kpi-card" id="kPropias">
+            <h3>Solicitudes hechas por docentes</h3>
+            <p class="kpi-value num">–</p>
+            <p class="kpi-label">Calculando…</p>
+        </section>
+        <section class="kpi-card" id="kTop">
+            <h3>Docente con más solicitudes</h3>
+            <p class="kpi-value kpi-text">–</p>
+            <p class="kpi-label">Calculando…</p>
+        </section>
+    </div>
+
+    <div class="doc-toolbar">
+        <input type="search" id="buscador" placeholder="Buscar docente, equipo o asignatura" autocomplete="off" aria-label="Buscar docente">
+        <div class="segmented doc-orden" role="group" aria-label="Ordenar por">
+            <button type="button" class="is-active" data-orden="cargo">Más solicitudes de sus clases</button>
+            <button type="button" data-orden="propias">Más solicitudes propias</button>
+            <button type="button" data-orden="nombre">Nombre</button>
+        </div>
+    </div>
+
+    <p class="muted doc-ayuda">
+        <b>De sus clases:</b> solicitudes donde lo eligieron como docente a cargo.
+        <b>Propias:</b> solicitudes que el docente hizo con su propia cuenta.
+        Toca un docente para ver el detalle.
+    </p>
+
+    <div id="listaDocentes" class="doc-lista"><p class="muted">Cargando docentes…</p></div>
+</main>
+
+<script>
+/* ==========================================================
+   DOCENTES
+   - Lista de docentes = los del formulario de solicitud + los que
+     aparezcan en solicitudes antiguas.
+   - Su cuenta se reconoce por el nombre en la tabla de usuarios.
+   - Todo se calcula en la página con las tablas existentes.
+========================================================== */
+const DOCENTES_FORMULARIO = [
+    "AARÓN EDUARDO SEPÚLVEDA MEDINA", "ALEJANDRO GABRIEL MOENA VALDERRAMA", "BRAYAN PATRICIO DEL VALLE AEDO", "DANIELA ANDREA COSSIO YAJURE", "ELÍAS ANDRÉS POBLETE AVILA",
+    "GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ", "GIOVANNI ANDRÉS JARA TORRES", "JORGE ANDRÉS PÉREZ MILLAR",
+    "JOSEFA CATALINA LISBOA RIVERA", "JULIO CESAR ALARCON MONTEROS", "MANUEL ALEJANDRO HENRIQUEZ OLIVA",
+    "MARCO ANTONIO ARRIAGADA CASAS", "PEDRO PATRICIO PEDRERO PÉREZ", "RICHARD ANTONIO VALDERRAMA SAN MARTIN",
+    "RICHARD NICOLÁS SANTOS MARTÍNEZ", "ROBERTO SEBASTIAN CID LIZAMA", "RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA",
+    "RODRIGO ALEJANDRO GARRIDO GARRIDO", "ROLANDO EDUARDO ORTEGA FUENTES", "VÍCTOR EDUARDO ZAPATA MYRIK"
+];
+const SIN_DOCENTE = "OTROS DOCENTES";
+// Docentes desvinculados: no se muestran en esta página
+const DESVINCULADOS = ["DANIELA FERNANDA MARTÍNEZ MARTÍNEZ", "EDUARDO ARTURO BASTÍAS GARCÍA"];
+
+let docentes = [];
+let orden = "cargo";
+const abiertos = new Set();
+
+const escapar = (t) => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const normalizar = (t) => String(t ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+const nombrePropio = (t) => String(t ?? "").toLocaleLowerCase("es-CL").replace(/(^|[\s-])(\p{L})/gu, (m, s, l) => s + l.toLocaleUpperCase("es-CL"));
+const fmt = (n) => Number(n).toLocaleString("es-CL");
+const fmtFecha = (d) => d ? d.toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "–";
+
+async function traerTodas(construir) {
+    const filas = [];
+    for (let desde = 0; ; desde += 1000) {
+        const { data, error } = await construir().range(desde, desde + 999);
+        if (error) throw error;
+        filas.push(...(data || []));
+        if (!data || data.length < 1000) return filas;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    // Solo administradores: el rol se consulta a la base de datos, no al navegador
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = "index.html"; return; }
+    const { data: yo } = await supabaseClient.from("usuarios").select("rol").ilike("email", session.user.email).maybeSingle();
+    if (!yo || yo.rol !== "admin") { window.location.href = "menu.html"; return; }
+
+    try {
+        const [solicitudes, usuarios] = await Promise.all([
+            traerTodas(() => supabaseClient.from("solicitudes")
+                .select("id, email, docente, asignatura, estado, fecha_solicitud, materiales_solicitados (material, cantidad)")
+                .order("id", { ascending: true })),
+            traerTodas(() => supabaseClient.from("usuarios").select("nombre, email").order("id", { ascending: true }))
+        ]);
+        calcular(solicitudes, usuarios);
+        renderizar();
+    } catch (err) {
+        console.error(err);
+        document.getElementById("listaDocentes").innerHTML =
+            '<p class="empty-state">No se pudieron cargar los datos. Revisa tu conexión e intenta de nuevo.</p>';
+    }
+});
+
+/* ---------- Reconocer la cuenta de cada docente por su nombre ---------- */
+function buscarCuenta(nombreDocente, usuarios) {
+    const d = normalizar(nombreDocente);
+    const exacto = usuarios.find(u => normalizar(u.nombre) === d);
+    if (exacto) return exacto;
+    // Mismo primer nombre y su apellido paterno contenido en el nombre registrado
+    const partes = d.split(" ");
+    if (partes.length < 3) return null;
+    const candidatos = usuarios.filter(u => {
+        const n = normalizar(u.nombre);
+        return n.split(" ")[0] === partes[0] && n.includes(partes[2]);
+    });
+    return candidatos.length === 1 ? candidatos[0] : null;
+}
+
+/* Agrupa materiales escritos de distinta forma ("multimetro digital" = "Multímetro Digital") */
+function contarMateriales(lista) {
+    const grupos = {};
+    lista.forEach(m => {
+        const clave = normalizar(m.material);
+        if (!clave) return;
+        const g = grupos[clave] ||= { veces: 0, unidades: 0, nombres: {} };
+        g.veces++;
+        g.unidades += Number(m.cantidad) || 0;
+        const original = String(m.material).trim();
+        g.nombres[original] = (g.nombres[original] || 0) + 1;
+    });
+    return Object.values(grupos)
+        .map(g => {
+            const n = Object.entries(g.nombres).sort((a, b) => b[1] - a[1])[0][0];
+            return { nombre: n.charAt(0).toLocaleUpperCase("es-CL") + n.slice(1), veces: g.veces, unidades: g.unidades };
+        })
+        .sort((a, b) => b.veces - a.veces || b.unidades - a.unidades);
+}
+
+function contar(lista, clave) {
+    const c = {};
+    lista.forEach(x => { const k = (x[clave] || "").trim(); if (k) c[k] = (c[k] || 0) + 1; });
+    return Object.entries(c).sort((a, b) => b[1] - a[1]);
+}
+
+function calcular(solicitudes, usuarios) {
+    const nombres = new Set(DOCENTES_FORMULARIO.map(normalizar));
+    const lista = [...DOCENTES_FORMULARIO];
+    solicitudes.forEach(s => {
+        const n = normalizar(s.docente);
+        if (n && n !== normalizar(SIN_DOCENTE) && !nombres.has(n) && !DESVINCULADOS.map(normalizar).includes(n)) { nombres.add(n); lista.push(s.docente.trim()); }
+    });
+
+    docentes = lista.map(nombre => {
+        const n = normalizar(nombre);
+        const cuenta = buscarCuenta(nombre, usuarios);
+        const correo = cuenta ? cuenta.email.toLowerCase() : null;
+        const aCargo = solicitudes.filter(s => normalizar(s.docente) === n);
+        const propias = correo ? solicitudes.filter(s => (s.email || "").toLowerCase() === correo) : [];
+        const matCargo = aCargo.flatMap(s => s.materiales_solicitados || []);
+        const matPropias = propias.flatMap(s => s.materiales_solicitados || []);
+        const fechas = [...aCargo, ...propias].map(s => fechaSupabase(s.fecha_solicitud)).filter(Boolean);
+        const hace30 = Date.now() - 30 * 864e5;
+        return {
+            nombre: nombrePropio(nombre),
+            clave: n,
+            cuenta,
+            aCargo: aCargo.length,
+            aCargoPorAlumnos: correo ? aCargo.filter(s => (s.email || "").toLowerCase() !== correo).length : aCargo.length,
+            propias: propias.length,
+            propiasDeSusClases: propias.filter(s => normalizar(s.docente) === n).length,
+            pendientes: [...new Map([...aCargo, ...propias].filter(s => s.estado !== "Entregado").map(s => [s.id, s])).values()].length,
+            ultimos30: aCargo.filter(s => fechaSupabase(s.fecha_solicitud) >= hace30).length,
+            unidadesCargo: matCargo.reduce((t, m) => t + (Number(m.cantidad) || 0), 0),
+            unidadesPropias: matPropias.reduce((t, m) => t + (Number(m.cantidad) || 0), 0),
+            equiposCargo: contarMateriales(matCargo),
+            equiposPropios: contarMateriales(matPropias),
+            asignaturas: contar(aCargo, "asignatura"),
+            ultima: fechas.length ? new Date(Math.max(...fechas)) : null
+        };
+    });
+
+    // Resumen superior
+    const conCuenta = docentes.filter(d => d.cuenta).length;
+    const totalCargo = docentes.reduce((t, d) => t + d.aCargo, 0);
+    const totalPropias = docentes.reduce((t, d) => t + d.propias, 0);
+    const docentesQuePiden = docentes.filter(d => d.propias > 0).length;
+    const top = [...docentes].sort((a, b) => b.aCargo - a.aCargo)[0];
+    ponerKpi("kDocentes", fmt(docentes.length), `${fmt(conCuenta)} con cuenta en el sistema`);
+    ponerKpi("kACargo", fmt(totalCargo), solicitudes.length ? `${(totalCargo / solicitudes.length * 100).toFixed(0)} % de todas las solicitudes` : "");
+    ponerKpi("kPropias", fmt(totalPropias), `${fmt(docentesQuePiden)} docentes solicitan con su cuenta`);
+    ponerKpi("kTop", top && top.aCargo ? top.nombre : "–", top && top.aCargo ? `${fmt(top.aCargo)} solicitudes de sus clases` : "");
+}
+
+function ponerKpi(id, valor, etiqueta) {
+    const el = document.getElementById(id);
+    el.querySelector(".kpi-value").textContent = valor;
+    el.querySelector(".kpi-label").textContent = etiqueta;
+}
+
+/* ---------- Listado ---------- */
+function barras(items, max, total, vacio) {
+    if (!items.length) return `<p class="muted doc-vacio">${vacio}</p>`;
+    return `<ol class="doc-barras">${items.map(it => `
+        <li>
+            <div class="doc-barra-txt"><span>${escapar(it.nombre)}</span><span class="num muted">${fmt(it.veces)} ${it.veces === 1 ? "vez" : "veces"}${it.unidades != null ? ` · ${fmt(it.unidades)} u.` : ""}</span></div>
+            <div class="doc-barra" aria-hidden="true"><span style="width:${(it.veces / max * 100).toFixed(1)}%"></span></div>
+        </li>`).join("")}</ol>
+        ${total > items.length ? `<p class="muted doc-mas">y ${fmt(total - items.length)} más</p>` : ""}`;
+}
+
+function tarjeta(d) {
+    const topEq = d.equiposCargo[0];
+    const maxCargo = d.equiposCargo[0]?.veces || 1;
+    const maxProp = d.equiposPropios[0]?.veces || 1;
+    const asign = d.asignaturas.map(([nombre, veces]) => ({ nombre, veces }));
+    const maxAsig = asign[0]?.veces || 1;
+    const sinActividad = !d.aCargo && !d.propias;
+    return `
+    <details class="doc-card${sinActividad ? " is-empty" : ""}" data-clave="${escapar(d.clave)}" ${abiertos.has(d.clave) ? "open" : ""}>
+        <summary>
+            <div class="doc-head">
+                <span class="doc-nombre">${escapar(d.nombre)}</span>
+                ${d.cuenta ? '<span class="chip chip-cuenta">Con cuenta</span>' : '<span class="chip chip-sincuenta">Sin cuenta</span>'}
+                ${d.pendientes ? `<span class="chip chip-pending">${fmt(d.pendientes)} pendiente${d.pendientes === 1 ? "" : "s"}</span>` : ""}
+            </div>
+            <dl class="doc-stats">
+                <div><dt>De sus clases</dt><dd class="num">${fmt(d.aCargo)}</dd></div>
+                <div><dt>Propias</dt><dd class="num">${d.cuenta ? fmt(d.propias) : "–"}</dd></div>
+                <div><dt>Unidades</dt><dd class="num">${fmt(d.unidadesCargo)}</dd></div>
+                <div class="doc-stat-wide"><dt>Equipo más pedido</dt><dd>${topEq ? escapar(topEq.nombre) : "–"}</dd></div>
+            </dl>
+        </summary>
+        <div class="doc-detalle">
+            <div class="doc-resumen">
+                <p><b>Última solicitud:</b> ${fmtFecha(d.ultima)}</p>
+                <p><b>Últimos 30 días:</b> ${fmt(d.ultimos30)} solicitudes de sus clases</p>
+                <p><b>Hechas por alumnos:</b> ${fmt(d.aCargoPorAlumnos)} de ${fmt(d.aCargo)}</p>
+                ${d.cuenta ? `<p><b>Cuenta:</b> ${escapar(d.cuenta.email)}</p>` : '<p class="muted">Este docente no tiene cuenta registrada, por eso no se cuentan solicitudes propias.</p>'}
+            </div>
+            <div class="doc-cols">
+                <section>
+                    <h4>Equipos más pedidos en sus clases</h4>
+                    ${barras(d.equiposCargo.slice(0, 8), maxCargo, d.equiposCargo.length, "Aún no hay solicitudes en sus clases.")}
+                </section>
+                <section>
+                    <h4>Asignaturas</h4>
+                    ${barras(asign.slice(0, 6), maxAsig, asign.length, "Sin asignaturas registradas.")}
+                </section>
+                <section>
+                    <h4>Lo que pidió con su cuenta</h4>
+                    ${d.cuenta
+                        ? barras(d.equiposPropios.slice(0, 8), maxProp, d.equiposPropios.length, "No ha hecho solicitudes con su cuenta.")
+                          + (d.propias ? `<p class="muted doc-mas">${fmt(d.propias)} solicitudes · ${fmt(d.unidadesPropias)} unidades · ${fmt(d.propiasDeSusClases)} para sus propias clases</p>` : "")
+                        : '<p class="muted doc-vacio">Sin cuenta registrada.</p>'}
+                </section>
+            </div>
+        </div>
+    </details>`;
+}
+
+function renderizar() {
+    const q = normalizar(document.getElementById("buscador").value);
+    let lista = docentes.filter(d => {
+        if (!q) return true;
+        const texto = normalizar([d.nombre, ...d.equiposCargo.map(e => e.nombre), ...d.equiposPropios.map(e => e.nombre), ...d.asignaturas.map(a => a[0])].join(" "));
+        return q.split(" ").every(p => texto.includes(p));
+    });
+    const porNombre = (a, b) => a.nombre.localeCompare(b.nombre, "es");
+    if (orden === "cargo") lista.sort((a, b) => b.aCargo - a.aCargo || porNombre(a, b));
+    else if (orden === "propias") lista.sort((a, b) => b.propias - a.propias || b.aCargo - a.aCargo || porNombre(a, b));
+    else lista.sort(porNombre);
+
+    const cont = document.getElementById("listaDocentes");
+    cont.innerHTML = lista.length
+        ? lista.map(tarjeta).join("")
+        : '<p class="empty-state">Ningún docente coincide con la búsqueda.</p>';
+    cont.querySelectorAll("details.doc-card").forEach(el =>
+        el.addEventListener("toggle", () => el.open ? abiertos.add(el.dataset.clave) : abiertos.delete(el.dataset.clave)));
+}
+
+document.getElementById("buscador").addEventListener("input", renderizar);
+document.querySelectorAll(".doc-orden [data-orden]").forEach(b => b.addEventListener("click", () => {
+    orden = b.dataset.orden;
+    document.querySelectorAll(".doc-orden [data-orden]").forEach(x => x.classList.toggle("is-active", x === b));
+    renderizar();
+}));
+</script>
+</body>
+</html>

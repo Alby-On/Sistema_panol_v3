@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-10-30d"></script>
+<script src="supabase.js?v=2026-11-01a"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -23,50 +23,92 @@
 <main class="page">
     <section class="panel container">
         <h2>¿Olvidaste tu contraseña?</h2>
-        <p class="muted">Escribe el correo con que te registraste y te enviaremos un enlace para crear una nueva.</p>
-        <label for="email">Correo electrónico</label>
-        <input type="email" id="email" placeholder="nombre@inacapmail.cl" autocomplete="email">
-        <button onclick="enviarCorreo()">Enviar enlace</button>
+        <p class="muted">Escribe tu correo o tu RUT y te enviaremos un enlace para crear una contraseña nueva.</p>
+        <label for="email">Correo o RUT</label>
+        <input type="text" id="email" placeholder="nombre@inacapmail.cl o 12345678-5" autocomplete="username" autocapitalize="off" spellcheck="false">
+        <button id="btnEnviar" onclick="enviarCorreo()">Enviar enlace</button>
         <p id="msg"></p>
     </section>
 </main>
 <script>
+function normalizarRut(rut) {
+    let r = String(rut || '').replace(/[.\s]/g, '').toLowerCase();
+    if (r && !r.includes('-') && r.length > 1) r = r.slice(0, -1) + '-' + r.slice(-1);
+    return r;
+}
+async function buscarCorreoPorRut(rut) {
+    const n = normalizarRut(rut);
+    const variantes = [...new Set([n, n.replace(/k$/, 'K')])];
+    for (const v of variantes) {
+        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", { rut_input: v });
+        if (!error && data) return data;
+    }
+    return null;
+}
+function ocultarCorreo(correo) {
+    const [usuario, dominio] = String(correo || '').split('@');
+    return dominio ? `${usuario.charAt(0)}***@${dominio}` : '';
+}
 
+let esperaEnvio = null;
+function iniciarEspera(segundos) {
+    const btn = document.getElementById("btnEnviar");
+    clearInterval(esperaEnvio);
+    let quedan = segundos;
+    const pintar = () => {
+        if (quedan <= 0) { clearInterval(esperaEnvio); btn.disabled = false; btn.textContent = "Enviar enlace"; return; }
+        btn.disabled = true;
+        btn.textContent = `Podrás reenviar en ${quedan} s`;
+        quedan--;
+    };
+    pintar();
+    esperaEnvio = setInterval(pintar, 1000);
+}
 
 async function enviarCorreo() {
-    const email = document.getElementById("email").value.trim();
+    const entrada = document.getElementById("email").value.trim();
     const msg = document.getElementById("msg");
-    
-    // Limpiar clases anteriores
+    const btn = document.getElementById("btnEnviar");
+    const mostrar = (texto, ok) => { msg.textContent = (ok ? "✅ " : "❌ ") + texto; msg.className = ok ? "msg-success" : "msg-error"; };
+
     msg.textContent = "";
     msg.className = "";
+    if (!entrada) { mostrar("Escribe tu correo o tu RUT.", false); return; }
 
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
 
-    if (!email) {
-        msg.textContent = "⚠️ Ingresa tu correo electrónico.";
-        msg.classList.add("msg-error");
+    let email = entrada;
+    let aviso = "";
+    if (!entrada.includes("@")) {
+        email = await buscarCorreoPorRut(entrada);
+        if (!email) {
+            mostrar("Ese RUT no tiene cuenta. Revisa que esté bien escrito o regístrate.", false);
+            btn.disabled = false; btn.textContent = "Enviar enlace";
+            return;
+        }
+        aviso = ` a ${ocultarCorreo(email)}`;
+    } else if (!/^\S+@\S+\.\S+$/.test(entrada)) {
+        mostrar("El correo no es válido.", false);
+        btn.disabled = false; btn.textContent = "Enviar enlace";
         return;
     }
 
-    // 🔥 Método correcto para enviar enlace de reset password
-    const { data, error } = await supabaseClient.auth.signInWithOtp({
-        email: email,
-        options: {
-            emailRedirectTo: new URL("reset.html", window.location.href).href, // misma carpeta donde está publicada esta versión
-            shouldCreateUser: false,
-            flowType: "recovery"    // 🔥 Clave para reset password
-        }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: new URL("reset.html", window.location.href).href   // misma carpeta donde está publicada esta versión
     });
 
     if (error) {
-        msg.textContent = "❌ Error: " + error.message;
-        msg.classList.add("msg-error");
+        mostrar(traducirErrorAuth(error), false);
+        const espera = String(error.message || "").match(/after (\d+) seconds?/i);
+        iniciarEspera(espera ? Number(espera[1]) : 10);
         return;
     }
 
-    msg.classList.add("msg-success");
-    msg.textContent = "✅ Correo enviado correctamente. Revisa tu bandeja de entrada o spam para continuar.";
+    mostrar(`Listo. Si la cuenta existe, te enviamos el enlace${aviso}. Puede tardar unos minutos: revisa también spam o correo no deseado. El enlace sirve una sola vez.`, true);
+    iniciarEspera(60);
 }
+document.getElementById("email").addEventListener("keydown", e => { if (e.key === "Enter") enviarCorreo(); });
 </script>
 </body>
 </html>

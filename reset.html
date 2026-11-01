@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-10-30d"></script>
+<script src="supabase.js?v=2026-11-01a"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -23,16 +23,16 @@
 <main class="page">
     <section class="panel container">
         <h2>Crea tu nueva contraseña</h2>
-        <p class="muted">Debe tener al menos 8 caracteres.</p>
-        <form onsubmit="event.preventDefault(); cambiarPassword();">
+        <p class="muted">Debe tener al menos 6 caracteres.</p>
+        <form id="formPass" onsubmit="event.preventDefault(); cambiarPassword();">
             <label for="nuevaPass">Nueva contraseña</label>
             <div class="password-container">
-                <input type="password" id="nuevaPass" placeholder="Mínimo 8 caracteres" onkeyup="checkPasswordMatch()" required minlength="8" autocomplete="new-password"/>
+                <input type="password" id="nuevaPass" placeholder="Mínimo 6 caracteres" onkeyup="checkPasswordMatch()" required minlength="6" autocomplete="new-password"/>
                 <span class="toggle-password" onclick="toggleVisibility('nuevaPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
             </div>
             <label for="confirmarPass">Confirma la contraseña</label>
             <div class="password-container">
-                <input type="password" id="confirmarPass" placeholder="Repite la contraseña" onkeyup="checkPasswordMatch()" required minlength="8" autocomplete="new-password"/>
+                <input type="password" id="confirmarPass" placeholder="Repite la contraseña" onkeyup="checkPasswordMatch()" required minlength="6" autocomplete="new-password"/>
                 <span class="toggle-password" onclick="toggleVisibility('confirmarPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
             </div>
             <div class="message-spacer"><p id="password-match-message"></p></div>
@@ -40,6 +40,7 @@
         </form>
         <button class="btn-secondary" id="btnLogin" onclick="irLogin()" disabled>Ir a iniciar sesión</button>
         <p id="msg"></p>
+        <p class="link-row hidden" id="pedirOtro"><a href="recuperar.html">Pedir un enlace nuevo</a></p>
     </section>
 </main>
 <script>
@@ -51,26 +52,32 @@ function showMessage(text, isError = false) {
     msg.className = isError ? "msg-error" : "msg-success";
 }
 
+function enlaceNoValido(texto) {
+    showMessage(texto, true);
+    document.getElementById("formPass").classList.add("hidden");
+    document.getElementById("btnLogin").classList.add("hidden");
+    document.getElementById("pedirOtro").classList.remove("hidden");
+}
+
 async function init() {
-    const hash = window.location.hash;
+    const enlace = ENLACE_CORREO;   // datos del enlace, leídos antes de que el cliente los borre
+    if (window.location.hash || window.location.search) history.replaceState(null, "", window.location.pathname);
 
-    if (!hash) {
-        showMessage("No se detectó enlace válido.", true);
+    if (enlace.error) {
+        enlaceNoValido(enlace.error === "otp_expired"
+            ? "El enlace ya fue usado o venció. Pide uno nuevo (el enlace sirve una sola vez)."
+            : "El enlace no es válido. Pide uno nuevo.");
         return;
     }
 
-    const params = new URLSearchParams(hash.slice(1));
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-
-    if (!access_token || !refresh_token) {
-        showMessage("El enlace es inválido o expiró.", true);
-        return;
+    // El cliente de Supabase normalmente ya abrió la sesión con el enlace
+    let { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session && enlace.access_token && enlace.refresh_token) {
+        const r = await supabaseClient.auth.setSession({ access_token: enlace.access_token, refresh_token: enlace.refresh_token });
+        session = r.data.session;
     }
-
-    const { error } = await supabaseClient.auth.setSession({ access_token, refresh_token });
-    if (error) {
-        showMessage("Error al iniciar sesión desde el enlace.", true);
+    if (!session) {
+        enlaceNoValido("Abre esta página desde el enlace que te llegó al correo. Si ya lo usaste, pide uno nuevo.");
         return;
     }
 }
@@ -102,13 +109,15 @@ async function cambiarPassword() {
     const { error } = await supabaseClient.auth.updateUser({ password: nuevaPass });
     
     if (error) {
-        showMessage("Error al actualizar contraseña: " + error.message, true);
+        showMessage(traducirErrorAuth(error), true);
         btnActualizar.disabled = false; // Re-habilitar si falla
         return;
     }
 
-    showMessage("Contraseña actualizada correctamente.");
+    showMessage("Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.");
+    await supabaseClient.auth.signOut();
     btnLogin.disabled = false; // 🔹 Habilita el botón de Volver al Login
+    setTimeout(irLogin, 3000);
 }
 
 function irLogin() {

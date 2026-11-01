@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-10-30d">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-10-30d"></script>
+<script src="supabase.js?v=2026-11-01a"></script>
 </head>
 <body data-modulo="acceso">
 <main class="page">
@@ -48,6 +48,13 @@
         </div>
         <button class="btn-primary" id="btnLogin" onclick="login()">Ingresar</button>
         <p id="loginMsg"></p>
+        <div class="notice hidden" id="reenviarBox">
+            <p id="reenviarTexto"><b>¿No te llegó el correo de confirmación?</b> Revisa también la carpeta de spam o correo no deseado. Si no está, pide uno nuevo.</p>
+            <label for="reenviarEmail">Correo con que te registraste</label>
+            <input type="email" id="reenviarEmail" placeholder="nombre@inacapmail.cl" autocomplete="email">
+            <button class="btn-secondary" id="btnReenviar" onclick="reenviarConfirmacion()">Reenviar correo de confirmación</button>
+            <p id="reenviarMsg" class="msg"></p>
+        </div>
         <p class="link-row"><a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a></p>
         <p class="link-row register-link"><a onclick="showRegister()">¿No tienes cuenta? Regístrate</a></p>
         <p class="link-row"><a onclick="showWelcome()">Volver al inicio</a></p>
@@ -89,6 +96,7 @@
         <p id="password-match-message"></p>
         <button class="btn-primary" id="btnRegister" onclick="registrar()">Crear cuenta</button>
         <p id="mensaje"></p>
+        <p class="link-row hidden" id="registroReenviar"><a onclick="abrirReenvio(regEmail.value.trim())">¿No te llegó el correo? Reenviar confirmación</a></p>
         <p class="link-row"><a onclick="showLogin()">Ya tengo cuenta, iniciar sesión</a></p>
         <p class="link-row"><a onclick="showWelcome()">Volver al inicio</a></p>
     </section>
@@ -99,20 +107,112 @@
 // ----------------------------------------
 
 // ----------------------------------------
-// REDIRECCIÓN DESPUÉS DE CONFIRMAR EMAIL
+// VUELTA DESDE EL CORREO DE CONFIRMACIÓN
 // ----------------------------------------
-async function handleRedirect() {
-    const hash = window.location.hash;
-    if (hash.includes("access_token")) {
-        const params = new URLSearchParams(hash.slice(1));
-        const access_token = params.get("access_token");
-        const refresh_token = params.get("refresh_token");
-
-        await supabaseClient.auth.setSession({ access_token, refresh_token });
-        window.location.href = "menu.html";
-    }
+function mensajeLogin(texto, tipo) {
+    const msg = document.getElementById("loginMsg");
+    msg.textContent = texto ? (tipo === "error" ? "❌ " : tipo === "ok" ? "✅ " : "⏳ ") + texto : "";
+    msg.className = "msg" + (tipo === "error" ? " msg-error" : tipo === "ok" ? " msg-success" : "");
 }
-handleRedirect();
+
+async function handleRedirect() {
+    const enlace = ENLACE_CORREO;
+    if (!enlace.error && !enlace.access_token) return;
+
+    // Si alguien abrió aquí un enlace de recuperación, se envía a la página correcta
+    if (enlace.type === "recovery" && enlace.access_token) {
+        window.location.replace("reset.html" + enlace.hash);
+        return;
+    }
+
+    history.replaceState(null, "", window.location.pathname);   // limpia la dirección
+    showLogin();
+
+    if (enlace.error) {
+        if (enlace.error === "otp_expired" || /expired|invalid/i.test(enlace.error_description || "")) {
+            mensajeLogin("El enlace del correo ya fue usado o venció.", "error");
+            abrirReenvio("", "<b>Prueba primero iniciar sesión:</b> con correos INACAP es común que Outlook revise el enlace antes que tú y la cuenta quede confirmada igual. Si al entrar te dice que falta confirmar, pide un correo nuevo aquí.");
+        } else {
+            mensajeLogin("No se pudo confirmar tu correo con ese enlace.", "error");
+            abrirReenvio("");
+        }
+        return;
+    }
+
+    mensajeLogin("Confirmando tu correo…");
+    let { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session && enlace.refresh_token) {
+        const r = await supabaseClient.auth.setSession({ access_token: enlace.access_token, refresh_token: enlace.refresh_token });
+        session = r.data.session;
+    }
+    if (!session) {
+        mensajeLogin("Tu correo quedó confirmado. Ahora inicia sesión con tu correo y contraseña.", "ok");
+        return;
+    }
+
+    const perfil = await activarPerfil(session.user, texto => mensajeLogin(texto, "error"));
+    if (!perfil) return;
+    localStorage.setItem("currentUser", JSON.stringify(perfil));
+    mensajeLogin(`¡Correo confirmado! Bienvenido(a), ${perfil.nombre}`, "ok");
+    setTimeout(() => window.location.href = "menu.html", 1500);
+}
+
+// ----------------------------------------
+// REENVIAR CORREO DE CONFIRMACIÓN
+// ----------------------------------------
+const TEXTO_REENVIO = document.getElementById("reenviarTexto").innerHTML;
+function abrirReenvio(email, textoAyuda) {
+    showLogin();
+    document.getElementById("reenviarTexto").innerHTML = textoAyuda || TEXTO_REENVIO;
+    if (email) document.getElementById("reenviarEmail").value = email;
+    document.getElementById("reenviarBox").classList.remove("hidden");
+}
+
+let esperaReenvio = null;
+async function reenviarConfirmacion() {
+    const email = document.getElementById("reenviarEmail").value.trim();
+    const msg = document.getElementById("reenviarMsg");
+    const btn = document.getElementById("btnReenviar");
+    const mostrar = (texto, ok) => { msg.textContent = (ok ? "✅ " : "❌ ") + texto; msg.className = "msg " + (ok ? "msg-success" : "msg-error"); };
+
+    if (!/^\S+@\S+\.\S+$/.test(email)) { mostrar("Escribe el correo con que te registraste.", false); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
+    const { error } = await supabaseClient.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: new URL("index.html", window.location.href).href }
+    });
+
+    if (error) {
+        mostrar(traducirErrorAuth(error), false);
+        const espera = String(error.message || "").match(/after (\d+) seconds?/i);
+        iniciarEsperaReenvio(espera ? Number(espera[1]) : 10);
+        return;
+    }
+    mostrar("Listo. Te enviamos un nuevo correo; puede tardar unos minutos. Revisa también spam o correo no deseado.", true);
+    iniciarEsperaReenvio(60);
+}
+
+function iniciarEsperaReenvio(segundos) {
+    const btn = document.getElementById("btnReenviar");
+    clearInterval(esperaReenvio);
+    let quedan = segundos;
+    const pintar = () => {
+        if (quedan <= 0) {
+            clearInterval(esperaReenvio);
+            btn.disabled = false;
+            btn.textContent = "Reenviar correo de confirmación";
+            return;
+        }
+        btn.disabled = true;
+        btn.textContent = `Podrás reenviar en ${quedan} s`;
+        quedan--;
+    };
+    pintar();
+    esperaReenvio = setInterval(pintar, 1000);
+}
 
 // ----------------------------------------
 // NAVEGACIÓN
@@ -261,11 +361,12 @@ async function registrar() {
 
 
     if (e1) {
-        showError(e1.message.includes("already registered") ? "El correo ya está registrado." : `Error: ${e1.message}`);
+        showError(traducirErrorAuth(e1));
         return;
     }
 
-    showSuccess("Registro exitoso. Revisa tu correo para confirmar. Tu perfil se activará al iniciar sesión.");
+    showSuccess("Registro exitoso. Te enviamos un correo para confirmar tu cuenta: ábrelo y presiona el enlace (revisa también spam o correo no deseado).");
+    document.getElementById("registroReenviar").classList.remove("hidden");
 }
 
 // ----------------------------------------
@@ -291,6 +392,50 @@ const bloquearBotonLogin = () => bloquearBoton("btnLogin", "Ingresando...");
 const desbloquearBotonLogin = () => desbloquearBoton("btnLogin", "Ingresar");
 const bloquearBotonRegistro = () => bloquearBoton("btnRegister", "Registrando...");
 const desbloquearBotonRegistro = () => desbloquearBoton("btnRegister", "Crear cuenta");
+
+// Busca el perfil del alumno y, si es su primera entrada, lo crea con los datos del registro.
+// Devuelve el perfil, o null si no se pudo (en ese caso ya mostró el error y cerró la sesión).
+async function activarPerfil(user, showError) {
+    const email = user.email;
+    // Primero por el correo exacto y, si no aparece, sin importar mayúsculas
+    // (algunos perfiles antiguos tienen el correo guardado con mayúscula inicial).
+    // Las reglas de la base de datos solo dejan ver el propio perfil, así que no hay riesgo de mezclar cuentas.
+    let { data: perfil } = await supabaseClient
+        .from("usuarios").select("*").eq("email", email).maybeSingle();
+    if (!perfil) {
+        ({ data: perfil } = await supabaseClient
+            .from("usuarios").select("*").ilike("email", email).maybeSingle());
+    }
+    if (perfil) return perfil;
+
+    const meta = user.user_metadata || {};
+    const { data: nuevoPerfil, error: e2 } =
+        await supabaseClient.from("usuarios")
+            .insert([{
+                nombre: meta.full_name,
+                rut: normalizarRut(meta.rut_val),   // corrige RUT registrados con puntos
+                carrera: meta.carrera_val,
+                telefono: meta.telefono_val,
+                email
+            }])
+            .select()
+            .single();
+
+    if (e2) {
+        console.error("Error al activar perfil:", e2);
+        if (e2.code === "23505" && /rut/i.test(e2.message || "")) {
+            const otra = await buscarCorreoPorRut(meta.rut_val);
+            showError(`Tu RUT ya está registrado con otra cuenta${otra ? ` (${ocultarCorreo(otra)})` : ""}. Ingresa con esa cuenta o pide ayuda en el pañol.`);
+        } else if (e2.code === "23514") {
+            showError("Tu RUT quedó mal registrado y no se pudo activar tu perfil. Pide ayuda en el pañol.");
+        } else {
+            showError("No se pudo activar tu perfil. Intenta de nuevo o pide ayuda en el pañol.");
+        }
+        await supabaseClient.auth.signOut();
+        return null;
+    }
+    return nuevoPerfil;
+}
 
 async function login() {
     bloquearBotonLogin(); // ⛔ evita spam
@@ -342,59 +487,19 @@ async function login() {
         });
 
     if (error) {
-        showError(
-            error.message.includes("Email not confirmed")
-                ? "Debes confirmar tu correo antes de entrar."
-                : "Credenciales incorrectas."
-        );
+        if (/email not confirmed/i.test(error.message || "")) {
+            showError("Debes confirmar tu correo antes de entrar. Busca el correo de confirmación (revisa spam) o pide uno nuevo aquí abajo.");
+            abrirReenvio(emailParaLogin);
+        } else if (/invalid login credentials/i.test(error.message || "")) {
+            showError("Credenciales incorrectas.");
+        } else {
+            showError(traducirErrorAuth(error));
+        }
         return;
     }
 
-    // Buscar el perfil: primero por el correo exacto y, si no aparece, sin importar mayúsculas
-    // (algunos perfiles antiguos tienen el correo guardado con mayúscula inicial).
-    // Las reglas de la base de datos solo dejan ver el propio perfil, así que no hay riesgo de mezclar cuentas.
-    let { data: perfil } = await supabaseClient
-        .from("usuarios")
-        .select("*")
-        .eq("email", emailParaLogin)
-        .maybeSingle();
-    if (!perfil) {
-        ({ data: perfil } = await supabaseClient
-            .from("usuarios")
-            .select("*")
-            .ilike("email", emailParaLogin)
-            .maybeSingle());
-    }
-
-    if (!perfil) {
-        const meta = authData.user.user_metadata;
-        const { data: nuevoPerfil, error: e2 } =
-            await supabaseClient.from("usuarios")
-                .insert([{
-                    nombre: meta.full_name,
-                    rut: normalizarRut(meta.rut_val),   // corrige RUT registrados con puntos
-                    carrera: meta.carrera_val,
-                    telefono: meta.telefono_val,
-                    email: emailParaLogin
-                }])
-                .select()
-                .single();
-
-        if (e2) {
-            console.error("Error al activar perfil:", e2);
-            if (e2.code === "23505" && /rut/i.test(e2.message || "")) {
-                const otra = await buscarCorreoPorRut(meta.rut_val);
-                showError(`Tu RUT ya está registrado con otra cuenta${otra ? ` (${ocultarCorreo(otra)})` : ""}. Ingresa con esa cuenta o pide ayuda en el pañol.`);
-            } else if (e2.code === "23514") {
-                showError("Tu RUT quedó mal registrado y no se pudo activar tu perfil. Pide ayuda en el pañol.");
-            } else {
-                showError("No se pudo activar tu perfil. Intenta de nuevo o pide ayuda en el pañol.");
-            }
-            await supabaseClient.auth.signOut();
-            return;
-        }
-        perfil = nuevoPerfil;
-    }
+    const perfil = await activarPerfil(authData.user, showError);
+    if (!perfil) return;
 
     localStorage.setItem("currentUser", JSON.stringify(perfil));
     showSuccess(`Bienvenido, ${perfil.nombre}`);
@@ -405,6 +510,7 @@ async function login() {
 
 
 showWelcome();
+handleRedirect();
 
 // ----------------------------------------
 // VISIBILIDAD DE CONTRASEÑAS

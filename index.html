@@ -130,6 +130,31 @@ function showRegister(){ hideAll(); registerBox.classList.remove("hidden"); }
 // VALIDACIÓN RUT
 // ----------------------------------------
 function limpiarRut(rut){ return rut.replace(/\./g,'').replace(/\s/g,'').toUpperCase(); }
+
+// RUT tal como lo guarda la base de datos: sin puntos ni espacios, con guion y "k" minúscula.
+// Ej: "12.345.678-K" -> "12345678-k"
+function normalizarRut(rut) {
+    let r = String(rut || '').replace(/[.\s]/g, '').toLowerCase();
+    if (r && !r.includes('-') && r.length > 1) r = r.slice(0, -1) + '-' + r.slice(-1);
+    return r;
+}
+
+// Algunos RUT antiguos quedaron con "K" mayúscula: se prueban ambas formas
+async function buscarCorreoPorRut(rut) {
+    const n = normalizarRut(rut);
+    const variantes = [...new Set([n, n.replace(/k$/, 'K')])];
+    for (const v of variantes) {
+        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", { rut_input: v });
+        if (!error && data) return data;
+    }
+    return null;
+}
+
+// "javier.suarez@gmail.com" -> "j***@gmail.com"
+function ocultarCorreo(correo) {
+    const [usuario, dominio] = String(correo || '').split('@');
+    return dominio ? `${usuario.charAt(0)}***@${dominio}` : '';
+}
 function dvT(rut){ let M=0,S=1; for(;rut;rut=Math.floor(rut/10)) S=(S+rut%10*(9-M++%6))%11; return S?S-1:'K'; }
 function validarRutCompleto(rutCompleto){
     if (!rutCompleto)
@@ -206,6 +231,13 @@ async function registrar() {
         return;
     }
 
+    // Evitar cuentas duplicadas: si el RUT ya tiene cuenta, se avisa antes de registrar
+    const correoExistente = await buscarCorreoPorRut(rut);
+    if (correoExistente) {
+        showError(`Este RUT ya está registrado con la cuenta ${ocultarCorreo(correoExistente)}. Inicia sesión con esa cuenta o usa "¿Olvidaste tu contraseña?".`);
+        return;
+    }
+
     const dominiosPermitidos = ["@gmail.com", "@hotmail.com", "@outlook.com", "@icloud.com", "@inacapmail.cl", "@inacap.cl"];
     if (!dominiosPermitidos.some(d => email.endsWith(d))) {
         showError("El correo ingresado no es válido o no está permitido.");
@@ -220,7 +252,7 @@ async function registrar() {
             emailRedirectTo: new URL("index.html", window.location.href).href, // misma carpeta donde está publicada esta versión
             data: { 
                 full_name: nombre,
-                rut_val: rut,
+                rut_val: normalizarRut(rut),   // sin puntos: así lo exige la base de datos
                 carrera_val: carrera,
                 telefono_val: telefono
             }
@@ -294,17 +326,13 @@ async function login() {
             return;
         }
 
-        const { data, error } = await supabaseClient.rpc(
-            "buscar_email_por_rut",
-            { rut_input: input }
-        );
-
-        if (error || !data) {
-            showError("El RUT no está registrado.");
+        const correo = await buscarCorreoPorRut(input);   // acepta el RUT con o sin puntos
+        if (!correo) {
+            showError("El RUT no está registrado. Si aún no tienes cuenta, regístrate.");
             return;
         }
 
-        emailParaLogin = data;
+        emailParaLogin = correo;
     }
 
     const { data: authData, error } =
@@ -322,11 +350,21 @@ async function login() {
         return;
     }
 
+    // Buscar el perfil: primero por el correo exacto y, si no aparece, sin importar mayúsculas
+    // (algunos perfiles antiguos tienen el correo guardado con mayúscula inicial).
+    // Las reglas de la base de datos solo dejan ver el propio perfil, así que no hay riesgo de mezclar cuentas.
     let { data: perfil } = await supabaseClient
         .from("usuarios")
         .select("*")
         .eq("email", emailParaLogin)
-        .single();
+        .maybeSingle();
+    if (!perfil) {
+        ({ data: perfil } = await supabaseClient
+            .from("usuarios")
+            .select("*")
+            .ilike("email", emailParaLogin)
+            .maybeSingle());
+    }
 
     if (!perfil) {
         const meta = authData.user.user_metadata;
@@ -334,7 +372,7 @@ async function login() {
             await supabaseClient.from("usuarios")
                 .insert([{
                     nombre: meta.full_name,
-                    rut: meta.rut_val,
+                    rut: normalizarRut(meta.rut_val),   // corrige RUT registrados con puntos
                     carrera: meta.carrera_val,
                     telefono: meta.telefono_val,
                     email: emailParaLogin
@@ -343,7 +381,16 @@ async function login() {
                 .single();
 
         if (e2) {
-            showError("Error al activar perfil.");
+            console.error("Error al activar perfil:", e2);
+            if (e2.code === "23505" && /rut/i.test(e2.message || "")) {
+                const otra = await buscarCorreoPorRut(meta.rut_val);
+                showError(`Tu RUT ya está registrado con otra cuenta${otra ? ` (${ocultarCorreo(otra)})` : ""}. Ingresa con esa cuenta o pide ayuda en el pañol.`);
+            } else if (e2.code === "23514") {
+                showError("Tu RUT quedó mal registrado y no se pudo activar tu perfil. Pide ayuda en el pañol.");
+            } else {
+                showError("No se pudo activar tu perfil. Intenta de nuevo o pide ayuda en el pañol.");
+            }
+            await supabaseClient.auth.signOut();
             return;
         }
         perfil = nuevoPerfil;

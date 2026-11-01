@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01c">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01d">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01c"></script>
+<script src="supabase.js?v=2026-11-01d"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -23,6 +23,9 @@
 <main class="page">
     <section class="panel container">
         <h2>Crea tu nueva contraseña</h2>
+        <div class="notice notice-pending clave-obligatoria hidden" id="avisoObligatorio">
+            <p><b>Entraste con una clave temporal.</b> Para seguir usando la app, crea una contraseña propia que puedas recordar.</p>
+        </div>
         <p class="muted">Debe tener al menos 6 caracteres.</p>
         <div class="hidden" id="pasoBoton">
             <p>Presiona el botón para continuar y crear tu nueva contraseña.</p>
@@ -63,8 +66,14 @@ function enlaceNoValido(texto) {
     document.getElementById("pedirOtro").classList.remove("hidden");
 }
 
+const OBLIGATORIO = new URLSearchParams(ENLACE_CORREO.search || "").get("obligatorio") === "1";
+
 async function init() {
     const enlace = ENLACE_CORREO;   // datos del enlace, leídos antes de que el cliente los borre
+    if (OBLIGATORIO) {
+        document.getElementById("avisoObligatorio").classList.remove("hidden");
+        document.getElementById("btnLogin").classList.add("hidden");
+    }
     if (window.location.hash || window.location.search) history.replaceState(null, "", window.location.pathname);
 
     if (enlace.error) {
@@ -139,6 +148,17 @@ async function cambiarPassword() {
     if (error) {
         showMessage(traducirErrorAuth(error), true);
         btnActualizar.disabled = false; // Re-habilitar si falla
+        return;
+    }
+
+    // Quita la marca de "clave temporal" (si la tenía)
+    await supabaseClient.rpc("marcar_clave_cambiada");
+
+    if (OBLIGATORIO) {
+        await supabaseClient.auth.refreshSession();   // la sesión deja de tener la marca
+        try { sessionStorage.setItem("claveCambiada", "1"); } catch (e) {}
+        showMessage("Contraseña creada. Ya puedes usar la app.");
+        setTimeout(() => window.location.href = "menu.html", 1500);
         return;
     }
 

@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01c">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01d">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01c"></script>
+<script src="supabase.js?v=2026-11-01d"></script>
 </head>
 <body data-modulo="acceso">
 <main class="page">
@@ -574,6 +574,14 @@ async function login() {
     if (!perfil) return;
 
     localStorage.setItem("currentUser", JSON.stringify(perfil));
+
+    // Entró con una clave temporal asignada en el pañol: debe crear su contraseña ahora
+    if (authData.user.app_metadata && authData.user.app_metadata.debe_cambiar_clave) {
+        showSuccess("Entraste con una clave temporal. Ahora crea tu propia contraseña.");
+        setTimeout(() => window.location.href = "reset.html?obligatorio=1", 1200);
+        return;
+    }
+
     showSuccess(`Bienvenido, ${perfil.nombre}`);
 
     // ⏳ NO desbloqueamos: redirigimos

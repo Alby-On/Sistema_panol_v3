@@ -22,6 +22,15 @@ function fechaSupabase(valor) {
     return new Date(tieneZona ? texto : texto + 'Z');
 }
 
+// Si entró con una clave temporal (asignada en el pañol), debe crear su contraseña antes de seguir
+(async () => {
+    if (/(index|reset|recuperar)\.html$|\/$/.test(window.location.pathname)) return;
+    try { if (sessionStorage.getItem("claveCambiada") === "1") return; } catch (e) {}   // ya la cambió en esta visita
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user && session.user.app_metadata && session.user.app_metadata.debe_cambiar_clave)
+        window.location.replace("reset.html?obligatorio=1");
+})();
+
 // Traduce al español los errores de inicio de sesión, registro y correos de Supabase.
 function traducirErrorAuth(error) {
     if (!error) return "";

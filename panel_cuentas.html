@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#12304B">
+    <title>Ayuda con contraseñas | Pañol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js?v=2026-11-01d"></script>
+</head>
+<body data-modulo="cuentas">
+<header class="appbar">
+    <div class="appbar-inner">
+        <a href="menu.html" class="appbar-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Menú</a>
+        <div class="appbar-title"><h1>Ayuda con contraseñas</h1><p>Pañol Electricidad y Automatización</p></div>
+    </div>
+</header>
+
+<main class="page cuentas" id="contenido" hidden>
+    <section class="panel">
+        <h2>Restablecer contraseña de un alumno</h2>
+        <p class="muted">Para alumnos que no recuerdan su contraseña o a quienes no les llega el correo. Se le asigna una <b>clave temporal</b> y, al entrar con ella, la app le pide crear una contraseña nueva. Si la cuenta no estaba activa, también queda activada.</p>
+        <form id="formClave" onsubmit="event.preventDefault(); buscarCuentaClave();">
+            <label for="claveBuscar">RUT o correo del alumno</label>
+            <div class="clave-buscar">
+                <input type="text" id="claveBuscar" placeholder="12345678-5 o nombre@inacapmail.cl" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="submit" class="btn-sm" id="btnClaveBuscar">Buscar</button>
+            </div>
+        </form>
+        <div id="claveResultado"></div>
+    </section>
+
+    <section class="panel cuentas-ayuda">
+        <h3>Cómo funciona</h3>
+        <ol>
+            <li>Busca al alumno por su RUT o su correo.</li>
+            <li>Revisa que el nombre sea el correcto y toca <b>Restablecer contraseña</b>.</li>
+            <li>Dile la clave temporal de 6 dígitos. Entra con su RUT o correo y esa clave.</li>
+            <li>La app le pedirá crear su propia contraseña antes de seguir.</li>
+        </ol>
+    </section>
+</main>
+
+<script>
+const escClave = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cuentaClave = null;
+
+async function buscarCuentaClave() {
+    const texto = document.getElementById('claveBuscar').value.trim();
+    const res = document.getElementById('claveResultado');
+    cuentaClave = null;
+    if (!texto) { res.innerHTML = '<p class="msg msg-error">❌ Escribe el RUT o el correo del alumno.</p>'; return; }
+    res.innerHTML = '<p class="muted">Buscando…</p>';
+    const { data, error } = await supabaseClient.rpc('admin_restablecer_password', { p_identificador: texto, p_aplicar: false });
+    if (error) { res.innerHTML = `<p class="msg msg-error">❌ ${error.code === '42501' ? 'Solo un administrador puede usar esta opción.' : 'No se pudo buscar. Inténtalo de nuevo.'}</p>`; return; }
+    if (!data || !data.length) { res.innerHTML = '<p class="msg msg-error">❌ No hay ninguna cuenta con ese RUT o correo.</p>'; return; }
+    cuentaClave = data[0];
+    res.innerHTML = `
+        <div class="clave-ficha">
+            <p class="clave-nombre">${escClave(cuentaClave.nombre || 'Sin nombre')}</p>
+            <p class="muted">${escClave(cuentaClave.email)}${cuentaClave.rut ? ' · RUT ' + escClave(cuentaClave.rut) : ''}</p>
+            <p><span class="chip ${cuentaClave.activa ? 'chip-done' : 'chip-pending'}">${cuentaClave.activa ? 'Cuenta activa' : 'Cuenta no activa (no confirmó el correo)'}</span></p>
+        </div>
+        <p class="muted">Su contraseña actual dejará de servir.</p>
+        <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="limpiarClave()">Cancelar</button>
+            <button type="button" id="btnClaveAplicar" onclick="aplicarClave()">${cuentaClave.activa ? 'Restablecer contraseña' : 'Activar y asignar clave'}</button>
+        </div>`;
+}
+
+async function aplicarClave() {
+    if (!cuentaClave) return;
+    const btn = document.getElementById('btnClaveAplicar');
+    btn.disabled = true;
+    btn.textContent = 'Restableciendo…';
+    const { data, error } = await supabaseClient.rpc('admin_restablecer_password', { p_identificador: cuentaClave.email, p_aplicar: true });
+    const res = document.getElementById('claveResultado');
+    if (error || !data || !data.length || !data[0].clave_temporal) {
+        res.innerHTML = '<p class="msg msg-error">❌ No se pudo restablecer la contraseña. Inténtalo de nuevo.</p>';
+        return;
+    }
+    const r = data[0];
+    res.innerHTML = `
+        <div class="clave-lista">
+            <p>Listo. Dile a <b>${escClave(r.nombre || r.email)}</b> que entre con su RUT o correo y esta clave:</p>
+            <p class="clave-temporal num">${escClave(r.clave_temporal)}</p>
+            <p class="muted">Al entrar, la app le pedirá crear su propia contraseña. Esta clave no se vuelve a mostrar.</p>
+        </div>
+        <div class="btn-row"><button type="button" onclick="limpiarClave()">Listo, buscar otro alumno</button></div>`;
+}
+
+function limpiarClave() {
+    cuentaClave = null;
+    document.getElementById('claveResultado').innerHTML = '';   // no dejar la clave a la vista
+    const campo = document.getElementById('claveBuscar');
+    campo.value = '';
+    campo.focus();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Solo administradores: el rol se consulta a la base de datos, no al navegador
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    const { data: yo } = await supabaseClient.from('usuarios').select('rol').ilike('email', session.user.email).maybeSingle();
+    if (!yo || yo.rol !== 'admin') { window.location.href = 'menu.html'; return; }
+    document.getElementById('contenido').hidden = false;
+    document.getElementById('claveBuscar').focus();
+});
+</script>
+</body>
+</html>

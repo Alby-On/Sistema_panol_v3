@@ -49,11 +49,13 @@ function datosEnlaceCorreo() {
     const q = new URLSearchParams(window.location.search);
     const leer = k => h.get(k) || q.get(k);
     return {
+        token_hash: q.get("token_hash"),   // enlaces nuevos: se confirman al tocar un botón
         access_token: h.get("access_token"),
         refresh_token: h.get("refresh_token"),
         type: leer("type"),
         error: leer("error_code") || leer("error"),
         error_description: leer("error_description"),
-        hash: window.location.hash
+        hash: window.location.hash,
+        search: window.location.search
     };
 }

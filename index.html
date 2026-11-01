@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01a">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01b">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01a"></script>
+<script src="supabase.js?v=2026-11-01b"></script>
 </head>
 <body data-modulo="acceso">
 <main class="page">
@@ -58,6 +58,13 @@
         <p class="link-row"><a href="recuperar.html" class="forgot-link">¿Olvidaste tu contraseña?</a></p>
         <p class="link-row register-link"><a onclick="showRegister()">¿No tienes cuenta? Regístrate</a></p>
         <p class="link-row"><a onclick="showWelcome()">Volver al inicio</a></p>
+    </section>
+
+    <section class="panel hidden" id="confirmBox">
+        <h2>Confirma tu correo</h2>
+        <p>Presiona el botón para activar tu cuenta del Sistema de Pañol.</p>
+        <button class="btn-primary" id="btnConfirmar" onclick="confirmarCorreo()">Confirmar mi correo</button>
+        <p id="confirmMsg" class="msg"></p>
     </section>
 
     <section class="panel hidden" id="registerBox">
@@ -117,7 +124,16 @@ function mensajeLogin(texto, tipo) {
 
 async function handleRedirect() {
     const enlace = ENLACE_CORREO;
-    if (!enlace.error && !enlace.access_token) return;
+    if (!enlace.error && !enlace.access_token && !enlace.token_hash) return;
+
+    // Enlace nuevo (con botón): Outlook revisa los enlaces sin tocar botones, así no se gasta antes de tiempo
+    if (enlace.token_hash) {
+        if (enlace.type === "recovery") { window.location.replace("reset.html" + enlace.search); return; }
+        history.replaceState(null, "", window.location.pathname);
+        hideAll();
+        confirmBox.classList.remove("hidden");
+        return;
+    }
 
     // Si alguien abrió aquí un enlace de recuperación, se envía a la página correcta
     if (enlace.type === "recovery" && enlace.access_token) {
@@ -154,6 +170,40 @@ async function handleRedirect() {
     if (!perfil) return;
     localStorage.setItem("currentUser", JSON.stringify(perfil));
     mensajeLogin(`¡Correo confirmado! Bienvenido(a), ${perfil.nombre}`, "ok");
+    setTimeout(() => window.location.href = "menu.html", 1500);
+}
+
+async function confirmarCorreo() {
+    const btn = document.getElementById("btnConfirmar");
+    const msg = document.getElementById("confirmMsg");
+    btn.disabled = true;
+    btn.textContent = "Confirmando…";
+    msg.textContent = "";
+    msg.className = "msg";
+
+    const { data, error } = await supabaseClient.auth.verifyOtp({
+        token_hash: ENLACE_CORREO.token_hash,
+        type: ENLACE_CORREO.type || "email"
+    });
+
+    if (error || !data.session) {
+        console.error("Confirmación:", error);
+        showLogin();
+        mensajeLogin("El enlace ya fue usado o venció.", "error");
+        abrirReenvio("", "<b>Prueba primero iniciar sesión:</b> si ya habías confirmado, tu cuenta está activa. Si al entrar te dice que falta confirmar, pide un correo nuevo aquí.");
+        return;
+    }
+
+    const perfil = await activarPerfil(data.session.user, texto => {
+        msg.textContent = "❌ " + texto;
+        msg.className = "msg msg-error";
+        btn.classList.add("hidden");
+    });
+    if (!perfil) return;
+    localStorage.setItem("currentUser", JSON.stringify(perfil));
+    msg.textContent = `✅ ¡Correo confirmado! Bienvenido(a), ${perfil.nombre}`;
+    msg.className = "msg msg-success";
+    btn.classList.add("hidden");
     setTimeout(() => window.location.href = "menu.html", 1500);
 }
 
@@ -219,6 +269,7 @@ function iniciarEsperaReenvio(segundos) {
 // ----------------------------------------
 function hideAll() {
     welcomeBox.classList.add("hidden");
+    confirmBox.classList.add("hidden");
     loginBox.classList.add("hidden");
     registerBox.classList.add("hidden");
 }

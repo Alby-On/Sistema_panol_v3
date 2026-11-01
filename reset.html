@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01a">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01b">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01a"></script>
+<script src="supabase.js?v=2026-11-01b"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -24,6 +24,10 @@
     <section class="panel container">
         <h2>Crea tu nueva contraseña</h2>
         <p class="muted">Debe tener al menos 6 caracteres.</p>
+        <div class="hidden" id="pasoBoton">
+            <p>Presiona el botón para continuar y crear tu nueva contraseña.</p>
+            <button id="btnContinuar" onclick="usarEnlace()">Continuar</button>
+        </div>
         <form id="formPass" onsubmit="event.preventDefault(); cambiarPassword();">
             <label for="nuevaPass">Nueva contraseña</label>
             <div class="password-container">
@@ -70,6 +74,14 @@ async function init() {
         return;
     }
 
+    // Enlace nuevo: la sesión se abre al tocar "Continuar" (Outlook revisa enlaces pero no toca botones)
+    if (enlace.token_hash) {
+        document.getElementById("formPass").classList.add("hidden");
+        document.getElementById("pasoBoton").classList.remove("hidden");
+        document.getElementById("btnLogin").classList.add("hidden");
+        return;
+    }
+
     // El cliente de Supabase normalmente ya abrió la sesión con el enlace
     let { data: { session } } = await supabaseClient.auth.getSession();
     if (!session && enlace.access_token && enlace.refresh_token) {
@@ -83,6 +95,22 @@ async function init() {
 }
 
 init();
+
+async function usarEnlace() {
+    const btn = document.getElementById("btnContinuar");
+    btn.disabled = true;
+    btn.textContent = "Verificando…";
+    const { data, error } = await supabaseClient.auth.verifyOtp({ token_hash: ENLACE_CORREO.token_hash, type: "recovery" });
+    document.getElementById("pasoBoton").classList.add("hidden");
+    if (error || !data.session) {
+        console.error("Recuperación:", error);
+        enlaceNoValido("El enlace ya fue usado o venció. Pide uno nuevo (el enlace sirve una sola vez).");
+        return;
+    }
+    document.getElementById("formPass").classList.remove("hidden");
+    document.getElementById("btnLogin").classList.remove("hidden");
+    document.getElementById("nuevaPass").focus();
+}
 
 async function cambiarPassword() {
     // ⬇️ Obtener el valor del campo principal

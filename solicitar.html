@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01d">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01e">
 
 </head>
 <body data-modulo="solicitar">
@@ -47,6 +47,7 @@
         <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
         <option>OTROS DOCENTES</option>
     </select>
+        <p class="muted docente-propio" id="docentePropio" hidden>Tu cuenta es de docente: tus solicitudes quedan a tu nombre.</p>
         <label for="asignatura">Asignatura</label>
         <div class="autocomplete-wrapper">
             <input type="text" id="asignatura" placeholder="Ej: Instalaciones Eléctricas en Baja Tensión" autocomplete="off">
@@ -88,7 +89,7 @@
     </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01d"></script>
+<script src="supabase.js?v=2026-11-01e"></script>
 <script>
 /* 🔗 Conexión a Supabase */
 
@@ -297,6 +298,34 @@ const HORAS_PARA_AGREGAR = 2;   // plazo para agregar materiales a una solicitud
 function limiteParaAgregar(sol) {
     return fechaSupabase(sol.fecha_solicitud).getTime() + HORAS_PARA_AGREGAR * 36e5;
 }
+// Si quien solicita es un docente de la lista, su nombre queda elegido y fijo (no puede cambiarlo).
+// Se reconoce por el nombre de la cuenta: igual al de la lista, o mismo primer nombre y apellido paterno.
+function seleccionarDocentePropio() {
+    const sel = document.getElementById("docente");
+    if (!user || !user.nombre) return;
+    const norm = t => String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z ]/g, " ").replace(/\s+/g, " ").trim();
+    const PARTICULAS = new Set(["DE", "DEL", "LA", "LAS", "LOS", "SAN", "DA"]);
+    const apellidoPaterno = d => {   // en la lista: dos nombres y luego los apellidos
+        const p = norm(d).split(" "); const ap = []; let i = 2;
+        while (i < p.length && PARTICULAS.has(p[i])) ap.push(p[i++]);
+        if (i < p.length) ap.push(p[i]);
+        return ap.join(" ");
+    };
+    const u = norm(user.nombre);
+    const pu = u.split(" ");
+    const coincide = d => {
+        const n = norm(d);
+        if (n === u) return true;
+        return pu.length >= 2 && n.split(" ")[0] === pu[0] && (" " + u + " ").includes(" " + apellidoPaterno(d) + " ");
+    };
+    const opciones = [...sel.options].filter(o => o.value && o.value !== "OTROS DOCENTES" && coincide(o.value));
+    if (opciones.length !== 1) return;   // ninguno o más de uno: no se adivina
+    sel.value = opciones[0].value;
+    sel.disabled = true;
+    sel.dataset.docentePropio = "1";
+    document.getElementById("docentePropio").hidden = false;
+}
+
 function plazoVencido(sol) {
     return Date.now() >= limiteParaAgregar(sol);
 }
@@ -331,6 +360,7 @@ async function activarModoAgregar() {
     if (![...selDocente.options].some(o => o.value === s.docente)) selDocente.add(new Option(s.docente, s.docente));
     selDocente.value = s.docente;
     selDocente.disabled = true;
+    if (!selDocente.dataset.docentePropio) document.getElementById("docentePropio").hidden = true;
     const inpAsignatura = document.getElementById("asignatura");
     inpAsignatura.value = s.asignatura;
     inpAsignatura.disabled = true;
@@ -498,6 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cantidades = JSON.parse(params.get("cantidades") || "[]");
 
     if (docente) document.getElementById("docente").value = docente;
+    seleccionarDocentePropio();   // un docente con cuenta siempre solicita a su nombre
     if (asignatura) document.getElementById("asignatura").value = asignatura;
 
     const tbody = document.getElementById("tbody");

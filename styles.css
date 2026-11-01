@@ -1290,3 +1290,4 @@ a { color: var(--primary-dark); }
 .clave-nombre { font-weight: 600; font-size: 1.05rem; }
 .clave-lista { margin-top: 14px; text-align: center; }
 .clave-temporal { font-size: 2.2rem; font-weight: 700; letter-spacing: .25em; margin: 8px 0; padding: 12px; border-radius: 10px; background: var(--done-bg, #E7F6EC); color: var(--done, #1E7A3E); }
+.docente-propio { font-size: .8125rem; margin: 6px 0 0; }

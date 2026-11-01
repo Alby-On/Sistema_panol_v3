@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01b">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01b"></script>
+<script src="supabase.js?v=2026-11-01c"></script>
 </head>
 <body data-modulo="acceso">
 <main class="page">
@@ -50,8 +50,11 @@
         <p id="loginMsg"></p>
         <div class="notice hidden" id="reenviarBox">
             <p id="reenviarTexto"><b>¿No te llegó el correo de confirmación?</b> Revisa también la carpeta de spam o correo no deseado. Si no está, pide uno nuevo.</p>
-            <label for="reenviarEmail">Correo con que te registraste</label>
-            <input type="email" id="reenviarEmail" placeholder="nombre@inacapmail.cl" autocomplete="email">
+            <div id="reenviarCampo">
+                <label for="reenviarEmail">Correo con que te registraste</label>
+                <input type="email" id="reenviarEmail" placeholder="nombre@inacapmail.cl" autocomplete="email">
+            </div>
+            <p id="reenviarDestino" class="hidden"></p>
             <button class="btn-secondary" id="btnReenviar" onclick="reenviarConfirmacion()">Reenviar correo de confirmación</button>
             <p id="reenviarMsg" class="msg"></p>
         </div>
@@ -211,16 +214,22 @@ async function confirmarCorreo() {
 // REENVIAR CORREO DE CONFIRMACIÓN
 // ----------------------------------------
 const TEXTO_REENVIO = document.getElementById("reenviarTexto").innerHTML;
-function abrirReenvio(email, textoAyuda) {
+let correoReenvio = "";   // correo encontrado por RUT: se usa sin mostrarlo completo
+function abrirReenvio(email, textoAyuda, ocultarCorreo) {
     showLogin();
     document.getElementById("reenviarTexto").innerHTML = textoAyuda || TEXTO_REENVIO;
-    if (email) document.getElementById("reenviarEmail").value = email;
+    correoReenvio = ocultarCorreo ? email : "";
+    document.getElementById("reenviarCampo").classList.toggle("hidden", !!ocultarCorreo);
+    const destino = document.getElementById("reenviarDestino");
+    destino.classList.toggle("hidden", !ocultarCorreo);
+    if (ocultarCorreo) destino.innerHTML = `Se enviará a <b>${ocultarCorreo}</b>`;
+    else if (email) document.getElementById("reenviarEmail").value = email;
     document.getElementById("reenviarBox").classList.remove("hidden");
 }
 
 let esperaReenvio = null;
 async function reenviarConfirmacion() {
-    const email = document.getElementById("reenviarEmail").value.trim();
+    const email = correoReenvio || document.getElementById("reenviarEmail").value.trim();
     const msg = document.getElementById("reenviarMsg");
     const btn = document.getElementById("btnReenviar");
     const mostrar = (texto, ok) => { msg.textContent = (ok ? "✅ " : "❌ ") + texto; msg.className = "msg " + (ok ? "msg-success" : "msg-error"); };
@@ -237,8 +246,7 @@ async function reenviarConfirmacion() {
 
     if (error) {
         mostrar(traducirErrorAuth(error), false);
-        const espera = String(error.message || "").match(/after (\d+) seconds?/i);
-        iniciarEsperaReenvio(espera ? Number(espera[1]) : 10);
+        iniciarEsperaReenvio(segundosDeEspera(error));
         return;
     }
     mostrar("Listo. Te enviamos un nuevo correo; puede tardar unos minutos. Revisa también spam o correo no deseado.", true);
@@ -257,7 +265,7 @@ function iniciarEsperaReenvio(segundos) {
             return;
         }
         btn.disabled = true;
-        btn.textContent = `Podrás reenviar en ${quedan} s`;
+        btn.textContent = quedan > 90 ? `Podrás reenviar en ${Math.ceil(quedan / 60)} min` : `Podrás reenviar en ${quedan} s`;
         quedan--;
     };
     pintar();
@@ -383,9 +391,15 @@ async function registrar() {
     }
 
     // Evitar cuentas duplicadas: si el RUT ya tiene cuenta, se avisa antes de registrar
-    const correoExistente = await buscarCorreoPorRut(rut);
-    if (correoExistente) {
-        showError(`Este RUT ya está registrado con la cuenta ${ocultarCorreo(correoExistente)}. Inicia sesión con esa cuenta o usa "¿Olvidaste tu contraseña?".`);
+    const cuentaExistente = await buscarCuentaPorRut(rut);
+    if (cuentaExistente && cuentaExistente.activa) {
+        showError(`Este RUT ya está registrado con la cuenta ${ocultarCorreo(cuentaExistente.email)}. Inicia sesión con esa cuenta o usa "¿Olvidaste tu contraseña?".`);
+        return;
+    }
+    if (cuentaExistente) {
+        showError(`Este RUT ya se registró con ${ocultarCorreo(cuentaExistente.email)}, pero la cuenta aún no está activa. Busca en ese correo el enlace de confirmación (revisa spam) o pide uno nuevo.`);
+        document.getElementById("registroReenviar").classList.add("hidden");
+        setTimeout(() => abrirReenvio(cuentaExistente.email, null, ocultarCorreo(cuentaExistente.email)), 2500);
         return;
     }
 
@@ -522,13 +536,18 @@ async function login() {
             return;
         }
 
-        const correo = await buscarCorreoPorRut(input);   // acepta el RUT con o sin puntos
-        if (!correo) {
+        const cuenta = await buscarCuentaPorRut(input);   // acepta el RUT con o sin puntos
+        if (!cuenta) {
             showError("El RUT no está registrado. Si aún no tienes cuenta, regístrate.");
             return;
         }
+        if (!cuenta.activa) {
+            showError(`Tu cuenta aún no está activa. Para activarla abre el enlace que te enviamos a ${ocultarCorreo(cuenta.email)} al registrarte (revisa también spam). Si no lo encuentras, pide uno nuevo aquí abajo.`);
+            abrirReenvio(cuenta.email, null, ocultarCorreo(cuenta.email));
+            return;
+        }
 
-        emailParaLogin = correo;
+        emailParaLogin = cuenta.email;
     }
 
     const { data: authData, error } =
@@ -539,10 +558,12 @@ async function login() {
 
     if (error) {
         if (/email not confirmed/i.test(error.message || "")) {
-            showError("Debes confirmar tu correo antes de entrar. Busca el correo de confirmación (revisa spam) o pide uno nuevo aquí abajo.");
+            showError("Tu cuenta aún no está activa. Para activarla abre el enlace que te enviamos a tu correo al registrarte (revisa también spam). Si no lo encuentras, pide uno nuevo aquí abajo.");
             abrirReenvio(emailParaLogin);
         } else if (/invalid login credentials/i.test(error.message || "")) {
-            showError("Credenciales incorrectas.");
+            showError(input.includes("@")
+                ? "Correo o contraseña incorrectos. Si no recuerdas tu contraseña, usa \"¿Olvidaste tu contraseña?\" o pide ayuda en el pañol."
+                : "Contraseña incorrecta. Si no la recuerdas, usa \"¿Olvidaste tu contraseña?\" o pide ayuda en el pañol.");
         } else {
             showError(traducirErrorAuth(error));
         }

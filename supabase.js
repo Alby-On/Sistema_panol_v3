@@ -28,8 +28,10 @@ function traducirErrorAuth(error) {
     const m = String(error.message || error.msg || error);
     const espera = m.match(/after (\d+) seconds?/i);
     if (espera) return `Por seguridad debes esperar ${espera[1]} segundos antes de pedir otro correo.`;
+    if (esLimiteDeCorreos(error))
+        return "No pudimos enviar el correo en este momento. Vuelve a intentarlo en unos minutos (en algunos casos puede tardar hasta una hora).";
     if (error.status === 429 || /rate limit|too many/i.test(m))
-        return "Se alcanzó el límite de correos que se pueden enviar por ahora. Espera unos minutos e inténtalo de nuevo.";
+        return "Demasiados intentos seguidos. Espera unos minutos e inténtalo de nuevo.";
     if (/email not confirmed/i.test(m)) return "Debes confirmar tu correo antes de entrar.";
     if (/invalid login credentials/i.test(m)) return "Correo, RUT o contraseña incorrectos.";
     if (/already registered|already been registered|already exists/i.test(m)) return "El correo ya está registrado.";
@@ -58,4 +60,36 @@ function datosEnlaceCorreo() {
         hash: window.location.hash,
         search: window.location.search
     };
+}
+
+// true cuando Supabase no envió el correo por el límite de correos por hora
+function esLimiteDeCorreos(error) {
+    return !!error && (error.code === "over_email_send_rate_limit" || /email rate limit/i.test(String(error.message || "")));
+}
+
+// Segundos que debe quedar bloqueado el botón de "enviar correo" después de un error
+function segundosDeEspera(error) {
+    const espera = String((error && error.message) || "").match(/after (\d+) seconds?/i);
+    if (espera) return Number(espera[1]);   // espera real que indica Supabase
+    if (esLimiteDeCorreos(error)) return 300;   // límite por hora: 5 minutos
+    return 10;
+}
+
+// Busca la cuenta de un RUT (con o sin puntos), también las que aún no confirman el correo.
+// Devuelve { email, activa } o null si el RUT no tiene cuenta.
+async function buscarCuentaPorRut(rut) {
+    const { data, error } = await supabaseClient.rpc("buscar_cuenta_por_rut", { rut_input: String(rut || "").trim() });
+    if (!error) return (data && data[0]) ? { email: data[0].email, activa: data[0].activa } : null;
+    // Respaldo: búsqueda anterior (solo cuentas con perfil)
+    const correo = await buscarCorreoPorRutAntiguo(rut);
+    return correo ? { email: correo, activa: true } : null;
+}
+async function buscarCorreoPorRutAntiguo(rut) {
+    let n = String(rut || "").replace(/[.\s]/g, "").toLowerCase();
+    if (n && !n.includes("-") && n.length > 1) n = n.slice(0, -1) + "-" + n.slice(-1);
+    for (const v of [...new Set([n, n.replace(/k$/, "K")])]) {
+        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", { rut_input: v });
+        if (!error && data) return data;
+    }
+    return null;
 }

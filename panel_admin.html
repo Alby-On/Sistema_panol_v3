@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01b">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01b"></script>
+<script src="supabase.js?v=2026-11-01c"></script>
 </head>
 <body data-modulo="gestor">
 <header class="appbar">
@@ -30,6 +30,10 @@
             <button type="button" class="btn-sm btn-secondary" id="btnPreparacion" onclick="abrirPreparacion()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
                 Lista de preparación
+            </button>
+            <button type="button" class="btn-sm btn-secondary" id="btnClave" onclick="abrirClave()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M18.5 4.5l2 2"/></svg>
+                Restablecer contraseña
             </button>
             <button type="button" class="btn-sm btn-secondary btn-avisos" id="btnAvisos" onclick="alternarAvisos()" aria-pressed="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -73,6 +77,24 @@
             <button type="button" class="btn-secondary" onclick="cerrarPreparacion()">Cerrar</button>
             <button type="button" onclick="imprimirPreparacion()">Imprimir</button>
         </div>
+    </div>
+</div>
+
+<div id="modalClave" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloClave">
+    <div class="modal-content clave-content">
+        <div class="modal-header">
+            <span id="tituloClave">Restablecer contraseña</span>
+            <span class="close-btn" onclick="cerrarClave()" role="button" aria-label="Cerrar">×</span>
+        </div>
+        <p class="muted">Para alumnos que no recuerdan su contraseña o a quienes no les llega el correo. Se le asigna una <b>clave temporal</b> y, si la cuenta no estaba activa, queda activada.</p>
+        <form id="formClave" onsubmit="event.preventDefault(); buscarCuentaClave();">
+            <label for="claveBuscar">RUT o correo del alumno</label>
+            <div class="clave-buscar">
+                <input type="text" id="claveBuscar" placeholder="12345678-5 o nombre@inacapmail.cl" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="submit" class="btn-sm" id="btnClaveBuscar">Buscar</button>
+            </div>
+        </form>
+        <div id="claveResultado"></div>
     </div>
 </div>
 
@@ -631,7 +653,8 @@
         const escribiendo = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
         if (e.key === '/' && !escribiendo) { e.preventDefault(); buscador.focus(); buscador.select(); }
         if (e.key === 'Escape') {
-            if (document.getElementById('modalPreparacion').style.display === 'flex') cerrarPreparacion();
+            if (document.getElementById('modalClave').style.display === 'flex') cerrarClave();
+            else if (document.getElementById('modalPreparacion').style.display === 'flex') cerrarPreparacion();
             else if (document.getElementById('commentModal').style.display === 'flex') cerrarFormulario();
             else if (document.activeElement === buscador && buscador.value) { buscador.value = ''; renderizar(); }
         }
@@ -640,6 +663,68 @@
     // 🚀 Carga inicial y refresco automático cada 5 segundos
     loadDashboardData();
     startAutoRefresh();
+</script>
+<script>
+// ----------------------------------------
+// RESTABLECER CONTRASEÑA DE UN ALUMNO (solo administradores; la base de datos lo verifica)
+// ----------------------------------------
+const escClave = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cuentaClave = null;
+
+function abrirClave() {
+    cuentaClave = null;
+    document.getElementById('claveBuscar').value = '';
+    document.getElementById('claveResultado').innerHTML = '';
+    document.getElementById('modalClave').style.display = 'flex';
+    setTimeout(() => document.getElementById('claveBuscar').focus(), 50);
+}
+function cerrarClave() {
+    document.getElementById('modalClave').style.display = 'none';
+    document.getElementById('claveResultado').innerHTML = '';   // no dejar la clave a la vista
+}
+
+async function buscarCuentaClave() {
+    const texto = document.getElementById('claveBuscar').value.trim();
+    const res = document.getElementById('claveResultado');
+    if (!texto) { res.innerHTML = '<p class="msg msg-error">❌ Escribe el RUT o el correo del alumno.</p>'; return; }
+    res.innerHTML = '<p class="muted">Buscando…</p>';
+    const { data, error } = await supabaseClient.rpc('admin_restablecer_password', { p_identificador: texto, p_aplicar: false });
+    if (error) { res.innerHTML = `<p class="msg msg-error">❌ ${error.code === '42501' ? 'Solo un administrador puede usar esta opción.' : 'No se pudo buscar. Inténtalo de nuevo.'}</p>`; return; }
+    if (!data || !data.length) { res.innerHTML = '<p class="msg msg-error">❌ No hay ninguna cuenta con ese RUT o correo.</p>'; return; }
+    cuentaClave = data[0];
+    res.innerHTML = `
+        <div class="clave-ficha">
+            <p class="clave-nombre">${escClave(cuentaClave.nombre || 'Sin nombre')}</p>
+            <p class="muted">${escClave(cuentaClave.email)}${cuentaClave.rut ? ' · RUT ' + escClave(cuentaClave.rut) : ''}</p>
+            <p><span class="chip ${cuentaClave.activa ? 'chip-done' : 'chip-pending'}">${cuentaClave.activa ? 'Cuenta activa' : 'Cuenta no activa (no confirmó el correo)'}</span></p>
+        </div>
+        <p class="muted">Su contraseña actual dejará de servir.</p>
+        <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="cerrarClave()">Cancelar</button>
+            <button type="button" id="btnClaveAplicar" onclick="aplicarClave()">${cuentaClave.activa ? 'Restablecer contraseña' : 'Activar y asignar clave'}</button>
+        </div>`;
+}
+
+async function aplicarClave() {
+    if (!cuentaClave) return;
+    const btn = document.getElementById('btnClaveAplicar');
+    btn.disabled = true;
+    btn.textContent = 'Restableciendo…';
+    const { data, error } = await supabaseClient.rpc('admin_restablecer_password', { p_identificador: cuentaClave.email, p_aplicar: true });
+    const res = document.getElementById('claveResultado');
+    if (error || !data || !data.length || !data[0].clave_temporal) {
+        res.innerHTML = '<p class="msg msg-error">❌ No se pudo restablecer la contraseña. Inténtalo de nuevo.</p>';
+        return;
+    }
+    const r = data[0];
+    res.innerHTML = `
+        <div class="clave-lista">
+            <p>Listo. Dile a <b>${escClave(r.nombre || r.email)}</b> que entre con su RUT o correo y esta clave:</p>
+            <p class="clave-temporal num">${escClave(r.clave_temporal)}</p>
+            <p class="muted">Después puede cambiarla desde "¿Olvidaste tu contraseña?". Esta clave no se vuelve a mostrar.</p>
+        </div>
+        <div class="btn-row"><button type="button" onclick="cerrarClave()">Listo</button></div>`;
+}
 </script>
 </body>
 </html>

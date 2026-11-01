@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01b">
+    <link rel="stylesheet" href="styles.css?v=2026-11-01c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01b"></script>
+<script src="supabase.js?v=2026-11-01c"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -31,20 +31,6 @@
     </section>
 </main>
 <script>
-function normalizarRut(rut) {
-    let r = String(rut || '').replace(/[.\s]/g, '').toLowerCase();
-    if (r && !r.includes('-') && r.length > 1) r = r.slice(0, -1) + '-' + r.slice(-1);
-    return r;
-}
-async function buscarCorreoPorRut(rut) {
-    const n = normalizarRut(rut);
-    const variantes = [...new Set([n, n.replace(/k$/, 'K')])];
-    for (const v of variantes) {
-        const { data, error } = await supabaseClient.rpc("buscar_email_por_rut", { rut_input: v });
-        if (!error && data) return data;
-    }
-    return null;
-}
 function ocultarCorreo(correo) {
     const [usuario, dominio] = String(correo || '').split('@');
     return dominio ? `${usuario.charAt(0)}***@${dominio}` : '';
@@ -58,7 +44,7 @@ function iniciarEspera(segundos) {
     const pintar = () => {
         if (quedan <= 0) { clearInterval(esperaEnvio); btn.disabled = false; btn.textContent = "Enviar enlace"; return; }
         btn.disabled = true;
-        btn.textContent = `Podrás reenviar en ${quedan} s`;
+        btn.textContent = quedan > 90 ? `Podrás reenviar en ${Math.ceil(quedan / 60)} min` : `Podrás reenviar en ${quedan} s`;
         quedan--;
     };
     pintar();
@@ -80,8 +66,11 @@ async function enviarCorreo() {
 
     let email = entrada;
     let aviso = "";
+    let pendiente = false;
     if (!entrada.includes("@")) {
-        email = await buscarCorreoPorRut(entrada);
+        const cuenta = await buscarCuentaPorRut(entrada);
+        email = cuenta ? cuenta.email : null;
+        pendiente = !!cuenta && !cuenta.activa;
         if (!email) {
             mostrar("Ese RUT no tiene cuenta. Revisa que esté bien escrito o regístrate.", false);
             btn.disabled = false; btn.textContent = "Enviar enlace";
@@ -100,8 +89,13 @@ async function enviarCorreo() {
 
     if (error) {
         mostrar(traducirErrorAuth(error), false);
-        const espera = String(error.message || "").match(/after (\d+) seconds?/i);
-        iniciarEspera(espera ? Number(espera[1]) : 10);
+        iniciarEspera(segundosDeEspera(error));
+        return;
+    }
+
+    if (pendiente) {
+        mostrar(`Tu cuenta aún no estaba activa (faltaba confirmar el correo). Te enviamos un enlace${aviso}: al abrirlo se activará tu cuenta y podrás crear tu contraseña. Revisa también spam o correo no deseado.`, true);
+        iniciarEspera(60);
         return;
     }
 

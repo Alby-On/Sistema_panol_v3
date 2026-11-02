@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-01e">
+    <link rel="stylesheet" href="styles.css?v=2026-11-02a">
 
 </head>
 <body data-modulo="solicitar">
@@ -23,7 +23,7 @@
     <section class="panel box">
         <div id="avisoPendiente" class="notice notice-pending" hidden></div>
         <label for="docente" style="margin-top:0">Docente a cargo</label>
-        <select id="docente">
+        <select id="docente" class="doc-select-oculto" tabindex="-1" aria-hidden="true">
         <option value="">Selecciona un docente</option>
         <option>AARÓN EDUARDO SEPÚLVEDA MEDINA</option>
         <option>ALEJANDRO GABRIEL MOENA VALDERRAMA</option>
@@ -47,6 +47,21 @@
         <option>VÍCTOR EDUARDO ZAPATA MYRIK</option>
         <option>OTROS DOCENTES</option>
     </select>
+        <button type="button" class="doc-picker" id="docPicker" onclick="abrirDocentes()" aria-haspopup="dialog">
+            <span class="doc-avatar" id="docPickerFoto"></span>
+            <span class="doc-picker-nombre" id="docPickerNombre">Selecciona un docente</span>
+            <svg class="doc-picker-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="doc-sheet" id="docSheet" role="dialog" aria-modal="true" aria-label="Elige al docente a cargo" hidden>
+            <div class="doc-sheet-panel">
+                <div class="doc-sheet-head">
+                    <h3>Docente a cargo</h3>
+                    <button type="button" class="doc-sheet-cerrar" onclick="cerrarDocentes()" aria-label="Cerrar">×</button>
+                </div>
+                <input type="search" id="docBuscar" placeholder="Busca por nombre o apellido" autocomplete="off" oninput="pintarDocentes()">
+                <div class="doc-lista" id="docLista"></div>
+            </div>
+        </div>
         <p class="muted docente-propio" id="docentePropio" hidden>Tu cuenta es de docente: tus solicitudes quedan a tu nombre.</p>
         <label for="asignatura">Asignatura</label>
         <div class="autocomplete-wrapper">
@@ -89,7 +104,7 @@
     </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-01e"></script>
+<script src="supabase.js?v=2026-11-02a"></script>
 <script>
 /* 🔗 Conexión a Supabase */
 
@@ -360,6 +375,7 @@ async function activarModoAgregar() {
     if (![...selDocente.options].some(o => o.value === s.docente)) selDocente.add(new Option(s.docente, s.docente));
     selDocente.value = s.docente;
     selDocente.disabled = true;
+    if (window.pintarPicker) pintarPicker();
     if (!selDocente.dataset.docentePropio) document.getElementById("docentePropio").hidden = true;
     const inpAsignatura = document.getElementById("asignatura");
     inpAsignatura.value = s.asignatura;
@@ -529,6 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (docente) document.getElementById("docente").value = docente;
     seleccionarDocentePropio();   // un docente con cuenta siempre solicita a su nombre
+    if (window.pintarPicker) pintarPicker();
     if (asignatura) document.getElementById("asignatura").value = asignatura;
 
     const tbody = document.getElementById("tbody");
@@ -554,6 +571,69 @@ document.addEventListener("DOMContentLoaded", () => {
 
     activarModoAgregar();
 });
+</script>
+<script>
+// ---------- Selector de docente con foto ----------
+// Foto de cada docente (fotos/docentes/, 256×256). Un docente sin foto aparece con sus iniciales.
+// Para agregar uno nuevo: su <option> en la lista y su foto aquí.
+const FOTOS_DOCENTES = {
+    "AARÓN EDUARDO SEPÚLVEDA MEDINA": "fotos/docentes/aaron-sepulveda.jpg",
+    "ALEJANDRO GABRIEL MOENA VALDERRAMA": "fotos/docentes/alejandro-moena.jpg",
+    "BRAYAN PATRICIO DEL VALLE AEDO": "fotos/docentes/brayan-del-valle.jpg",
+    "DANIELA ANDREA COSSIO YAJURE": "fotos/docentes/daniela-cossio.jpg",
+    "ELÍAS ANDRÉS POBLETE AVILA": "fotos/docentes/elias-poblete.jpg",
+    "GERARDO NICOLÁS SEPÚLVEDA GUTIÉRREZ": "fotos/docentes/gerardo-sepulveda.jpg",
+    "GIOVANNI ANDRÉS JARA TORRES": "fotos/docentes/giovanni-jara.jpg",
+    "JORGE ANDRÉS PÉREZ MILLAR": "fotos/docentes/jorge-perez.jpg",
+    "JOSEFA CATALINA LISBOA RIVERA": "fotos/docentes/josefa-lisboa.jpg",
+    "JULIO CESAR ALARCON MONTEROS": "fotos/docentes/julio-alarcon.jpg",
+    "MANUEL ALEJANDRO HENRIQUEZ OLIVA": "fotos/docentes/manuel-henriquez.jpg",
+    "MARCO ANTONIO ARRIAGADA CASAS": "fotos/docentes/marco-arriagada.jpg",
+    "PEDRO PATRICIO PEDRERO PÉREZ": "fotos/docentes/pedro-pedreros.jpg",
+    "RICHARD NICOLÁS SANTOS MARTÍNEZ": "fotos/docentes/richard-santos.jpg",
+    "RICHARD ANTONIO VALDERRAMA SAN MARTIN": "fotos/docentes/richard-valderrama.jpg",
+    "ROBERTO SEBASTIAN CID LIZAMA": "fotos/docentes/roberto-cid.jpg",
+    "RODRIGO ALEJANDRO CONTRERAS ZÚÑIGA": "fotos/docentes/rodrigo-contreras.jpg",
+    "RODRIGO ALEJANDRO GARRIDO GARRIDO": "fotos/docentes/rodrigo-garrido.jpg",
+    "ROLANDO EDUARDO ORTEGA FUENTES": "fotos/docentes/rolando-ortega.jpg",
+    "VÍCTOR EDUARDO ZAPATA MYRIK": "fotos/docentes/victor-zapata.jpg"
+};
+const COLORES_AVATAR = ["#1D63C9", "#1A9A5A", "#6A4BD6", "#0C97A3", "#E05A3A", "#9A6400", "#12304B"];
+const iniciales = n => { const p = n.split(" "); return (p[0][0] + (p[2] || p[1] || "")[0]).toUpperCase(); };
+const nombreBonito = n => n.toLowerCase().replace(/(^|\s)(\S)/g, (m, e, l) => e + l.toUpperCase()).replace(/\b(Del|De|La|San)\b/g, w => w === "San" ? w : w.toLowerCase());
+function avatar(nombre, clase) {
+    if (!nombre) return `<span class="doc-avatar ${clase || ""} is-vacio"></span>`;
+    if (nombre === "OTROS DOCENTES") return `<span class="doc-avatar ${clase || ""} is-otros">+</span>`;
+    const foto = FOTOS_DOCENTES[nombre];
+    if (foto) return `<span class="doc-avatar ${clase || ""}"><img src="${foto}" alt=""></span>`;
+    let h = 0; for (const c of nombre) h = (h * 31 + c.charCodeAt(0)) % 997;
+    return `<span class="doc-avatar ${clase || ""}" style="background:${COLORES_AVATAR[h % COLORES_AVATAR.length]}">${iniciales(nombre)}</span>`;
+}
+function pintarPicker() {
+    const sel = document.getElementById("docente");
+    const btn = document.getElementById("docPicker");
+    document.getElementById("docPickerFoto").outerHTML = avatar(sel.value).replace('class="doc-avatar', 'id="docPickerFoto" class="doc-avatar');
+    document.getElementById("docPickerNombre").textContent = sel.value ? nombreBonito(sel.value) : "Selecciona un docente";
+    btn.classList.toggle("is-vacio", !sel.value);
+    btn.disabled = sel.disabled;
+}
+function pintarDocentes() {
+    const sel = document.getElementById("docente");
+    const q = document.getElementById("docBuscar").value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const ops = [...sel.options].filter(o => o.value && o.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
+    document.getElementById("docLista").innerHTML = ops.map(o => `
+        <button type="button" class="doc-item ${o.value === sel.value ? "is-activo" : ""}" onclick="elegirDocente(this.dataset.v)" data-v="${o.value}">
+            ${avatar(o.value, "doc-avatar-lg")}<span>${o.value === "OTROS DOCENTES" ? "Otros docentes" : nombreBonito(o.value)}</span>
+        </button>`).join("") || '<p class="muted">No hay docentes con ese nombre.</p>';
+}
+function abrirDocentes() { document.getElementById("docSheet").hidden = false; document.getElementById("docBuscar").value = ""; pintarDocentes(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("docSheet").hidden) cerrarDocentes(); });
+document.getElementById("docSheet").addEventListener("click", e => { if (e.target.id === "docSheet") cerrarDocentes(); });
+function cerrarDocentes() { document.getElementById("docSheet").hidden = true; }
+function elegirDocente(v) { const sel = document.getElementById("docente"); sel.value = v; sel.dispatchEvent(new Event("change")); cerrarDocentes(); pintarPicker(); }
+// El selector refleja la lista original (que sigue siendo la fuente de verdad)
+new MutationObserver(pintarPicker).observe(document.getElementById("docente"), { attributes: true });
+pintarPicker();
 </script>
 </body>
 </html>

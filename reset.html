@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-02a">
+    <link rel="stylesheet" href="styles.css?v=2026-11-09a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-02a"></script>
+<script src="supabase.js?v=2026-11-09a"></script>
 </head>
 <body data-modulo="inicio">
 <header class="appbar">
@@ -32,6 +32,13 @@
             <button id="btnContinuar" onclick="usarEnlace()">Continuar</button>
         </div>
         <form id="formPass" onsubmit="event.preventDefault(); cambiarPassword();">
+            <div class="hidden" id="campoActual">
+                <label for="actualPass">Contraseña actual</label>
+                <div class="password-container">
+                    <input type="password" id="actualPass" placeholder="La que usas hoy" autocomplete="current-password"/>
+                    <span class="toggle-password" onclick="toggleVisibility('actualPass', this)" role="button" aria-label="Mostrar contraseña">👁️</span>
+                </div>
+            </div>
             <label for="nuevaPass">Nueva contraseña</label>
             <div class="password-container">
                 <input type="password" id="nuevaPass" placeholder="Mínimo 6 caracteres" onkeyup="checkPasswordMatch()" required minlength="6" autocomplete="new-password"/>
@@ -67,12 +74,21 @@ function enlaceNoValido(texto) {
 }
 
 const OBLIGATORIO = new URLSearchParams(ENLACE_CORREO.search || "").get("obligatorio") === "1";
+const CAMBIAR = new URLSearchParams(ENLACE_CORREO.search || "").get("cambiar") === "1";   // desde el menú, con sesión abierta
 
 async function init() {
     const enlace = ENLACE_CORREO;   // datos del enlace, leídos antes de que el cliente los borre
     if (OBLIGATORIO) {
         document.getElementById("avisoObligatorio").classList.remove("hidden");
         document.getElementById("btnLogin").classList.add("hidden");
+    }
+    if (CAMBIAR) {
+        document.querySelector("main h2").textContent = "Cambiar contraseña";
+        document.getElementById("campoActual").classList.remove("hidden");
+        const volver = document.getElementById("btnLogin");
+        volver.textContent = "Volver al menú";
+        volver.disabled = false;
+        volver.onclick = () => window.location.href = "menu.html";
     }
     if (window.location.hash || window.location.search) history.replaceState(null, "", window.location.pathname);
 
@@ -143,6 +159,20 @@ async function cambiarPassword() {
     // Deshabilitar botón durante el proceso
     btnActualizar.disabled = true; 
 
+    // Desde el menú se pide la contraseña actual (por si el teléfono queda en manos de otro)
+    if (CAMBIAR) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const actual = document.getElementById("actualPass").value;
+        if (!session) { showMessage("Tu sesión terminó. Vuelve a iniciar sesión.", true); return; }
+        if (!actual) { showMessage("Escribe tu contraseña actual.", true); btnActualizar.disabled = false; return; }
+        const { error: errActual } = await supabaseClient.auth.signInWithPassword({ email: session.user.email, password: actual });
+        if (errActual) {
+            showMessage(/invalid login/i.test(errActual.message || "") ? "La contraseña actual no es correcta." : traducirErrorAuth(errActual), true);
+            btnActualizar.disabled = false;
+            return;
+        }
+    }
+
     const { error } = await supabaseClient.auth.updateUser({ password: nuevaPass });
     
     if (error) {
@@ -153,6 +183,12 @@ async function cambiarPassword() {
 
     // Quita la marca de "clave temporal" (si la tenía)
     await supabaseClient.rpc("marcar_clave_cambiada");
+
+    if (CAMBIAR) {
+        showMessage("Contraseña cambiada. La próxima vez entra con la nueva.");
+        setTimeout(() => window.location.href = "menu.html", 1800);
+        return;
+    }
 
     if (OBLIGATORIO) {
         await supabaseClient.auth.refreshSession();   // la sesión deja de tener la marca

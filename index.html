@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=2026-11-02a">
+    <link rel="stylesheet" href="styles.css?v=2026-11-09a">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js?v=2026-11-02a"></script>
+<script src="supabase.js?v=2026-11-09a"></script>
 </head>
 <body data-modulo="acceso">
 <main class="page">
@@ -92,7 +92,11 @@
         <label for="regTelefono">Teléfono</label>
         <input type="tel" id="regTelefono" placeholder="+56911111111" autocomplete="tel">
         <label for="regEmail">Correo electrónico</label>
-        <input type="email" id="regEmail" placeholder="nombre@inacapmail.cl" autocomplete="email">
+        <input type="email" id="regEmail" placeholder="nombre@inacapmail.cl" autocomplete="email" autocapitalize="off" spellcheck="false" onblur="revisarCorreoEscrito()" oninput="revisarCorreoEscrito(true)">
+        <p class="correo-sugerencia hidden" id="correoSugerencia"></p>
+        <label for="regEmail2">Repite tu correo</label>
+        <input type="email" id="regEmail2" placeholder="Escríbelo otra vez" autocomplete="off" autocapitalize="off" spellcheck="false" onpaste="return false" ondrop="return false">
+        <p class="muted correo-ayuda">Revisa que esté bien escrito: es el que usarás para recuperar tu contraseña.</p>
         <label for="regPass">Contraseña</label>
         <div class="password-container">
             <input type="password" id="regPass" placeholder="Crea una contraseña" onkeyup="checkPasswordMatch()" autocomplete="new-password">
@@ -350,7 +354,8 @@ async function registrar() {
     const rut = regRut.value.trim();
     const carrera = regCarrera.value;
     const telefono = regTelefono.value.trim();
-    const email = regEmail.value.trim();
+    const email = regEmail.value.trim().toLowerCase();
+    const email2 = document.getElementById("regEmail2").value.trim().toLowerCase();
     const pass = regPass.value.trim();
     const confirmPass = regConfirmPass.value.trim();
 
@@ -403,14 +408,27 @@ async function registrar() {
         return;
     }
 
-    const dominiosPermitidos = ["@gmail.com", "@hotmail.com", "@outlook.com", "@icloud.com", "@inacapmail.cl", "@inacap.cl"];
-    if (!dominiosPermitidos.some(d => email.endsWith(d))) {
-        showError("El correo ingresado no es válido o no está permitido.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError("El correo no es válido. Revisa que esté bien escrito.");
+        return;
+    }
+    const sugerido = sugerirCorreo(email);
+    if (sugerido) {
+        revisarCorreoEscrito();
+        showError(`Revisa tu correo: ¿quisiste decir ${sugerido}?`);
+        return;
+    }
+    if (!DOMINIOS_PERMITIDOS.includes(email.split("@")[1])) {
+        showError("Usa tu correo de INACAP (@inacapmail.cl) o uno de Gmail, Hotmail, Outlook o iCloud.");
+        return;
+    }
+    if (email !== email2) {
+        showError("Los dos correos no coinciden. Escríbelos de nuevo.");
         return;
     }
 
     // CREAR EN AUTH CON METADATOS (No insertamos en la tabla aún)
-    const { error: e1 } = await supabaseClient.auth.signUp({ 
+    const { data: registro, error: e1 } = await supabaseClient.auth.signUp({ 
         email, 
         password: pass,
         options: {
@@ -430,8 +448,57 @@ async function registrar() {
         return;
     }
 
+    // Sin confirmación por correo: la cuenta queda activa y con sesión abierta
+    if (registro && registro.session) {
+        const perfil = await activarPerfil(registro.user, showError);
+        if (!perfil) return;
+        localStorage.setItem("currentUser", JSON.stringify(perfil));
+        showSuccess(`¡Cuenta creada! Tu correo registrado es ${email}. Es el que usarás para recuperar tu contraseña.`);
+        setTimeout(() => window.location.href = "menu.html", 3500);
+        return;
+    }
+
+    // Con confirmación por correo activada en Supabase
     showSuccess("Registro exitoso. Te enviamos un correo para confirmar tu cuenta: ábrelo y presiona el enlace (revisa también spam o correo no deseado).");
     document.getElementById("registroReenviar").classList.remove("hidden");
+}
+
+// ----------------------------------------
+// CORREO BIEN ESCRITO
+// ----------------------------------------
+const DOMINIOS_PERMITIDOS = ["inacapmail.cl", "inacap.cl", "gmail.com", "hotmail.com", "outlook.com", "icloud.com"];
+function distancia(a, b) {   // cuántas letras hay que cambiar para pasar de a a b
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++)
+        for (let j = 1; j <= b.length; j++)
+            d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1),
+                (i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) ? d[i-2][j-2] + 1 : Infinity);
+    return d[a.length][b.length];
+}
+// Devuelve el correo corregido si el dominio parece mal escrito (gmial.com, gmail.cl, inacapmail.com…)
+function sugerirCorreo(email) {
+    const m = String(email || "").trim().toLowerCase().match(/^([^\s@]+)@([^\s@]+)$/);
+    if (!m) return null;
+    const [, usuario, dominio] = m;
+    if (DOMINIOS_PERMITIDOS.includes(dominio)) return null;
+    const base = dominio.split(".")[0];
+    let mejor = null, mejorD = Infinity;
+    for (const d of DOMINIOS_PERMITIDOS) {
+        const dist = Math.min(distancia(dominio, d), distancia(base, d.split(".")[0]) + (dominio.endsWith(d.slice(d.indexOf("."))) ? 0 : 1));
+        if (dist < mejorD) { mejor = d; mejorD = dist; }
+    }
+    return mejorD <= 3 ? `${usuario}@${mejor}` : null;
+}
+function revisarCorreoEscrito(soloOcultar) {
+    const campo = document.getElementById("regEmail");
+    const caja = document.getElementById("correoSugerencia");
+    const sugerido = soloOcultar ? null : sugerirCorreo(campo.value);
+    if (!sugerido) { caja.classList.add("hidden"); return; }
+    caja.innerHTML = `¿Quisiste decir <b></b>? <button type="button" class="btn-sm">Sí, corregir</button>`;
+    caja.querySelector("b").textContent = sugerido;
+    caja.querySelector("button").onclick = () => { campo.value = sugerido; caja.classList.add("hidden"); document.getElementById("regEmail2").focus(); };
+    caja.classList.remove("hidden");
 }
 
 // ----------------------------------------

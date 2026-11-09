@@ -1318,3 +1318,12 @@ a { color: var(--primary-dark); }
 .doc-item { display: flex; align-items: center; justify-content: flex-start; gap: 14px; width: 100%; min-height: 64px; margin: 0; padding: 6px 8px; background: transparent; color: var(--ink); border: 0; border-radius: 12px; text-align: left; font: inherit; font-weight: 500; box-shadow: none; cursor: pointer; }
 .doc-item:hover { background: var(--surface-alt); }
 .doc-item.is-activo { background: var(--azul-soft); color: var(--azul-dark); font-weight: 700; }
+
+/* ---------- Registro: correo bien escrito / menú: correo y cambiar contraseña ---------- */
+.correo-sugerencia { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin: 6px 0 4px; padding: 10px 12px; border-radius: 10px; background: var(--ambar-soft, #FFF4DC); color: var(--ink); font-size: .9rem; }
+.correo-sugerencia.hidden { display: none; }
+.correo-sugerencia .btn-sm { width: auto; margin: 0; }
+.correo-ayuda { font-size: .8125rem; margin: 4px 0 8px; }
+.menu-correo { margin: 6px 0 0; font-size: .875rem; color: var(--muted); overflow-wrap: anywhere; }
+.menu-correo b { color: var(--ink); font-weight: 600; }
+.perfil-nota { font-size: .8125rem; margin: 12px 0 10px; }

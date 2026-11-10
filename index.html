@@ -422,6 +422,11 @@ async function registrar() {
         showError("Usa tu correo de INACAP (@inacapmail.cl) o uno de Gmail, Hotmail, Outlook o iCloud.");
         return;
     }
+    const problemaCorreo = correoSospechoso(email, nombre);
+    if (problemaCorreo) {
+        showError(problemaCorreo);
+        return;
+    }
     if (email !== email2) {
         showError("Los dos correos no coinciden. Escríbelos de nuevo.");
         return;
@@ -490,6 +495,22 @@ function sugerirCorreo(email) {
     }
     return mejorD <= 3 ? `${usuario}@${mejor}` : null;
 }
+// Correos que casi seguro no son del alumno (genéricos o solo un nombre, como matias@gmail.com).
+// Reglas revisadas contra los correos ya registrados: ninguno válido queda bloqueado.
+const NOMBRES_COMUNES = ["matias","benjamin","sebastian","nicolas","diego","felipe","ignacio","joaquin","vicente","tomas","martin","agustin","cristobal","javier","francisco","jose","juan","pablo","daniel","carlos","luis","jorge","pedro","manuel","miguel","alejandro","andres","gabriel","maximiliano","lucas","bastian","camilo","fernando","rodrigo","cristian","eduardo","ricardo","victor","claudio","mauricio","maria","camila","valentina","javiera","fernanda","catalina","constanza","francisca","daniela","sofia","isidora","antonia","josefa","carolina","paula","andrea","gonzalez","munoz","rojas","diaz","perez","soto","contreras","silva","martinez","sepulveda","morales","rodriguez","lopez","fuentes","hernandez","torres","araya","flores","espinoza","valenzuela","castillo","ramirez","reyes","gutierrez","castro","vargas","alvarez","vasquez","tapia","fernandez","sanchez","carrasco","gomez","cortes","herrera","nunez","jara","vergara","rivera","figueroa","riquelme","garcia","miranda","bravo","vera","molina","vega","campos","sandoval","orellana","zuniga","olivares","alarcon","gallardo","ortiz","garrido","salazar","guzman","henriquez","saavedra","navarro","aguilera","parra","romero","aravena","caceres","pizarro","godoy","acuna"];
+const PALABRAS_GENERICAS = /^(test|prueba|pruebas|correo|alumno|alumna|ejemplo|usuario|nombre|email|mail|hola|asdf|qwerty|abc|aaa|xxx|sinnombre|inacap|panol|estudiante)\d*$/;
+function correoSospechoso(email, nombre) {
+    const [usuario, dominio] = email.split("@");
+    const plano = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const palabras = plano(nombre).split(/\s+/).filter(Boolean);
+    const generico = "Ese correo parece genérico y probablemente no es tuyo. Escribe tu correo personal o el de INACAP (nombre.apellido@inacapmail.cl).";
+    if (PALABRAS_GENERICAS.test(usuario)) return generico;
+    if (/^[a-z]+$/.test(usuario) && (NOMBRES_COMUNES.includes(usuario) || palabras.includes(usuario))) return generico;
+    if (dominio === "inacapmail.cl" && !usuario.includes(".")) return "Tu correo de INACAP tiene la forma nombre.apellido@inacapmail.cl. Revisa que esté completo.";
+    if (dominio === "gmail.com" && usuario.replace(/\./g, "").length < 6) return "Ese correo de Gmail es demasiado corto. Revisa que esté completo.";
+    return null;
+}
+
 function revisarCorreoEscrito(soloOcultar) {
     const campo = document.getElementById("regEmail");
     const caja = document.getElementById("correoSugerencia");
